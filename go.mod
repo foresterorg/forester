@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/georgysavva/scany/v2 v2.0.0
 	github.com/google/go-cmp v0.5.8
+	github.com/hooklift/iso9660 v1.0.0
 	github.com/ilyakaznacheev/cleanenv v1.4.2
 	github.com/jackc/pgx-zerolog v0.0.0-20230315001418-f978528409eb
 	github.com/jackc/pgx/v5 v5.3.1
@@ -14,6 +15,8 @@ require (
 
 require (
 	github.com/BurntSushi/toml v1.1.0 // indirect
+	github.com/c4milo/gotoolkit v0.0.0-20190525173301-67483a18c17a // indirect
+	github.com/hooklift/assert v0.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
 	github.com/jackc/puddle/v2 v2.2.0 // indirect

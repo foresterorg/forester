@@ -1,0 +1,25 @@
+# IDE or editors
+/.idea/
+/.vscode/
+/.fleet/
+/.envrc
+__debug_bin
+tags
+TAGS
+
+# build locations
+/bin
+
+# config
+/config/*.env
+
+# HTTP client tests
+/scripts/http/*.local.http
+/scripts/http/*.private.env.json
+
+# custom make targets
+/mk/private.mk
+
+# data files
+/images
+/*.iso

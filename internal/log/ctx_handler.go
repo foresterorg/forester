@@ -14,7 +14,7 @@ type ContextHandler struct {
 func NewContextHandler(h slog.Handler) *ContextHandler {
 	// Optimization: avoid chains of ContextHandlers.
 	if lh, ok := h.(*ContextHandler); ok {
-		h = lh.Handler()
+		h = lh.handler
 	}
 	return &ContextHandler{h}
 }
@@ -24,6 +24,14 @@ func (h *ContextHandler) Enabled(ctx context.Context, level slog.Level) bool {
 }
 
 func (h *ContextHandler) Handle(ctx context.Context, r slog.Record) error {
+	tid := TraceId(ctx)
+	if tid != "" {
+		traceAttr := slog.Attr{
+			Key:   "trace_id",
+			Value: slog.StringValue(tid),
+		}
+		r.AddAttrs(traceAttr)
+	}
 	return h.handler.Handle(ctx, r)
 }
 
@@ -33,8 +41,4 @@ func (h *ContextHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 
 func (h *ContextHandler) WithGroup(name string) slog.Handler {
 	return NewContextHandler(h.handler.WithGroup(name))
-}
-
-func (h *ContextHandler) Handler() slog.Handler {
-	return h.handler
 }

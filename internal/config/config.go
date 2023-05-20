@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"forester/internal/ptr"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -19,7 +20,6 @@ var config struct {
 		Name        string        `env:"NAME" env-default:"provisioning" env-description:"main database name"`
 		User        string        `env:"USER" env-default:"postgres" env-description:"main database username"`
 		Password    string        `env:"PASSWORD" env-default:"" env-description:"main database password"`
-		SeedScript  string        `env:"SEED_SCRIPT" env-default:"" env-description:"database seed script (dev only)"`
 		MinConn     int32         `env:"MIN_CONN" env-default:"2" env-description:"connection pool minimum size"`
 		MaxConn     int32         `env:"MAX_CONN" env-default:"50" env-description:"connection pool maximum size"`
 		MaxIdleTime time.Duration `env:"MAX_IDLE_TIME" env-default:"15m" env-description:"connection pool idle time (time interval syntax)"`
@@ -32,7 +32,7 @@ var config struct {
 		MaxField int    `env:"MAX_FIELD" env-default:"0" env-description:"logger maximum field length (dev only)"`
 	} `env-prefix:"LOGGING_"`
 	Images struct {
-		Directory string `env:"DIRECTORY" env-default:"./tmp/images" env-description:"absolute path to directory with images"`
+		Directory string `env:"DIRECTORY" env-default:"images" env-description:"absolute path to directory with images"`
 	} `env-prefix:"IMAGES_"`
 }
 
@@ -41,18 +41,18 @@ var (
 	Application = &config.App
 	Database    = &config.Database
 	Logging     = &config.Logging
-	Worker      = &config.Logging
+	Images      = &config.Images
 )
 
 // Initialize loads configuration from provided .env files, the first existing file wins.
-func Initialize(configFiles ...string) {
+func Initialize(configFiles ...string) error {
 	var loaded bool
 	for _, configFile := range configFiles {
 		if _, err := os.Stat(configFile); err == nil {
 			// if config file exists, load it (also loads environmental variables)
 			err := cleanenv.ReadConfig(configFile, &config)
 			if err != nil {
-				panic(err)
+				return fmt.Errorf("config read error: %w", err)
 			}
 			loaded = true
 		}
@@ -62,9 +62,18 @@ func Initialize(configFiles ...string) {
 		// otherwise use only environmental variables instead
 		err := cleanenv.ReadEnv(&config)
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("config environment parse error: %w", err)
 		}
 	}
+
+	// validate
+	var err error
+	config.Images.Directory, err = filepath.Abs(config.Images.Directory)
+	if err != nil {
+		return fmt.Errorf("image directory config error: %w", err)
+	}
+
+	return nil
 }
 
 func HelpText() (string, error) {
