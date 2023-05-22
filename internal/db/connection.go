@@ -6,11 +6,10 @@ import (
 	"forester/internal/config"
 	"net/url"
 
-	pgxlog "github.com/jackc/pgx-zerolog"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slog"
 
 	_ "github.com/georgysavva/scany/v2"
 )
@@ -58,29 +57,11 @@ func Initialize(ctx context.Context, schema string) error {
 	poolConfig.MaxConnLifetime = config.Database.MaxLifetime
 	poolConfig.MaxConnIdleTime = config.Database.MaxIdleTime
 
-		logLevel, configErr := tracelog.LogLevelFromString(config.Database.LogLevel)
-		if configErr != nil {
-			return fmt.Errorf("cannot parse db log level configuration: %w", configErr)
-		}
-
-		if logLevel > 0 {
-			zeroLogger := pgxlog.NewLogger(log.Logger,
-				pgxlog.WithContextFunc(func(ctx context.Context, logWith zerolog.Context) zerolog.Context {
-					traceId := ctxval.TraceId(ctx)
-					if traceId != "" {
-						logWith = logWith.Str("trace_id", traceId)
-					}
-					accountId := ctxval.AccountIdOrNil(ctx)
-					if accountId != 0 {
-						logWith = logWith.Int64("account_id", accountId)
-					}
-					return logWith
-				}))
-			poolConfig.ConnConfig.Tracer = &tracelog.TraceLog{
-				Logger:   zeroLogger,
-				LogLevel: logLevel,
-				}
-		}
+	logLevel, configErr := tracelog.LogLevelFromString(config.Database.LogLevel)
+	if configErr != nil {
+		return fmt.Errorf("cannot parse db log level configuration: %w", configErr)
+	}
+	poolConfig.ConnConfig.Tracer = NewTracerLogger(slog.Default(), logLevel)
 
 	Pool, err = pgxpool.NewWithConfig(ctx, poolConfig)
 	if err != nil {

@@ -2,6 +2,7 @@ package img
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"forester/internal/config"
 	"io"
@@ -23,6 +24,8 @@ var ExtractedPaths = map[string]string{
 	"/images/pxeboot/vmlinuz.":   "/images/pxeboot/vmlinuz",
 }
 
+var ErrTooManyFiles = errors.New("not Anaconda image-based ISO: too many files")
+
 func UploadImage(ctx context.Context, id int, image io.ReadSeeker) error {
 	destPath := filepath.Join(config.Images.Directory, strconv.Itoa(id))
 	err := os.MkdirAll(destPath, 0744)
@@ -35,6 +38,7 @@ func UploadImage(ctx context.Context, id int, image io.ReadSeeker) error {
 		return fmt.Errorf("cannot read iso9660: %w", err)
 	}
 
+	var fileCount int
 	for {
 		fileInfo, err := isoReader.Next()
 		if err == io.EOF {
@@ -79,6 +83,11 @@ func UploadImage(ctx context.Context, id int, image io.ReadSeeker) error {
 			return fmt.Errorf("iso9660 copy error: %w", err)
 		} else if cerr != nil {
 			return fmt.Errorf("file close error: %w", err)
+		}
+
+		fileCount += 1
+		if fileCount > 100 {
+			return ErrTooManyFiles
 		}
 	}
 
