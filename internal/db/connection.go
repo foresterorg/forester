@@ -8,7 +8,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
-	"github.com/rs/zerolog/log"
 	"golang.org/x/exp/slog"
 
 	_ "github.com/georgysavva/scany/v2"
@@ -51,6 +50,7 @@ func Initialize(ctx context.Context, schema string) error {
 	if err != nil {
 		return fmt.Errorf("unable to parse db configuration: %w", err)
 	}
+	slog.DebugCtx(ctx, "connecting to database", "conn_string", connStr)
 
 	poolConfig.MaxConns = config.Database.MaxConn
 	poolConfig.MinConns = config.Database.MinConn
@@ -77,6 +77,6 @@ func Initialize(ctx context.Context, schema string) error {
 }
 
 func Close() {
-	log.Logger.Info().Msg("Closing all database connections")
+	slog.Debug("closing database")
 	Pool.Close()
 }

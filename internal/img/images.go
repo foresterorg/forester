@@ -26,8 +26,8 @@ var ExtractedPaths = map[string]string{
 
 var ErrTooManyFiles = errors.New("not Anaconda image-based ISO: too many files")
 
-func UploadImage(ctx context.Context, id int, image io.ReadSeeker) error {
-	destPath := filepath.Join(config.Images.Directory, strconv.Itoa(id))
+func UploadImage(ctx context.Context, id int64, image io.ReadSeeker) error {
+	destPath := filepath.Join(config.Images.Directory, strconv.FormatInt(id, 10))
 	err := os.MkdirAll(destPath, 0744)
 	if err != nil {
 		return fmt.Errorf("cannot write image: %w", err)
@@ -50,12 +50,12 @@ func UploadImage(ctx context.Context, id int, image io.ReadSeeker) error {
 
 		mappedName, ok := ExtractedPaths[fileInfo.Name()]
 		if !ok {
-			slog.DebugCtx(ctx, "Skipping uploaded iso9660 entry", "iso_path", fileInfo.Name())
+			slog.DebugCtx(ctx, "skipping uploaded iso9660 entry", "iso_path", fileInfo.Name())
 			continue
 		}
 
 		filePath := filepath.Join(destPath, mappedName)
-		slog.DebugCtx(ctx, "Extracting uploaded iso9660 entry", "iso_path", fileInfo.Name(), "dest_path", filePath)
+		slog.DebugCtx(ctx, "extracting uploaded iso9660 entry", "iso_path", fileInfo.Name(), "dest_path", filePath)
 		if fileInfo.IsDir() {
 			if err := os.MkdirAll(filePath, 0744); err != nil {
 				return fmt.Errorf("cannot create dir %s: %w", filePath, err)

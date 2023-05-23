@@ -3,11 +3,11 @@ module forester
 go 1.19
 
 require (
+	github.com/alexflint/go-arg v1.4.3
 	github.com/georgysavva/scany/v2 v2.0.0
 	github.com/google/go-cmp v0.5.8
 	github.com/hooklift/iso9660 v1.0.0
 	github.com/ilyakaznacheev/cleanenv v1.4.2
-	github.com/jackc/pgx-zerolog v0.0.0-20230315001418-f978528409eb
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/rs/zerolog v1.29.1
 	golang.org/x/exp v0.0.0-20230515195305-f3d0a9c9a5cc
@@ -15,6 +15,7 @@ require (
 
 require (
 	github.com/BurntSushi/toml v1.1.0 // indirect
+	github.com/alexflint/go-scalar v1.1.0 // indirect
 	github.com/c4milo/gotoolkit v0.0.0-20190525173301-67483a18c17a // indirect
 	github.com/hooklift/assert v0.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect

@@ -26,7 +26,7 @@ var GetImageDao func(ctx context.Context) ImageDao
 type ImageDao interface {
 	Create(ctx context.Context, img *model.Image) error
 	GetById(ctx context.Context, img *model.Image, id int64) error
-	List(ctx context.Context, img []model.Image, limit, offset int64) error
+	List(ctx context.Context, img *[]model.Image, limit, offset int64) error
 	Delete(ctx context.Context, id int64) error
 }
 
@@ -58,21 +58,23 @@ func (dao imageDao) GetById(ctx context.Context, img *model.Image, id int64) err
 	if err != nil {
 		return fmt.Errorf("db error: %w", err)
 	}
+
 	return nil
 }
 
-func (dao imageDao) List(ctx context.Context, img []model.Image, limit, offset int64) error {
-	query := `SELECT * FROM images ORDER BY id LIMIT $2 OFFSET $3`
+func (dao imageDao) List(ctx context.Context, img *[]model.Image, limit, offset int64) error {
+	query := `SELECT * FROM images ORDER BY id LIMIT $1 OFFSET $2`
 
 	rows, err := Pool.Query(ctx, query, limit, offset)
 	if err != nil {
 		return fmt.Errorf("db error: %w", err)
 	}
 
-	err = pgxscan.ScanAll(&img, rows)
+	err = pgxscan.ScanAll(img, rows)
 	if err != nil {
 		return fmt.Errorf("db error: %w", err)
 	}
+
 	return nil
 }
 

@@ -12,7 +12,8 @@ import (
 
 var config struct {
 	App struct {
-		Port int `env:"PORT" env-default:"8000" env-description:"HTTP port of the API service"`
+		Port      int `env:"PORT" env-default:"8000" env-description:"HTTP port of the API service"`
+		BootImage int `env:"BOOT_IMAGE" env-default:"1" env-description:"use shim/grub from image ID"`
 	} `env-prefix:"APP_"`
 	Database struct {
 		Host        string        `env:"HOST" env-default:"localhost" env-description:"main database hostname"`
