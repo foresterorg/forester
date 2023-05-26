@@ -1,39 +1,39 @@
 package version
 
-var (
-	// BuildCommit is SHA commit set via -ldflags
-	BuildCommit string
+import "runtime/debug"
 
-	// BuildTime in UTC set via -ldflags
+var (
+	// BuildTag contains Git tag or sha
+	BuildTag string
+
+	// BuildTime contains build time
 	BuildTime string
+
+	// BuildGoVersion contains Go version
+	BuildGoVersion string
 )
 
 const (
-	// ApplicationName contains string that is used by other names
 	ApplicationName = "forester"
-
-	// PrometheusLabelName contains string that is included in all Prometheus metrics
-	PrometheusLabelName = ApplicationName
-
-	// APIPathName is the name used in main route API prefix
-	APIPathName = ApplicationName
-
-	// UnleashAppName contains string used to initialize Unleash (feature flags)
-	UnleashAppName = ApplicationName
-
-	// APIPathVersion is the name used in main route API prefix
-	APIPathVersion = "v1"
-
-	// OpenTelemetryVersion is used for all OpenTelemetry tracing
-	OpenTelemetryVersion = "1.0.0"
 )
 
 func init() {
-	if BuildTime == "" {
-		BuildTime = "N/A"
+	bi, ok := debug.ReadBuildInfo()
+
+	if ok {
+		BuildGoVersion = bi.GoVersion
+
+		for _, bs := range bi.Settings {
+			switch bs.Key {
+			case "vcs.revision":
+				BuildTag = bs.Value[0:4]
+			case "vcs.time":
+				BuildTime = bs.Value
+			}
+		}
 	}
 
-	if BuildCommit == "" {
-		BuildCommit = "HEAD"
+	if BuildTag == "" {
+		BuildTag = "HEAD"
 	}
 }

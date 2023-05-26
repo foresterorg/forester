@@ -1,0 +1,6 @@
+echo "FORESTER PROJECT version {{ .Version }}"
+
+echo "Error: {{ .Error }}"
+echo "The system will poweroff shortly"
+sleep 999
+halt

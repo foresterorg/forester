@@ -19,7 +19,7 @@ import (
 
 func main() {
 	ctx := context.Background()
-	logging.Initialize(slog.LevelDebug)
+	logging.Initialize(config.ParsedLoggingLevel())
 
 	err := config.Initialize("config/forester.env")
 	if err != nil {
@@ -33,13 +33,16 @@ func main() {
 
 	rootRouter := chi.NewRouter()
 	bootRouter := chi.NewRouter()
+	imgRouter := chi.NewRouter()
 	ksRouter := chi.NewRouter()
 
 	rootRouter.Use(mux.TraceIdMiddleware)
 
-	mux.MountKickstart(bootRouter)
+	mux.MountBoot(bootRouter)
+	mux.MountImages(imgRouter)
 	mux.MountKickstart(ksRouter)
 	rootRouter.Mount("/boot", bootRouter)
+	rootRouter.Mount("/img", imgRouter)
 	rootRouter.Mount("/ks", ksRouter)
 
 	rootServer := http.Server{

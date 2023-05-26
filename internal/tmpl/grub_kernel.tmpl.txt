@@ -1,0 +1,6 @@
+echo "FORESTER PROJECT version {{ .Version }}"
+echo "Booting Anaconda..."
+
+linuxefi images/pxeboot/vmlinuz inst.stage2={{ .BaseURL }}/img/{{ .ImageID }} ip=dhcp inst.text inst.sshd inst.ks={{ .BaseURL }}/ks
+initrdefi images/pxeboot/initrd.img
+boot

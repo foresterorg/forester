@@ -1,0 +1,21 @@
+# deprecated/removed
+#install
+#auth  --useshadow  --passalgo=sha512
+#logging --level=info
+
+text
+skipx
+timezone Etc/UTC --utc
+keyboard 'us'
+lang en_US.UTF-8
+firstboot --disable
+liveimg --url={{ .BaseURL }}/img/{{ .ImageID }}/liveimg.tar.xz
+rootpw --iscrypted --lock locked
+firewall --enabled --ssh
+selinux --enforcing
+network --bootproto=dhcp --device=link --activate --onboot=on
+zerombr
+bootloader --location=mbr --timeout=1 --append="console=tty1 console=ttyS0,115200n8"
+clearpart --all --initlabel
+autopart
+shutdown

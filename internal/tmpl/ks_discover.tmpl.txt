@@ -1,0 +1,7 @@
+# FORESTER PROJECT version {{ .Version }}
+
+%pre --interpreter=/bin/python3 --erroronfail --log=/mnt/sysimage/root/ks-pre.log
+{{ template "ks_pre.tmpl.py" . }}
+%end
+
+%include /tmp/pre-generated.ks

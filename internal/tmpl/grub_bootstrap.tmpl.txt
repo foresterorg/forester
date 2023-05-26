@@ -1,0 +1,4 @@
+echo "FORESTER PROJECT version {{ .Version }}"
+
+echo "Trying mac/$net_default_mac"
+configfile "mac/$net_default_mac"

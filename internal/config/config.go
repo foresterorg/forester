@@ -4,16 +4,19 @@ import (
 	"fmt"
 	"forester/internal/ptr"
 	"os"
+	"path"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
+	"golang.org/x/exp/slog"
 )
 
 var config struct {
 	App struct {
-		Port      int `env:"PORT" env-default:"8000" env-description:"HTTP port of the API service"`
-		BootImage int `env:"BOOT_IMAGE" env-default:"1" env-description:"use shim/grub from image ID"`
+		Port            int           `env:"PORT" env-default:"8000" env-description:"HTTP port of the API service"`
+		InstallDuration time.Duration `env:"INSTALL_DURATION" env-default:"1h" env-description:"duration for which the service initiates provisioning after acquire"`
 	} `env-prefix:"APP_"`
 	Database struct {
 		Host        string        `env:"HOST" env-default:"localhost" env-description:"main database hostname"`
@@ -28,12 +31,11 @@ var config struct {
 		LogLevel    string        `env:"LOG_LEVEL" env-default:"trace" env-description:"logging level of database logs"`
 	} `env-prefix:"DATABASE_"`
 	Logging struct {
-		Level    string `env:"LEVEL" env-default:"info" env-description:"logger level (trace, debug, info, warn, error, fatal, panic)"`
-		Stdout   bool   `env:"STDOUT" env-default:"true" env-description:"logger standard output, disabled in clowder by default, stdout is still used if there is no other writer"`
-		MaxField int    `env:"MAX_FIELD" env-default:"0" env-description:"logger maximum field length (dev only)"`
+		Level string `env:"LEVEL" env-default:"debug" env-description:"logger level (debug, info, warn, error)"`
 	} `env-prefix:"LOGGING_"`
 	Images struct {
 		Directory string `env:"DIRECTORY" env-default:"images" env-description:"absolute path to directory with images"`
+		BootId    int    `env:"BOOT_ID" env-default:"1" env-description:"boot shim/grub from image DB ID"`
 	} `env-prefix:"IMAGES_"`
 }
 
@@ -74,6 +76,12 @@ func Initialize(configFiles ...string) error {
 		return fmt.Errorf("image directory config error: %w", err)
 	}
 
+	// print key configuration values
+	slog.Debug("image configuration",
+		"path", config.Images.Directory,
+		"boot_id", config.Images.BootId,
+	)
+
 	return nil
 }
 
@@ -83,4 +91,23 @@ func HelpText() (string, error) {
 		return "", fmt.Errorf("cannot generate help text: %w", err)
 	}
 	return text, nil
+}
+
+func ParsedLoggingLevel() slog.Level {
+	switch Logging.Level {
+	case "debug", "DEBUG":
+		return slog.LevelDebug
+	case "info", "INFO":
+		return slog.LevelInfo
+	case "warn", "warning", "WARN", "WARNING":
+		return slog.LevelWarn
+	case "error", "ERROR":
+		return slog.LevelError
+	}
+
+	return slog.LevelDebug
+}
+
+func BootPath() string {
+	return path.Join(config.Images.Directory, strconv.Itoa(config.Images.BootId))
 }
