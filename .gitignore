@@ -1,3 +1,6 @@
+# OS stuff
+.DS_Store
+
 # IDE or editors
 /.idea/
 /.vscode/

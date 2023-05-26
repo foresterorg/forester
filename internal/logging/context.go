@@ -1,6 +1,10 @@
 package logging
 
-import "context"
+import (
+	"context"
+	"math/big"
+	"math/rand"
+)
 
 type ctxKeyId int
 
@@ -20,4 +24,12 @@ func TraceId(ctx context.Context) string {
 // WithTraceId returns context copy with trace id value.
 func WithTraceId(ctx context.Context, id string) context.Context {
 	return context.WithValue(ctx, traceCtxKey, id)
+}
+
+func NewTraceId() string {
+	var b [16]byte
+	var i big.Int
+	_, _ = rand.Read(b[:])
+	i.SetBytes(b[:])
+	return i.Text(62)
 }

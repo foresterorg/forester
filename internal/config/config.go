@@ -18,7 +18,7 @@ var config struct {
 	Database struct {
 		Host        string        `env:"HOST" env-default:"localhost" env-description:"main database hostname"`
 		Port        uint16        `env:"PORT" env-default:"5432" env-description:"main database port"`
-		Name        string        `env:"NAME" env-default:"provisioning" env-description:"main database name"`
+		Name        string        `env:"NAME" env-default:"forester" env-description:"main database name"`
 		User        string        `env:"USER" env-default:"postgres" env-description:"main database username"`
 		Password    string        `env:"PASSWORD" env-default:"" env-description:"main database password"`
 		MinConn     int32         `env:"MIN_CONN" env-default:"2" env-description:"connection pool minimum size"`
