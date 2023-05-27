@@ -35,7 +35,7 @@ var config struct {
 		Level string `env:"LEVEL" env-default:"debug" env-description:"logger level (debug, info, warn, error)"`
 	} `env-prefix:"LOGGING_"`
 	Images struct {
-		Directory string `env:"DIRECTORY" env-default:"images" env-description:"absolute path to directory with images"`
+		Directory string `env:"DIR" env-default:"images" env-description:"absolute path to directory with images"`
 		BootId    int    `env:"BOOT_ID" env-default:"1" env-description:"boot shim/grub from image DB ID"`
 	} `env-prefix:"IMAGES_"`
 }

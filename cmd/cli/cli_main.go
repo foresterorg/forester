@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"forester/internal/api/ctl"
 	"forester/internal/config"
 	"forester/internal/logging"
 	"net/http"
 	"os"
+	"strconv"
 	"text/tabwriter"
 
 	arg "github.com/alexflint/go-arg"
@@ -78,9 +80,11 @@ func main() {
 	}
 }
 
+var ErrUploadNot200 = errors.New("upload error")
+
 func imageUpload(ctx context.Context, cmdArgs *imageUploadCmd) error {
 	client := ctl.NewImageServiceClient(args.URL, http.DefaultClient)
-	id, _, err := client.Create(ctx, &ctl.Image{
+	_, uploadURL, err := client.Create(ctx, &ctl.Image{
 		Name: cmdArgs.Name,
 	})
 	if err != nil {
@@ -93,8 +97,27 @@ func imageUpload(ctx context.Context, cmdArgs *imageUploadCmd) error {
 	}
 	defer file.Close()
 
-	// TODO upload image using dedicated endpoint
-	_ = id
+	r, err := http.NewRequest("PUT", uploadURL, file)
+	if err != nil {
+		return fmt.Errorf("cannot create upload request: %w", err)
+	}
+	fi, err := file.Stat()
+	if err != nil {
+		return fmt.Errorf("cannot stat file: %w", err)
+	}
+	r.Header.Set("Content-Type", "application/octet-stream")
+	r.Header.Set("Content-Size", strconv.FormatInt(fi.Size(), 10))
+	uploadClient := &http.Client{}
+	res, err := uploadClient.Do(r)
+	if err != nil {
+		return fmt.Errorf("cannot send data: %w", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		return fmt.Errorf("server returned %d: %w", res.StatusCode, ErrUploadNot200)
+	}
+
 	return nil
 }
 

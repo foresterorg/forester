@@ -7,6 +7,7 @@ import (
 	"forester/internal/api/ctl"
 	"forester/internal/config"
 	"forester/internal/db"
+	"forester/internal/img"
 	"forester/internal/logging"
 	"forester/internal/mux"
 	"net/http"
@@ -77,6 +78,9 @@ func main() {
 	}
 
 	<-waitForSignal
+
+	slog.DebugCtx(ctx, "waiting for extracting jobs to complete")
+	img.ExtractWG.Wait()
 
 	slog.DebugCtx(ctx, "shutdown complete")
 }

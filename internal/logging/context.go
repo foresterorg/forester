@@ -2,8 +2,8 @@ package logging
 
 import (
 	"context"
-	"math/big"
-	"math/rand"
+
+	"github.com/thanhpk/randstr"
 )
 
 type ctxKeyId int
@@ -27,9 +27,5 @@ func WithTraceId(ctx context.Context, id string) context.Context {
 }
 
 func NewTraceId() string {
-	var b [16]byte
-	var i big.Int
-	_, _ = rand.Read(b[:])
-	i.SetBytes(b[:])
-	return i.Text(62)
+	return randstr.Base62(8)
 }
