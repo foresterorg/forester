@@ -4,7 +4,6 @@ import (
 	"errors"
 	"forester/internal/config"
 	"forester/internal/db"
-	"forester/internal/model"
 	"forester/internal/tmpl"
 	"net/http"
 
@@ -58,8 +57,7 @@ var ErrSystemNotInstallable = errors.New("system is not installable, acquire it 
 func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
 	mac := chi.URLParam(r, "MAC")
 	sDao := db.GetSystemDao(r.Context())
-	var system model.System
-	err := sDao.FindByMac(r.Context(), &system, mac)
+	system, err := sDao.FindByMac(r.Context(), mac)
 	if err != nil {
 		renderGrubError(err, w, r)
 		return

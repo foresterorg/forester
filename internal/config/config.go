@@ -16,6 +16,7 @@ import (
 var config struct {
 	App struct {
 		Port            int           `env:"PORT" env-default:"8000" env-description:"HTTP port of the API service"`
+		Hostname        string        `env:"HOSTNAME" env-default:"" env-description:"hostname of the service"`
 		InstallDuration time.Duration `env:"INSTALL_DURATION" env-default:"1h" env-description:"duration for which the service initiates provisioning after acquire"`
 	} `env-prefix:"APP_"`
 	Database struct {
@@ -46,6 +47,16 @@ var (
 	Logging     = &config.Logging
 	Images      = &config.Images
 )
+
+var Hostname string
+
+func init() {
+	var err error
+	Hostname, err = os.Hostname()
+	if err != nil {
+		panic(err)
+	}
+}
 
 // Initialize loads configuration from provided .env files, the first existing file wins.
 func Initialize(configFiles ...string) error {
@@ -85,12 +96,12 @@ func Initialize(configFiles ...string) error {
 	return nil
 }
 
-func HelpText() (string, error) {
+func HelpText() string {
 	text, err := cleanenv.GetDescription(&config, ptr.To(""))
 	if err != nil {
-		return "", fmt.Errorf("cannot generate help text: %w", err)
+		panic(err)
 	}
-	return text, nil
+	return text
 }
 
 func ParsedLoggingLevel() slog.Level {
@@ -110,4 +121,8 @@ func ParsedLoggingLevel() slog.Level {
 
 func BootPath() string {
 	return path.Join(config.Images.Directory, strconv.Itoa(config.Images.BootId))
+}
+
+func BaseURL() string {
+	return fmt.Sprintf("http://%s:%d", Hostname, config.App.Port)
 }

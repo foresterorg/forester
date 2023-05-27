@@ -18,10 +18,10 @@ func getImageDao(ctx context.Context) ImageDao {
 	return &imageDao{}
 }
 
-func (dao imageDao) Create(ctx context.Context, img *model.Image) error {
+func (dao imageDao) Create(ctx context.Context, image *model.Image) error {
 	query := `INSERT INTO images (name) VALUES ($1) RETURNING id`
 
-	err := Pool.QueryRow(ctx, query, img.Name).Scan(&img.ID)
+	err := Pool.QueryRow(ctx, query, image.Name).Scan(&image.ID)
 	if err != nil {
 		return fmt.Errorf("db error: %w", err)
 	}
@@ -29,31 +29,33 @@ func (dao imageDao) Create(ctx context.Context, img *model.Image) error {
 	return nil
 }
 
-func (dao imageDao) GetById(ctx context.Context, img *model.Image, id int64) error {
+func (dao imageDao) GetById(ctx context.Context, id int64) (*model.Image, error) {
 	query := `SELECT * FROM images WHERE id = $1 LIMIT 1`
 
-	err := pgxscan.Get(ctx, Pool, img, query, id)
+	result := &model.Image{}
+	err := pgxscan.Get(ctx, Pool, result, query, id)
 	if err != nil {
-		return fmt.Errorf("db error: %w", err)
+		return nil, fmt.Errorf("db error: %w", err)
 	}
 
-	return nil
+	return result, nil
 }
 
-func (dao imageDao) List(ctx context.Context, img *[]model.Image, limit, offset int64) error {
+func (dao imageDao) List(ctx context.Context, limit, offset int64) (*[]model.Image, error) {
 	query := `SELECT * FROM images ORDER BY id LIMIT $1 OFFSET $2`
 
+	var result []model.Image
 	rows, err := Pool.Query(ctx, query, limit, offset)
 	if err != nil {
-		return fmt.Errorf("db error: %w", err)
+		return nil, fmt.Errorf("db error: %w", err)
 	}
 
-	err = pgxscan.ScanAll(img, rows)
+	err = pgxscan.ScanAll(&result, rows)
 	if err != nil {
-		return fmt.Errorf("db error: %w", err)
+		return nil, fmt.Errorf("db error: %w", err)
 	}
 
-	return nil
+	return &result, nil
 }
 
 func (dao imageDao) Delete(ctx context.Context, id int64) error {

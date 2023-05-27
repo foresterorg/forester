@@ -16,8 +16,9 @@ func getSystemDao(ctx context.Context) SystemDao {
 	return &systemDao{}
 }
 
-func (dao systemDao) FindByMac(ctx context.Context, system *model.System, mac string) error {
-	system.ImageID = 5
-	system.AcquiredAt = time.Now()
-	return nil
+func (dao systemDao) FindByMac(ctx context.Context, mac string) (*model.System, error) {
+	result := &model.System{}
+	result.ImageID = 5
+	result.AcquiredAt = time.Now()
+	return result, nil
 }

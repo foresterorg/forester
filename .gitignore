@@ -12,6 +12,8 @@ TAGS
 
 # build locations
 /bin
+/forester-controller
+/forester-cli
 
 # config
 /config/*.env

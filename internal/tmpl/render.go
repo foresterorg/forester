@@ -3,6 +3,7 @@ package tmpl
 import (
 	"embed"
 	"fmt"
+	"forester/internal/config"
 	"forester/internal/version"
 	"io"
 	"text/template"
@@ -24,7 +25,7 @@ func init() {
 
 func commonParams() *CommonParams {
 	return &CommonParams{
-		BaseURL: "http://nuc.home.lan:8000",
+		BaseURL: config.BaseURL(),
 		Version: version.BuildTag,
 	}
 }

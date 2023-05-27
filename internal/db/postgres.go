@@ -22,14 +22,14 @@ var (
 var GetImageDao func(ctx context.Context) ImageDao
 
 type ImageDao interface {
-	Create(ctx context.Context, img *model.Image) error
-	GetById(ctx context.Context, img *model.Image, id int64) error
-	List(ctx context.Context, img *[]model.Image, limit, offset int64) error
+	Create(ctx context.Context, image *model.Image) error
+	GetById(ctx context.Context, id int64) (*model.Image, error)
+	List(ctx context.Context, limit, offset int64) (*[]model.Image, error)
 	Delete(ctx context.Context, id int64) error
 }
 
 var GetSystemDao func(ctx context.Context) SystemDao
 
 type SystemDao interface {
-	FindByMac(ctx context.Context, system *model.System, mac string) error
+	FindByMac(ctx context.Context, mac string) (*model.System, error)
 }

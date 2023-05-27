@@ -3,11 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"forester/internal/api/ctl"
 	"forester/internal/config"
-	"forester/internal/db"
 	"forester/internal/logging"
-	"forester/internal/model"
-	"forester/internal/srv"
+	"net/http"
 	"os"
 	"text/tabwriter"
 
@@ -32,6 +31,7 @@ type imageCmd struct {
 
 var args struct {
 	Image   *imageCmd `arg:"subcommand:image" help:"image related commands"`
+	URL     string    `arg:"-u" default:"http://localhost:8000"`
 	Config  string    `arg:"-c" default:"config/forester.env"`
 	Quiet   bool      `arg:"-q"`
 	Verbose bool      `arg:"-v"`
@@ -59,10 +59,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = db.Initialize(ctx, "public")
-	if err != nil {
-		return
-	}
 
 	switch {
 	case args.Image != nil:
@@ -82,30 +78,37 @@ func main() {
 	}
 }
 
-func imageUpload(ctx context.Context, args *imageUploadCmd) error {
-	file, err := os.Open(args.ImageFile)
+func imageUpload(ctx context.Context, cmdArgs *imageUploadCmd) error {
+	client := ctl.NewImageServiceClient(args.URL, http.DefaultClient)
+	id, _, err := client.Create(ctx, &ctl.Image{
+		Name: cmdArgs.Name,
+	})
+	if err != nil {
+		return fmt.Errorf("cannot create image: %w", err)
+	}
+
+	file, err := os.Open(cmdArgs.ImageFile)
 	if err != nil {
 		return fmt.Errorf("cannot open image: %w", err)
 	}
 	defer file.Close()
 
-	err = srv.ImageUpload(ctx, file, args.Name)
-	if err != nil {
-		return fmt.Errorf("cannot upload image: %w", err)
-	}
+	// TODO upload image using dedicated endpoint
+	_ = id
 	return nil
 }
 
-func imageList(ctx context.Context, args *imageListCmd) error {
-	result := make([]model.Image, 0, args.Limit)
-	err := srv.ImageList(ctx, &result, args.Limit, args.Offset)
+func imageList(ctx context.Context, cmdArgs *imageListCmd) error {
+
+	client := ctl.NewImageServiceClient(args.URL, http.DefaultClient)
+	images, err := client.List(ctx, 1000, 0)
 	if err != nil {
-		return fmt.Errorf("cannot upload image: %w", err)
+		return fmt.Errorf("cannot list images: %w", err)
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 5, ' ', 0)
 	fmt.Fprintln(w, "Image ID\tImage Name")
-	for _, img := range result {
+	for _, img := range images {
 		fmt.Fprintf(w, "%d\t%s\n", img.ID, img.Name)
 	}
 	w.Flush()

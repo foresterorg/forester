@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"forester/internal/api/ctl"
 	"forester/internal/config"
 	"forester/internal/db"
 	"forester/internal/logging"
@@ -18,7 +19,12 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "-h" {
+		fmt.Printf("Environment variables:\n%s\n", config.HelpText())
+		os.Exit(1)
+	}
 	ctx := context.Background()
+
 	logging.Initialize(config.ParsedLoggingLevel())
 
 	err := config.Initialize("config/forester.env")
@@ -44,6 +50,7 @@ func main() {
 	rootRouter.Mount("/boot", bootRouter)
 	rootRouter.Mount("/img", imgRouter)
 	rootRouter.Mount("/ks", ksRouter)
+	ctl.MountServices(rootRouter)
 
 	rootServer := http.Server{
 		Addr:    fmt.Sprintf(":%d", config.Application.Port),

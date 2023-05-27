@@ -1,0 +1,19 @@
+webrpc = v1
+
+name = forester-controller
+version = v0.0.1
+
+struct Image
+  - ID: int64
+    + json = id
+    + go.field.name = ID
+
+  - Name: string
+    + json = name
+    + go.field.name = Name
+
+service ImageService
+  - Create(image: Image) => (id: int64, uploadURL: string)
+  - GetByID(imageID: int64) => (image: Image)
+  - List(limit: int64, offset: int64) => (images: []Image)
+  - Delete(imageID: int64)
