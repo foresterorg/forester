@@ -33,6 +33,44 @@ type System struct {
 	Comment string `db:"comment"`
 }
 
+type Fact struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+type Facts struct {
+	List []Fact `json:"list"`
+}
+
+var KnownFactKeys = [...]string{
+	"bios_vendor",
+	"bios_version",
+	"bios_release_date",
+	"bios_revision",
+	"firmware_revision",
+	"system_manufacturer",
+	"system_product_name",
+	"system_version",
+	"system_serial_number",
+	"system_uuid",
+	"system_sku_number",
+	"system_family",
+	"baseboard_manufacturer",
+	"baseboard_product_name",
+	"baseboard_version",
+	"baseboard_serial_number",
+	"baseboard_asset_tag",
+	"chassis_manufacturer",
+	"chassis_type",
+	"chassis_version",
+	"chassis_serial_number",
+	"chassis_asset_tag",
+	"processor_family",
+	"processor_manufacturer",
+	"processor_version",
+	"processor_frequency",
+}
+
 func (s System) Installable() bool {
 	return time.Now().Sub(s.AcquiredAt) < config.Application.InstallDuration
 }

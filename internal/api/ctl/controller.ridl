@@ -17,3 +17,10 @@ service ImageService
   - GetByID(imageID: int64) => (image: Image)
   - List(limit: int64, offset: int64) => (images: []Image)
   - Delete(imageID: int64)
+
+struct NewSystem
+  - HwAddrs: []string
+  - Facts: map<string,string>
+
+service SystemService
+  - Register(system: NewSystem)

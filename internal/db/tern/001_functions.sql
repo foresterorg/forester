@@ -19,7 +19,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ language 'plpgsql' STRICT;
+$$ LANGUAGE 'plpgsql' STRICT;
 
 -- Migration history tracking trigger
 CREATE TRIGGER track_applied_migrations
@@ -35,4 +35,4 @@ $$
 BEGIN
   RETURN floor(random() * (high - low + 1) + low);
 END;
-$$ language 'plpgsql' STRICT;
+$$ LANGUAGE 'plpgsql' STABLE STRICT;

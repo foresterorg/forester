@@ -26,4 +26,4 @@ BEGIN
   SELECT value INTO n2 FROM random_names WHERE id = (SELECT rand_between(513, 66048));
   RETURN n1 || ' ' || n2;
 END;
-$$ language 'plpgsql' STRICT;
+$$ LANGUAGE 'plpgsql' STABLE STRICT;

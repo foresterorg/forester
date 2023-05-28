@@ -16,6 +16,15 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+type systemRegisterCmd struct {
+	HwAddrs []string          `arg:"-m"`
+	Facts   map[string]string `arg:"-f"`
+}
+
+type systemCmd struct {
+	Register *systemRegisterCmd `arg:"subcommand:register" help:"register system"`
+}
+
 type imageUploadCmd struct {
 	ImageFile string `arg:"positional" placeholder:"IMAGE_FILE"`
 	Name      string `arg:"-n"`
@@ -32,12 +41,13 @@ type imageCmd struct {
 }
 
 var args struct {
-	Image   *imageCmd `arg:"subcommand:image" help:"image related commands"`
-	URL     string    `arg:"-u" default:"http://localhost:8000"`
-	Config  string    `arg:"-c" default:"config/forester.env"`
-	Quiet   bool      `arg:"-q"`
-	Verbose bool      `arg:"-v"`
-	Debug   bool      `arg:"-d"`
+	Image   *imageCmd  `arg:"subcommand:image" help:"image related commands"`
+	System  *systemCmd `arg:"subcommand:system" help:"system related commands"`
+	URL     string     `arg:"-u" default:"http://localhost:8000"`
+	Config  string     `arg:"-c" default:"config/forester.env"`
+	Quiet   bool       `arg:"-q"`
+	Verbose bool       `arg:"-v"`
+	Debug   bool       `arg:"-d"`
 }
 
 func main() {
@@ -69,7 +79,13 @@ func main() {
 		} else if cmd := args.Image.List; cmd != nil {
 			err = imageList(ctx, cmd)
 		} else {
-			_ = parser.FailSubcommand("missing image subcommand", "image")
+			_ = parser.FailSubcommand("unknown subcommand", "image")
+		}
+	case args.System != nil:
+		if cmd := args.System.Register; cmd != nil {
+			err = systemRegister(ctx, cmd)
+		} else {
+			_ = parser.FailSubcommand("unknown subcommand", "image")
 		}
 	default:
 		parser.Fail("missing subcommand")
@@ -135,6 +151,20 @@ func imageList(ctx context.Context, cmdArgs *imageListCmd) error {
 		fmt.Fprintf(w, "%d\t%s\n", img.ID, img.Name)
 	}
 	w.Flush()
+
+	return nil
+}
+
+func systemRegister(ctx context.Context, cmdArgs *systemRegisterCmd) error {
+	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
+	sys := ctl.NewSystem{
+		HwAddrs: cmdArgs.HwAddrs,
+		Facts:   cmdArgs.Facts,
+	}
+	err := client.Register(ctx, &sys)
+	if err != nil {
+		return fmt.Errorf("cannot register system: %w", err)
+	}
 
 	return nil
 }

@@ -31,5 +31,6 @@ type ImageDao interface {
 var GetSystemDao func(ctx context.Context) SystemDao
 
 type SystemDao interface {
+	Register(ctx context.Context, sys *model.System) error
 	FindByMac(ctx context.Context, mac string) (*model.System, error)
 }
