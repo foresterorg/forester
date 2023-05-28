@@ -17,6 +17,8 @@ func MountKickstart(r *chi.Mux) {
 
 func HandleKickstart(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
+
+	// TODO read MAC header and render discover or install
 	err := tmpl.RenderKickstartDiscover(w)
 	if err != nil {
 		renderGrubError(err, w, r)

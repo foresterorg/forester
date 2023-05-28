@@ -72,7 +72,7 @@ var KnownFactKeys = [...]string{
 }
 
 func (s System) Installable() bool {
-	return time.Now().Sub(s.AcquiredAt) < config.Application.InstallDuration
+	return s.Acquired && s.ImageID != nil && time.Now().Sub(s.AcquiredAt) < config.Application.InstallDuration
 }
 
 func (s System) FactsMap() map[string]string {

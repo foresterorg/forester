@@ -26,9 +26,21 @@ type systemListCmd struct {
 	Offset int64 `arg:"-o" default:"0"`
 }
 
+type systemAcquireCmd struct {
+	ID      int64  `arg:"-s"`
+	ImageID int64  `arg:"-i"`
+	Comment string `arg:"-c"`
+}
+
+type systemReleaseCmd struct {
+	ID int64 `arg:"-s"`
+}
+
 type systemCmd struct {
 	Register *systemRegisterCmd `arg:"subcommand:register" help:"register system"`
 	List     *systemListCmd     `arg:"subcommand:list" help:"list systems"`
+	Acquire  *systemAcquireCmd  `arg:"subcommand:acquire" help:"acquire system"`
+	Release  *systemReleaseCmd  `arg:"subcommand:release" help:"release system"`
 }
 
 type imageUploadCmd struct {
@@ -92,6 +104,10 @@ func main() {
 			err = systemRegister(ctx, cmd)
 		} else if cmd := args.System.List; cmd != nil {
 			err = systemList(ctx, cmd)
+		} else if cmd := args.System.Acquire; cmd != nil {
+			err = systemAcquire(ctx, cmd)
+		} else if cmd := args.System.Release; cmd != nil {
+			err = systemRelease(ctx, cmd)
 		} else {
 			_ = parser.FailSubcommand("unknown subcommand", "image")
 		}
@@ -192,6 +208,31 @@ func systemList(ctx context.Context, cmdArgs *systemListCmd) error {
 		fmt.Fprintf(w, "%d\t%s\t%s\t%t\t%s\n", line.ID, line.Name, line.HwAddrs, line.Acquired, line.Comment)
 	}
 	w.Flush()
+
+	return nil
+}
+
+func systemAcquire(ctx context.Context, cmdArgs *systemAcquireCmd) error {
+	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
+	sys := ctl.SystemToAcquire{
+		ID:      cmdArgs.ID,
+		ImageID: cmdArgs.ImageID,
+		Comment: cmdArgs.Comment,
+	}
+	_, err := client.Acquire(ctx, &sys)
+	if err != nil {
+		return fmt.Errorf("cannot acquire system: %w", err)
+	}
+
+	return nil
+}
+
+func systemRelease(ctx context.Context, cmdArgs *systemReleaseCmd) error {
+	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
+	err := client.Release(ctx, cmdArgs.ID)
+	if err != nil {
+		return fmt.Errorf("cannot release system: %w", err)
+	}
 
 	return nil
 }

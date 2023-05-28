@@ -6,6 +6,7 @@ import (
 	"forester/internal/db"
 	"forester/internal/model"
 	"net"
+	"time"
 )
 
 var _ SystemService = SystemServiceImpl{}
@@ -45,6 +46,7 @@ func (i SystemServiceImpl) List(ctx context.Context, limit int64, offset int64) 
 	if err != nil {
 		return nil, fmt.Errorf("cannot list: %w", err)
 	}
+
 	result := make([]*System, len(list))
 	for i, item := range list {
 		result[i] = &System{
@@ -58,5 +60,32 @@ func (i SystemServiceImpl) List(ctx context.Context, limit int64, offset int64) 
 			Comment:    item.Comment,
 		}
 	}
+
 	return result, nil
+}
+
+func (i SystemServiceImpl) Acquire(ctx context.Context, system *SystemToAcquire) (time.Time, error) {
+	dao := db.GetSystemDao(ctx)
+	dbSystem := &model.System{
+		ID:      system.ID,
+		ImageID: &system.ImageID,
+		Comment: system.Comment,
+	}
+
+	err := dao.Acquire(ctx, dbSystem)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("cannot acquire: %w", err)
+	}
+
+	return dbSystem.AcquiredAt, nil
+}
+
+func (i SystemServiceImpl) Release(ctx context.Context, systemId int64) error {
+	dao := db.GetSystemDao(ctx)
+	err := dao.Release(ctx, systemId)
+	if err != nil {
+		return fmt.Errorf("cannot release: %w", err)
+	}
+
+	return nil
 }
