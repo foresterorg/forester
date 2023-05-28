@@ -26,8 +26,8 @@ type System struct {
 	// for a system that way not acquired yet.
 	AcquiredAt time.Time `db:"acquired_at"`
 
-	// Image ID or 0 when no image was assigned yet.
-	ImageID int64 `db:"image_id"`
+	// Image ID or nil when no image was acquired yet.
+	ImageID *int64 `db:"image_id"`
 
 	// Comment, can be blank.
 	Comment string `db:"comment"`
@@ -73,4 +73,20 @@ var KnownFactKeys = [...]string{
 
 func (s System) Installable() bool {
 	return time.Now().Sub(s.AcquiredAt) < config.Application.InstallDuration
+}
+
+func (s System) FactsMap() map[string]string {
+	result := make(map[string]string, len(s.Facts.List))
+	for _, f := range s.Facts.List {
+		result[f.Key] = f.Value
+	}
+	return result
+}
+
+func (s System) HwAddrStrings() []string {
+	result := make([]string, len(s.HwAddrs))
+	for i, a := range s.HwAddrs {
+		result[i] = a.String()
+	}
+	return result
 }

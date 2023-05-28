@@ -38,3 +38,25 @@ func (i SystemServiceImpl) Register(ctx context.Context, system *NewSystem) erro
 
 	return nil
 }
+
+func (i SystemServiceImpl) List(ctx context.Context, limit int64, offset int64) ([]*System, error) {
+	dao := db.GetSystemDao(ctx)
+	list, err := dao.List(ctx, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("cannot list: %w", err)
+	}
+	result := make([]*System, len(list))
+	for i, item := range list {
+		result[i] = &System{
+			ID:         item.ID,
+			Name:       item.Name,
+			HwAddrs:    item.HwAddrStrings(),
+			Facts:      item.FactsMap(),
+			Acquired:   item.Acquired,
+			AcquiredAt: item.AcquiredAt,
+			ImageID:    item.ImageID,
+			Comment:    item.Comment,
+		}
+	}
+	return result, nil
+}

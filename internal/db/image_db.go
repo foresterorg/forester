@@ -41,10 +41,10 @@ func (dao imageDao) GetById(ctx context.Context, id int64) (*model.Image, error)
 	return result, nil
 }
 
-func (dao imageDao) List(ctx context.Context, limit, offset int64) (*[]model.Image, error) {
+func (dao imageDao) List(ctx context.Context, limit, offset int64) ([]*model.Image, error) {
 	query := `SELECT * FROM images ORDER BY id LIMIT $1 OFFSET $2`
 
-	var result []model.Image
+	var result []*model.Image
 	rows, err := Pool.Query(ctx, query, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("db error: %w", err)
@@ -55,7 +55,7 @@ func (dao imageDao) List(ctx context.Context, limit, offset int64) (*[]model.Ima
 		return nil, fmt.Errorf("db error: %w", err)
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 func (dao imageDao) Delete(ctx context.Context, id int64) error {

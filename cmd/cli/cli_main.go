@@ -21,8 +21,14 @@ type systemRegisterCmd struct {
 	Facts   map[string]string `arg:"-f"`
 }
 
+type systemListCmd struct {
+	Limit  int64 `arg:"-m" default:"100"`
+	Offset int64 `arg:"-o" default:"0"`
+}
+
 type systemCmd struct {
 	Register *systemRegisterCmd `arg:"subcommand:register" help:"register system"`
+	List     *systemListCmd     `arg:"subcommand:list" help:"list systems"`
 }
 
 type imageUploadCmd struct {
@@ -84,6 +90,8 @@ func main() {
 	case args.System != nil:
 		if cmd := args.System.Register; cmd != nil {
 			err = systemRegister(ctx, cmd)
+		} else if cmd := args.System.List; cmd != nil {
+			err = systemList(ctx, cmd)
 		} else {
 			_ = parser.FailSubcommand("unknown subcommand", "image")
 		}
@@ -94,6 +102,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func newTabWriter() *tabwriter.Writer {
+	return tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 }
 
 var ErrUploadNot200 = errors.New("upload error")
@@ -138,14 +150,13 @@ func imageUpload(ctx context.Context, cmdArgs *imageUploadCmd) error {
 }
 
 func imageList(ctx context.Context, cmdArgs *imageListCmd) error {
-
 	client := ctl.NewImageServiceClient(args.URL, http.DefaultClient)
-	images, err := client.List(ctx, 1000, 0)
+	images, err := client.List(ctx, cmdArgs.Limit, cmdArgs.Offset)
 	if err != nil {
 		return fmt.Errorf("cannot list images: %w", err)
 	}
 
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 5, ' ', 0)
+	w := newTabWriter()
 	fmt.Fprintln(w, "Image ID\tImage Name")
 	for _, img := range images {
 		fmt.Fprintf(w, "%d\t%s\n", img.ID, img.Name)
@@ -165,6 +176,22 @@ func systemRegister(ctx context.Context, cmdArgs *systemRegisterCmd) error {
 	if err != nil {
 		return fmt.Errorf("cannot register system: %w", err)
 	}
+
+	return nil
+}
+
+func systemList(ctx context.Context, cmdArgs *systemListCmd) error {
+	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
+	result, err := client.List(ctx, cmdArgs.Limit, cmdArgs.Offset)
+	if err != nil {
+		return fmt.Errorf("cannot register system: %w", err)
+	}
+	w := newTabWriter()
+	fmt.Fprintln(w, "ID\tName\tHw Addresses\tAcquired\tComment")
+	for _, line := range result {
+		fmt.Fprintf(w, "%d\t%s\t%s\t%t\t%s\n", line.ID, line.Name, line.HwAddrs, line.Acquired, line.Comment)
+	}
+	w.Flush()
 
 	return nil
 }

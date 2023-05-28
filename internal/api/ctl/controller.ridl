@@ -6,11 +6,8 @@ version = v0.0.1
 struct Image
   - ID: int64
     + json = id
-    + go.field.name = ID
-
   - Name: string
     + json = name
-    + go.field.name = Name
 
 service ImageService
   - Create(image: Image) => (id: int64, uploadURL: string)
@@ -20,7 +17,28 @@ service ImageService
 
 struct NewSystem
   - HwAddrs: []string
+    + json = hw_addrs
   - Facts: map<string,string>
+    + json = facts
+
+struct System
+  - ID: int64
+    + json = id
+  - Name: string
+    + json = name
+  - HwAddrs: []string
+    + json = hw_addrs
+  - Facts: map<string,string>
+    + json = facts
+  - Acquired: bool
+    + json = acquired
+  - AcquiredAt: timestamp
+    + json = acquired_at
+  - ImageID?: int64
+    + json = image_id,omitempty
+  - Comment: string
+    + json = comment
 
 service SystemService
   - Register(system: NewSystem)
+  - List(limit: int64, offset: int64) => (images: []System)

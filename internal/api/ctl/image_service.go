@@ -36,8 +36,8 @@ func (i ImageServiceImpl) List(ctx context.Context, limit int64, offset int64) (
 	if err != nil {
 		return nil, fmt.Errorf("cannot list: %w", err)
 	}
-	result := make([]*Image, len(*images))
-	for i, img := range *images {
+	result := make([]*Image, len(images))
+	for i, img := range images {
 		result[i] = &Image{
 			ID:   img.ID,
 			Name: img.Name,

@@ -62,13 +62,13 @@ func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
 		renderGrubError(err, w, r)
 		return
 	}
-	if !system.Installable() {
+	if !system.Installable() || system.ImageID == nil {
 		renderGrubError(ErrSystemNotInstallable, w, r)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	err = tmpl.RenderGrubKernel(w, tmpl.GrubKernelParams{ImageID: system.ImageID})
+	err = tmpl.RenderGrubKernel(w, tmpl.GrubKernelParams{ImageID: *system.ImageID})
 	if err != nil {
 		renderGrubError(err, w, r)
 		return

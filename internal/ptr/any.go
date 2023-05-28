@@ -27,3 +27,8 @@ func FromOrEmpty[T any](ref *T) (value T) {
 	}
 	return
 }
+
+// ToInt64 returns a pointer to the given value.
+func ToInt64(value int64) *int64 {
+	return &value
+}

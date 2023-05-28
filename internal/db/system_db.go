@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 	"forester/internal/model"
+	"forester/internal/ptr"
 	"time"
+
+	"github.com/georgysavva/scany/v2/pgxscan"
 )
 
 func init() {
@@ -28,9 +31,26 @@ func (dao systemDao) Register(ctx context.Context, sys *model.System) error {
 	return nil
 }
 
+func (dao systemDao) List(ctx context.Context, limit, offset int64) ([]*model.System, error) {
+	query := `SELECT * FROM systems ORDER BY id LIMIT $1 OFFSET $2`
+
+	var result []*model.System
+	rows, err := Pool.Query(ctx, query, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("db error: %w", err)
+	}
+
+	err = pgxscan.ScanAll(&result, rows)
+	if err != nil {
+		return nil, fmt.Errorf("db error: %w", err)
+	}
+
+	return result, nil
+}
+
 func (dao systemDao) FindByMac(ctx context.Context, mac string) (*model.System, error) {
 	result := &model.System{}
-	result.ImageID = 5
+	result.ImageID = ptr.ToInt64(5)
 	result.AcquiredAt = time.Now()
 	return result, nil
 }
