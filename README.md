@@ -16,7 +16,16 @@ Build the project:
     go mod download
     ./build.sh
 
-Create postgres database and execute all SQL files from internal/db/tern manually (migrations are work in progress).
+Create postgres database, configure the migrator and run it:
+
+    cat config/tern.conf
+    [database]
+    host = localhost
+    port = 5432
+    database = forester
+    user = postgres
+
+    ./migrate.sh
 
 Check possible environmental variables:
 
