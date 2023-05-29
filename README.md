@@ -39,6 +39,15 @@ Start using the CLI:
 
     ./forester-cli --help
 
+**TLS**
+
+- Sign server.cer with ca.cer
+- Configure the service to use it (TBD)
+- mkfs.msdos -C letsencrypt.img 300
+- mcopy -i letsencrypt.img letsencrypt.cer ::/ca.cer
+- mdir -i letsencrypt.img
+- Enroll the certificate into EFI
+
 **License**
 
 GNU GPL v3
