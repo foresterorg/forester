@@ -64,20 +64,18 @@ def gather_serial():
     except Exception:
         return ""
 
-
 def gather_facts():
     global log
     result = {
-        "mac": gather_mac(),
-        "serial": gather_serial(), # as in dracut/anaconda-ks-sendheaders.sh
-        "cpu": {
-            # TODO try with psutil package contains a lot of useful stuff
-            "count": open('/proc/cpuinfo').read().count('processor\t:'),
-        },
-        "memory": {
-            "bytes": os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES'),
-        },
-        "dmi": {},
+            "system": {
+                "hw_addrs": gather_mac(),
+                "facts": {
+                    "serial": gather_serial(), # as in dracut/anaconda-ks-sendheaders.sh
+                    # TODO try with psutil package contains a lot of useful stuff
+                    "cpuinfo-processor-count": str(open('/proc/cpuinfo').read().count('processor\t:')),
+                    "memory-bytes": str(os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')),
+                    },
+                },
     }
     for keyword in ['bios-vendor', 'bios-version', 'bios-release-date', 'bios-revision', 'firmware-revision',
                     'system-manufacturer', 'system-product-name', 'system-version', 'system-serial-number',
@@ -86,15 +84,15 @@ def gather_facts():
                     'chassis-manufacturer', 'chassis-type', 'chassis-version', 'chassis-serial-number',
                     'chassis-asset-tag', 'processor-family', 'processor-manufacturer', 'processor-version',
                     'processor-frequency']:
-        result["dmi"][keyword] = run_pipe(*(dmidecode + ["-s", keyword]))
-    result["log"] = log
+        result["system"]["facts"][keyword] = run_pipe(*(dmidecode + ["-s", keyword]))
+    #result["log"] = log
     return result
 
 
 facts = gather_facts()
 print(json.dumps(facts, indent=2))
 
-r = requests.post('%s/ks/register' % base_url, json=facts)
+r = requests.post('%s/rpc/SystemService/Register' % base_url, json=facts)
 log_write("register upload", r.content)
 
 # we are done, power off
