@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"text/tabwriter"
 
 	arg "github.com/alexflint/go-arg"
@@ -22,8 +23,9 @@ type systemRegisterCmd struct {
 }
 
 type systemListCmd struct {
-	Limit  int64 `arg:"-m" default:"100"`
-	Offset int64 `arg:"-o" default:"0"`
+	DisplayFacts []string `args:"-f"`
+	Limit        int64    `arg:"-m" default:"100"`
+	Offset       int64    `arg:"-o" default:"0"`
 }
 
 type systemAcquireCmd struct {
@@ -202,10 +204,28 @@ func systemList(ctx context.Context, cmdArgs *systemListCmd) error {
 	if err != nil {
 		return fmt.Errorf("cannot register system: %w", err)
 	}
+
+	if len(cmdArgs.DisplayFacts) == 0 {
+		cmdArgs.DisplayFacts = []string{
+			"system-manufacturer",
+			"system-product-name",
+		}
+	}
+
 	w := newTabWriter()
-	fmt.Fprintln(w, "ID\tName\tHw Addresses\tAcquired\tComment")
+	fmt.Fprintln(w, "ID\tName\tHw Addresses\tAcquired\tFacts")
 	for _, line := range result {
-		fmt.Fprintf(w, "%d\t%s\t%s\t%t\t%s\n", line.ID, line.Name, line.HwAddrs, line.Acquired, line.Comment)
+		a := line.HwAddrs[0]
+		if len(line.HwAddrs) > 1 {
+			a = fmt.Sprintf("%s (%d)", a, len(line.HwAddrs))
+		}
+		var factCol []string
+		for _, fn := range cmdArgs.DisplayFacts {
+			if f, ok := line.Facts[fn]; ok {
+				factCol = append(factCol, f)
+			}
+		}
+		fmt.Fprintf(w, "%d\t%s\t%s\t%t\t%s\n", line.ID, line.Name, a, line.Acquired, strings.Join(factCol, " "))
 	}
 	w.Flush()
 
