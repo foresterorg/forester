@@ -24,7 +24,7 @@ type systemRegisterCmd struct {
 }
 
 type systemShowCmd struct {
-	Pattern string `arg:"positional,required" placeholder:"SEARCH_PATTERN"`
+	Pattern string `arg:"positional,required" placeholder:"MAC_OR_NAME"`
 }
 
 type systemListCmd struct {
@@ -34,13 +34,13 @@ type systemListCmd struct {
 }
 
 type systemAcquireCmd struct {
-	ID      int64  `arg:"-s,required"`
-	ImageID int64  `arg:"-i,required"`
-	Comment string `arg:"-c"`
+	Pattern   string `arg:"positional,required" placeholder:"MAC_OR_NAME"`
+	ImageName string `arg:"-i,required"`
+	Comment   string `arg:"-c"`
 }
 
 type systemReleaseCmd struct {
-	ID int64 `arg:"-s,required"`
+	Pattern string `arg:"positional,required" placeholder:"MAC_OR_NAME"`
 }
 
 type systemCmd struct {
@@ -57,7 +57,7 @@ type imageUploadCmd struct {
 }
 
 type imageShowCmd struct {
-	Pattern string `arg:"positional,required" placeholder:"SEARCH_PATTERN"`
+	ImageName string `arg:"positional,required" placeholder:"NAME"`
 }
 
 type imageListCmd struct {
@@ -188,7 +188,7 @@ func imageUpload(ctx context.Context, cmdArgs *imageUploadCmd) error {
 
 func imageShow(ctx context.Context, cmdArgs *imageShowCmd) error {
 	client := ctl.NewImageServiceClient(args.URL, http.DefaultClient)
-	result, err := client.Find(ctx, cmdArgs.Pattern)
+	result, err := client.Find(ctx, cmdArgs.ImageName)
 	if err != nil {
 		return fmt.Errorf("cannot find: %w", err)
 	}
@@ -245,8 +245,9 @@ func systemShow(ctx context.Context, cmdArgs *systemShowCmd) error {
 	fmt.Fprintf(w, "%s\t%d\n", "ID", result.ID)
 	fmt.Fprintf(w, "%s\t%s\n", "Name", result.Name)
 	fmt.Fprintf(w, "%s\t%t\n", "Acquired", result.Acquired)
-	if result.Acquired {
+	if result.Acquired && result.ImageID != nil {
 		fmt.Fprintf(w, "%s\t%s\n", "Acquired at", result.AcquiredAt.Format(time.ANSIC))
+		fmt.Fprintf(w, "%s\t%d\n", "Image ID", *result.ImageID)
 	}
 	for _, mac := range result.HwAddrs {
 		fmt.Fprintf(w, "%s\t%s\n", "MAC", mac)
@@ -295,12 +296,7 @@ func systemList(ctx context.Context, cmdArgs *systemListCmd) error {
 
 func systemAcquire(ctx context.Context, cmdArgs *systemAcquireCmd) error {
 	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
-	sys := ctl.SystemToAcquire{
-		ID:      cmdArgs.ID,
-		ImageID: cmdArgs.ImageID,
-		Comment: cmdArgs.Comment,
-	}
-	_, err := client.Acquire(ctx, &sys)
+	err := client.Acquire(ctx, cmdArgs.Pattern, cmdArgs.ImageName, cmdArgs.Comment)
 	if err != nil {
 		return fmt.Errorf("cannot acquire system: %w", err)
 	}
@@ -310,7 +306,7 @@ func systemAcquire(ctx context.Context, cmdArgs *systemAcquireCmd) error {
 
 func systemRelease(ctx context.Context, cmdArgs *systemReleaseCmd) error {
 	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
-	err := client.Release(ctx, cmdArgs.ID)
+	err := client.Release(ctx, cmdArgs.Pattern)
 	if err != nil {
 		return fmt.Errorf("cannot release system: %w", err)
 	}

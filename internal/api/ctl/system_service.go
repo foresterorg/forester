@@ -6,7 +6,6 @@ import (
 	"forester/internal/db"
 	"forester/internal/model"
 	"net"
-	"time"
 )
 
 var _ SystemService = SystemServiceImpl{}
@@ -88,25 +87,36 @@ func (i SystemServiceImpl) List(ctx context.Context, limit int64, offset int64) 
 	return result, nil
 }
 
-func (i SystemServiceImpl) Acquire(ctx context.Context, system *SystemToAcquire) (time.Time, error) {
-	dao := db.GetSystemDao(ctx)
-	dbSystem := &model.System{
-		ID:      system.ID,
-		ImageID: &system.ImageID,
-		Comment: system.Comment,
-	}
+func (i SystemServiceImpl) Acquire(ctx context.Context, systemPattern, imagePattern, comment string) error {
+	daoSystem := db.GetSystemDao(ctx)
+	daoImage := db.GetImageDao(ctx)
 
-	err := dao.Acquire(ctx, dbSystem)
+	image, err := daoImage.Find(ctx, imagePattern)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("cannot acquire: %w", err)
+		return fmt.Errorf("cannot find: %w", err)
+	}
+	system, err := daoSystem.Find(ctx, systemPattern)
+	if err != nil {
+		return fmt.Errorf("cannot find: %w", err)
 	}
 
-	return dbSystem.AcquiredAt, nil
+	err = daoSystem.Acquire(ctx, system.ID, image.ID, comment)
+	if err != nil {
+		return fmt.Errorf("cannot acquire: %w", err)
+	}
+
+	return nil
 }
 
-func (i SystemServiceImpl) Release(ctx context.Context, systemId int64) error {
+func (i SystemServiceImpl) Release(ctx context.Context, systemPattern string) error {
 	dao := db.GetSystemDao(ctx)
-	err := dao.Release(ctx, systemId)
+
+	system, err := dao.Find(ctx, systemPattern)
+	if err != nil {
+		return fmt.Errorf("cannot find: %w", err)
+	}
+
+	err = dao.Release(ctx, system.ID)
 	if err != nil {
 		return fmt.Errorf("cannot release: %w", err)
 	}

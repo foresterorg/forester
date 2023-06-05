@@ -40,17 +40,9 @@ struct System
   - Comment: string
     + json = comment
 
-struct SystemToAcquire
-  - ID: int64
-    + json = id
-  - ImageID: int64
-    + json = image_id
-  - Comment: string
-    + json = comment
-
 service SystemService
   - Register(system: NewSystem)
   - Find(pattern: string) => (system: System)
-  - Acquire(system: SystemToAcquire) => (acquired_at: timestamp)
-  - Release(systemId: int64)
+  - Acquire(systemPattern: string, imagePattern: string, comment: string)
+  - Release(systemPattern: string)
   - List(limit: int64, offset: int64) => (systems: []System)

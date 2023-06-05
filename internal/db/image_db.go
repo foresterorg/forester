@@ -47,7 +47,7 @@ func (dao imageDao) Find(ctx context.Context, pattern string) (*model.Image, err
 	result := &model.Image{}
 	err := pgxscan.Get(ctx, Pool, result, query, pattern)
 	if err != nil {
-		return nil, fmt.Errorf("db error: %w", err)
+		return nil, fmt.Errorf("select error: %w", err)
 	}
 
 	return result, nil
@@ -59,12 +59,12 @@ func (dao imageDao) List(ctx context.Context, limit, offset int64) ([]*model.Ima
 	var result []*model.Image
 	rows, err := Pool.Query(ctx, query, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("db error: %w", err)
+		return nil, fmt.Errorf("select error: %w", err)
 	}
 
 	err = pgxscan.ScanAll(&result, rows)
 	if err != nil {
-		return nil, fmt.Errorf("db error: %w", err)
+		return nil, fmt.Errorf("select error: %w", err)
 	}
 
 	return result, nil
@@ -75,7 +75,7 @@ func (dao imageDao) Delete(ctx context.Context, id int64) error {
 
 	tag, err := Pool.Exec(ctx, query, id)
 	if err != nil {
-		return fmt.Errorf("db error: %w", err)
+		return fmt.Errorf("delete error: %w", err)
 	}
 
 	if tag.RowsAffected() != 1 {

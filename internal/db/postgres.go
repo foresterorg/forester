@@ -35,7 +35,7 @@ var GetSystemDao func(ctx context.Context) SystemDao
 type SystemDao interface {
 	Register(ctx context.Context, sys *model.System) error
 	List(ctx context.Context, limit, offset int64) ([]*model.System, error)
-	Acquire(ctx context.Context, sys *model.System) error
+	Acquire(ctx context.Context, systemId, imageId int64, comment string) error
 	Release(ctx context.Context, systemId int64) error
 	Find(ctx context.Context, pattern string) (*model.System, error)
 	FindByMac(ctx context.Context, mac net.HardwareAddr) (*model.System, error)
