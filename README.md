@@ -2,18 +2,21 @@
 
 Bare-metal provisioning service for Red Hat Anaconda (Fedora, RHEL, CentOS Stream, Alma Linux...)
 
-Requirements:
+**Requirements**:
 
-* Go 1.20
+* Go 1.20+
 * Postgres
 
-Hacking
+**Feedback and support**
 
-Build the project:
+Visit our [discussion forums](https://github.com/foresterorg/forester/discussions)!
+
+**Hacking**
+
+Build the project, the script will also install required CLI tools for code generation and database migration:
 
     git clone https://github.com/foresterorg/forester
     cd forester
-    go mod download
     ./build.sh
 
 Create postgres database, configure the migrator and run it:
@@ -46,7 +49,7 @@ Start using the CLI:
 - mkfs.msdos -C letsencrypt.img 300
 - mcopy -i letsencrypt.img letsencrypt.cer ::/ca.cer
 - mdir -i letsencrypt.img
-- Enroll the certificate into EFI
+- Enroll the certificate into EFI
 
 **License**
 
@@ -56,6 +59,4 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 
 **TODO**
 
-* https://github.com/webrpc/webrpc
 * Out of band management
-* Inventory
