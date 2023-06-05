@@ -42,6 +42,14 @@ type Facts struct {
 	List []Fact `json:"list"`
 }
 
+func (f *Facts) FactsMap() map[string]string {
+	result := make(map[string]string, len(f.List))
+	for _, f := range f.List {
+		result[f.Key] = f.Value
+	}
+	return result
+}
+
 var KnownFactKeys = [...]string{
 	"bios_vendor",
 	"bios_version",
@@ -73,14 +81,6 @@ var KnownFactKeys = [...]string{
 
 func (s System) Installable() bool {
 	return s.Acquired && s.ImageID != nil && time.Now().Sub(s.AcquiredAt) < config.Application.InstallDuration
-}
-
-func (s System) FactsMap() map[string]string {
-	result := make(map[string]string, len(s.Facts.List))
-	for _, f := range s.Facts.List {
-		result[f.Key] = f.Value
-	}
-	return result
 }
 
 func (s System) HwAddrStrings() []string {

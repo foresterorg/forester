@@ -12,14 +12,19 @@ import (
 	"strconv"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	arg "github.com/alexflint/go-arg"
 	"golang.org/x/exp/slog"
 )
 
 type systemRegisterCmd struct {
-	HwAddrs []string          `arg:"-m"`
+	HwAddrs []string          `arg:"-m,required"`
 	Facts   map[string]string `arg:"-f"`
+}
+
+type systemShowCmd struct {
+	Pattern string `arg:"positional,required" placeholder:"SEARCH_PATTERN"`
 }
 
 type systemListCmd struct {
@@ -29,25 +34,30 @@ type systemListCmd struct {
 }
 
 type systemAcquireCmd struct {
-	ID      int64  `arg:"-s"`
-	ImageID int64  `arg:"-i"`
+	ID      int64  `arg:"-s,required"`
+	ImageID int64  `arg:"-i,required"`
 	Comment string `arg:"-c"`
 }
 
 type systemReleaseCmd struct {
-	ID int64 `arg:"-s"`
+	ID int64 `arg:"-s,required"`
 }
 
 type systemCmd struct {
 	Register *systemRegisterCmd `arg:"subcommand:register" help:"register system"`
 	List     *systemListCmd     `arg:"subcommand:list" help:"list systems"`
+	Show     *systemShowCmd     `arg:"subcommand:show" help:"show system"`
 	Acquire  *systemAcquireCmd  `arg:"subcommand:acquire" help:"acquire system"`
 	Release  *systemReleaseCmd  `arg:"subcommand:release" help:"release system"`
 }
 
 type imageUploadCmd struct {
-	ImageFile string `arg:"positional" placeholder:"IMAGE_FILE"`
-	Name      string `arg:"-n"`
+	ImageFile string `arg:"positional,required" placeholder:"IMAGE_FILE"`
+	Name      string `arg:"-n,required"`
+}
+
+type imageShowCmd struct {
+	Pattern string `arg:"positional,required" placeholder:"SEARCH_PATTERN"`
 }
 
 type imageListCmd struct {
@@ -57,6 +67,7 @@ type imageListCmd struct {
 
 type imageCmd struct {
 	Upload *imageUploadCmd `arg:"subcommand:upload" help:"upload image"`
+	Show   *imageShowCmd   `arg:"subcommand:show" help:"show image"`
 	List   *imageListCmd   `arg:"subcommand:list" help:"list images"`
 }
 
@@ -96,6 +107,8 @@ func main() {
 	case args.Image != nil:
 		if cmd := args.Image.Upload; cmd != nil {
 			err = imageUpload(ctx, cmd)
+		} else if cmd := args.Image.Show; cmd != nil {
+			err = imageShow(ctx, cmd)
 		} else if cmd := args.Image.List; cmd != nil {
 			err = imageList(ctx, cmd)
 		} else {
@@ -104,6 +117,8 @@ func main() {
 	case args.System != nil:
 		if cmd := args.System.Register; cmd != nil {
 			err = systemRegister(ctx, cmd)
+		} else if cmd := args.System.Show; cmd != nil {
+			err = systemShow(ctx, cmd)
 		} else if cmd := args.System.List; cmd != nil {
 			err = systemList(ctx, cmd)
 		} else if cmd := args.System.Acquire; cmd != nil {
@@ -118,7 +133,11 @@ func main() {
 	}
 
 	if err != nil {
-		panic(err)
+		if args.Debug {
+			panic(err)
+		} else {
+			fmt.Fprintf(os.Stderr, "ERROR: %s\nCommand returned an error, use -d or --debug for more info\n\n", err.Error())
+		}
 	}
 }
 
@@ -167,6 +186,22 @@ func imageUpload(ctx context.Context, cmdArgs *imageUploadCmd) error {
 	return nil
 }
 
+func imageShow(ctx context.Context, cmdArgs *imageShowCmd) error {
+	client := ctl.NewImageServiceClient(args.URL, http.DefaultClient)
+	result, err := client.Find(ctx, cmdArgs.Pattern)
+	if err != nil {
+		return fmt.Errorf("cannot find: %w", err)
+	}
+
+	w := newTabWriter()
+	fmt.Fprintln(w, "Attribute\tValue")
+	fmt.Fprintf(w, "%s\t%d\n", "ID", result.ID)
+	fmt.Fprintf(w, "%s\t%s\n", "Name", result.Name)
+	w.Flush()
+
+	return nil
+}
+
 func imageList(ctx context.Context, cmdArgs *imageListCmd) error {
 	client := ctl.NewImageServiceClient(args.URL, http.DefaultClient)
 	images, err := client.List(ctx, cmdArgs.Limit, cmdArgs.Offset)
@@ -194,6 +229,32 @@ func systemRegister(ctx context.Context, cmdArgs *systemRegisterCmd) error {
 	if err != nil {
 		return fmt.Errorf("cannot register system: %w", err)
 	}
+
+	return nil
+}
+
+func systemShow(ctx context.Context, cmdArgs *systemShowCmd) error {
+	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
+	result, err := client.Find(ctx, cmdArgs.Pattern)
+	if err != nil {
+		return fmt.Errorf("cannot find: %w", err)
+	}
+
+	w := newTabWriter()
+	fmt.Fprintln(w, "Attribute\tValue")
+	fmt.Fprintf(w, "%s\t%d\n", "ID", result.ID)
+	fmt.Fprintf(w, "%s\t%s\n", "Name", result.Name)
+	fmt.Fprintf(w, "%s\t%t\n", "Acquired", result.Acquired)
+	if result.Acquired {
+		fmt.Fprintf(w, "%s\t%s\n", "Acquired at", result.AcquiredAt.Format(time.ANSIC))
+	}
+	for _, mac := range result.HwAddrs {
+		fmt.Fprintf(w, "%s\t%s\n", "MAC", mac)
+	}
+	for k, v := range result.Facts {
+		fmt.Fprintf(w, "Fact '%s'\t%s\n", k, v)
+	}
+	w.Flush()
 
 	return nil
 }

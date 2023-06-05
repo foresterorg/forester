@@ -40,6 +40,30 @@ func (i SystemServiceImpl) Register(ctx context.Context, system *NewSystem) erro
 	return nil
 }
 
+func (i SystemServiceImpl) Find(ctx context.Context, pattern string) (*System, error) {
+	dao := db.GetSystemDao(ctx)
+	result, err := dao.Find(ctx, pattern)
+	if err != nil {
+		return nil, fmt.Errorf("cannot find: %w", err)
+	}
+
+	hwa := make([]string, len(result.HwAddrs))
+	for i, _ := range result.HwAddrs {
+		hwa[i] = result.HwAddrs[i].String()
+	}
+
+	return &System{
+		ID:         result.ID,
+		Name:       result.Name,
+		HwAddrs:    hwa,
+		Facts:      result.Facts.FactsMap(),
+		Acquired:   result.Acquired,
+		AcquiredAt: result.AcquiredAt,
+		ImageID:    result.ImageID,
+		Comment:    result.Comment,
+	}, nil
+}
+
 func (i SystemServiceImpl) List(ctx context.Context, limit int64, offset int64) ([]*System, error) {
 	dao := db.GetSystemDao(ctx)
 	list, err := dao.List(ctx, limit, offset)
@@ -53,7 +77,7 @@ func (i SystemServiceImpl) List(ctx context.Context, limit int64, offset int64) 
 			ID:         item.ID,
 			Name:       item.Name,
 			HwAddrs:    item.HwAddrStrings(),
-			Facts:      item.FactsMap(),
+			Facts:      item.Facts.FactsMap(),
 			Acquired:   item.Acquired,
 			AcquiredAt: item.AcquiredAt,
 			ImageID:    item.ImageID,

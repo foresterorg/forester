@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"forester/internal/model"
+	"net"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -24,6 +25,7 @@ var GetImageDao func(ctx context.Context) ImageDao
 type ImageDao interface {
 	Create(ctx context.Context, image *model.Image) error
 	GetById(ctx context.Context, id int64) (*model.Image, error)
+	Find(ctx context.Context, pattern string) (*model.Image, error)
 	List(ctx context.Context, limit, offset int64) ([]*model.Image, error)
 	Delete(ctx context.Context, id int64) error
 }
@@ -35,5 +37,6 @@ type SystemDao interface {
 	List(ctx context.Context, limit, offset int64) ([]*model.System, error)
 	Acquire(ctx context.Context, sys *model.System) error
 	Release(ctx context.Context, systemId int64) error
-	FindByMac(ctx context.Context, mac string) (*model.System, error)
+	Find(ctx context.Context, pattern string) (*model.System, error)
+	FindByMac(ctx context.Context, mac net.HardwareAddr) (*model.System, error)
 }

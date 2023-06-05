@@ -12,6 +12,7 @@ struct Image
 service ImageService
   - Create(image: Image) => (id: int64, uploadURL: string)
   - GetByID(imageID: int64) => (image: Image)
+  - Find(pattern: string) => (image: Image)
   - List(limit: int64, offset: int64) => (images: []Image)
   - Delete(imageID: int64)
 
@@ -49,6 +50,7 @@ struct SystemToAcquire
 
 service SystemService
   - Register(system: NewSystem)
+  - Find(pattern: string) => (system: System)
   - Acquire(system: SystemToAcquire) => (acquired_at: timestamp)
   - Release(systemId: int64)
-  - List(limit: int64, offset: int64) => (images: []System)
+  - List(limit: int64, offset: int64) => (systems: []System)

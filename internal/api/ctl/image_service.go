@@ -27,7 +27,29 @@ func (i ImageServiceImpl) Create(ctx context.Context, image *Image) (int64, stri
 }
 
 func (i ImageServiceImpl) GetByID(ctx context.Context, imageID int64) (*Image, error) {
-	panic("implement me")
+	dao := db.GetImageDao(ctx)
+	result, err := dao.GetById(ctx, imageID)
+	if err != nil {
+		return nil, fmt.Errorf("cannot find: %w", err)
+	}
+
+	return &Image{
+		ID:   result.ID,
+		Name: result.Name,
+	}, nil
+}
+
+func (i ImageServiceImpl) Find(ctx context.Context, pattern string) (*Image, error) {
+	dao := db.GetImageDao(ctx)
+	result, err := dao.Find(ctx, pattern)
+	if err != nil {
+		return nil, fmt.Errorf("cannot find: %w", err)
+	}
+
+	return &Image{
+		ID:   result.ID,
+		Name: result.Name,
+	}, nil
 }
 
 func (i ImageServiceImpl) List(ctx context.Context, limit int64, offset int64) ([]*Image, error) {

@@ -41,6 +41,18 @@ func (dao imageDao) GetById(ctx context.Context, id int64) (*model.Image, error)
 	return result, nil
 }
 
+func (dao imageDao) Find(ctx context.Context, pattern string) (*model.Image, error) {
+	query := `SELECT * FROM images WHERE name = $1 LIMIT 1`
+
+	result := &model.Image{}
+	err := pgxscan.Get(ctx, Pool, result, query, pattern)
+	if err != nil {
+		return nil, fmt.Errorf("db error: %w", err)
+	}
+
+	return result, nil
+}
+
 func (dao imageDao) List(ctx context.Context, limit, offset int64) ([]*model.Image, error) {
 	query := `SELECT * FROM images ORDER BY id LIMIT $1 OFFSET $2`
 

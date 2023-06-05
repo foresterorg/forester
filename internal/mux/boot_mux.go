@@ -5,6 +5,7 @@ import (
 	"forester/internal/config"
 	"forester/internal/db"
 	"forester/internal/tmpl"
+	"net"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -55,7 +56,12 @@ func HandleBootstrapConfig(w http.ResponseWriter, r *http.Request) {
 var ErrSystemNotInstallable = errors.New("system is not installable, acquire it again or change APP_INSTALL_DURATION")
 
 func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
-	mac := chi.URLParam(r, "MAC")
+	mac, err := net.ParseMAC(chi.URLParam(r, "MAC"))
+	if err != nil {
+		renderGrubError(err, w, r)
+		return
+	}
+
 	sDao := db.GetSystemDao(r.Context())
 	system, err := sDao.FindByMac(r.Context(), mac)
 	if err != nil {

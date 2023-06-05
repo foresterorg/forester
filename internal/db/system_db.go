@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"forester/internal/model"
-	"forester/internal/ptr"
-	"time"
+	"net"
+	"strings"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 )
@@ -90,9 +90,31 @@ func (dao systemDao) Release(ctx context.Context, systemId int64) error {
 	return nil
 }
 
-func (dao systemDao) FindByMac(ctx context.Context, mac string) (*model.System, error) {
+func (dao systemDao) Find(ctx context.Context, pattern string) (*model.System, error) {
+	if mac, err := net.ParseMAC(pattern); err == nil {
+		return dao.FindByMac(ctx, mac)
+	}
+
+	query := `SELECT * FROM systems WHERE name = $1 LIMIT 1`
+	name := strings.ToUpper(pattern)
+
 	result := &model.System{}
-	result.ImageID = ptr.ToInt64(5)
-	result.AcquiredAt = time.Now()
+	err := pgxscan.Get(ctx, Pool, result, query, name)
+	if err != nil {
+		return nil, fmt.Errorf("db error: %w", err)
+	}
+
+	return result, nil
+}
+
+func (dao systemDao) FindByMac(ctx context.Context, mac net.HardwareAddr) (*model.System, error) {
+	query := `SELECT * FROM systems WHERE $1 = ANY(hwaddrs) LIMIT 1`
+
+	result := &model.System{}
+	err := pgxscan.Get(ctx, Pool, result, query, mac)
+	if err != nil {
+		return nil, fmt.Errorf("db error: %w", err)
+	}
+
 	return result, nil
 }
