@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
 )
 
@@ -62,19 +63,27 @@ func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var imageId int64
+
 	sDao := db.GetSystemDao(r.Context())
 	system, err := sDao.FindByMac(r.Context(), mac)
-	if err != nil {
+	if errors.Is(err, pgx.ErrNoRows) {
+		// unknown system: boot discovery anaconda
+		imageId = config.Images.BootId
+	} else if err != nil {
 		renderGrubError(err, w, r)
 		return
-	}
-	if !system.Installable() || system.ImageID == nil {
-		renderGrubError(ErrSystemNotInstallable, w, r)
-		return
+	} else {
+		// known system
+		if !system.Installable() || system.ImageID == nil {
+			renderGrubError(ErrSystemNotInstallable, w, r)
+			return
+		}
+		imageId = *system.ImageID
 	}
 
 	w.WriteHeader(http.StatusOK)
-	err = tmpl.RenderGrubKernel(w, tmpl.GrubKernelParams{ImageID: *system.ImageID})
+	err = tmpl.RenderGrubKernel(w, tmpl.GrubKernelParams{ImageID: imageId})
 	if err != nil {
 		renderGrubError(err, w, r)
 		return

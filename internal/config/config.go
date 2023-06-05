@@ -36,7 +36,7 @@ var config struct {
 	} `env-prefix:"LOGGING_"`
 	Images struct {
 		Directory string `env:"DIR" env-default:"images" env-description:"absolute path to directory with images"`
-		BootId    int    `env:"BOOT_ID" env-default:"1" env-description:"boot shim/grub from image DB ID"`
+		BootId    int64  `env:"BOOT_ID" env-default:"1" env-description:"boot shim/grub from image DB ID"`
 	} `env-prefix:"IMAGES_"`
 }
 
@@ -120,7 +120,7 @@ func ParsedLoggingLevel() slog.Level {
 }
 
 func BootPath() string {
-	return path.Join(config.Images.Directory, strconv.Itoa(config.Images.BootId))
+	return path.Join(config.Images.Directory, strconv.FormatInt(config.Images.BootId, 10))
 }
 
 func BaseURL() string {

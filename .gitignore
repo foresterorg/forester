@@ -17,7 +17,7 @@ TAGS
 
 # config
 /config/*.env
-#tern.conf
+tern.conf
 
 # HTTP client tests
 /scripts/http/*.local.http
