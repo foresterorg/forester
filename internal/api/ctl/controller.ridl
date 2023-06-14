@@ -14,7 +14,7 @@ service ImageService
   - GetByID(imageID: int64) => (image: Image)
   - Find(pattern: string) => (image: Image)
   - List(limit: int64, offset: int64) => (images: []Image)
-  - Delete(imageID: int64)
+  - Delete(name: string)
 
 struct Appliance
   - ID: int64
@@ -28,9 +28,10 @@ struct Appliance
 
 service ApplianceService
   - Create(name: string, kind: int16, uri: string)
+  - Find(name: string) => (appliance: Appliance)
   - List(limit: int64, offset: int64) => (appliances: []Appliance)
-  - Enlist(applianceID: int64, namePattern: string)
-  - Delete(applianceID: int64)
+  - Enlist(name: string, namePattern: string)
+  - Delete(name: string)
 
 struct NewSystem
   - HwAddrs: []string
@@ -62,4 +63,4 @@ service SystemService
   - Acquire(systemPattern: string, imagePattern: string, comment: string)
   - Release(systemPattern: string)
   - List(limit: int64, offset: int64) => (systems: []System)
-  - Reset(systemID: int64)
+  - Reset(systemPattern: string)

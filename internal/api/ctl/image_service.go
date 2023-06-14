@@ -68,6 +68,6 @@ func (i ImageServiceImpl) List(ctx context.Context, limit int64, offset int64) (
 	return result, nil
 }
 
-func (i ImageServiceImpl) Delete(ctx context.Context, imageID int64) error {
+func (i ImageServiceImpl) Delete(ctx context.Context, name string) error {
 	panic("implement me")
 }

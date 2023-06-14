@@ -93,7 +93,7 @@ func (dao systemDao) Find(ctx context.Context, pattern string) (*model.System, e
 	}
 
 	query := `SELECT * FROM systems WHERE name = $1 LIMIT 1`
-	name := strings.ToUpper(pattern)
+	name := strings.Title(pattern)
 
 	result := &model.System{}
 	err := pgxscan.Get(ctx, Pool, result, query, name)

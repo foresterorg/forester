@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"forester/internal/db"
 	"forester/internal/model"
+	"net/url"
 	"regexp"
 
 	"github.com/digitalocean/go-libvirt"
+	"github.com/digitalocean/go-libvirt/socket"
 	"github.com/digitalocean/go-libvirt/socket/dialers"
 	"github.com/google/uuid"
 	"golang.org/x/exp/slog"
@@ -41,6 +43,21 @@ func (i ApplianceServiceImpl) Create(ctx context.Context, name string, kind int1
 	return nil
 }
 
+func (i ApplianceServiceImpl) Find(ctx context.Context, name string) (*Appliance, error) {
+	dao := db.GetApplianceDao(ctx)
+	result, err := dao.Find(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("cannot find: %w", err)
+	}
+
+	return &Appliance{
+		ID:   result.ID,
+		Name: result.Name,
+		Kind: int16(result.Kind),
+		URI:  result.URI,
+	}, nil
+}
+
 func (i ApplianceServiceImpl) List(ctx context.Context, limit int64, offset int64) ([]*Appliance, error) {
 	dao := db.GetApplianceDao(ctx)
 	list, err := dao.List(ctx, limit, offset)
@@ -61,12 +78,40 @@ func (i ApplianceServiceImpl) List(ctx context.Context, limit int64, offset int6
 	return result, nil
 }
 
-func (i ApplianceServiceImpl) Enlist(ctx context.Context, applianceID int64, namePattern string) error {
-	// TODO use credentials stored in DB
-	v := libvirt.NewWithDialer(dialers.NewLocal())
+var ErrUnsupportedLibvirtScheme = errors.New("unsupported scheme, valid options are: unix")
+
+func dialerFromURI(ctx context.Context, uri string) (socket.Dialer, error) {
+	parsed, err := url.Parse(uri)
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse: %w", err)
+	}
+
+	if parsed.Scheme != "unix" {
+		return nil, ErrUnsupportedLibvirtScheme
+	}
+
+	v := dialers.NewLocal(dialers.WithSocket(parsed.Path))
+	slog.DebugCtx(ctx, "connecting to libvirt", "socket", parsed.Path)
+	return v, nil
+}
+
+func (i ApplianceServiceImpl) Enlist(ctx context.Context, name string, namePattern string) error {
+	dao := db.GetApplianceDao(ctx)
+	app, err := dao.Find(ctx, name)
+	if err != nil {
+		return fmt.Errorf("unknown appliance %s: %w", name, err)
+	}
+
+	dialer, err := dialerFromURI(ctx, app.URI)
+	if err != nil {
+		return fmt.Errorf("URI '%s' error: %w", app.URI, err)
+	}
+	v := libvirt.NewWithDialer(dialer)
+
 	if err := v.Connect(); err != nil {
 		return fmt.Errorf("cannot connect: %w", err)
 	}
+	defer v.Disconnect()
 
 	domains, _, err := v.ConnectListAllDomains(1, 0)
 	if err != nil {
@@ -98,13 +143,9 @@ func (i ApplianceServiceImpl) Enlist(ctx context.Context, applianceID int64, nam
 		}
 	}
 
-	if err := v.Disconnect(); err != nil {
-		return fmt.Errorf("cannot disconnect: %w", err)
-	}
-
 	return nil
 }
 
-func (i ApplianceServiceImpl) Delete(ctx context.Context, applianceID int64) error {
+func (i ApplianceServiceImpl) Delete(ctx context.Context, name string) error {
 	panic("implement me")
 }

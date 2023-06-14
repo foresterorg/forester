@@ -16,6 +16,9 @@ type System struct {
 	// Appliance ID where this system belongs or nil for manual systems
 	ApplianceID *int64 `db:"appliance_id"`
 
+	// Appliance is associated record, if present. Not all DAO functions do set this field.
+	Appliance *Appliance
+
 	// UID is unique id (typically UUID) of a system
 	UID string `db:"uid"`
 

@@ -130,8 +130,12 @@ func (i SystemServiceImpl) Release(ctx context.Context, systemPattern string) er
 	return nil
 }
 
-func (i SystemServiceImpl) Reset(ctx context.Context, systemID int64) error {
-	// TODO use credentials stored in DB
+func (i SystemServiceImpl) Reset(ctx context.Context, systemPattern string) error {
+	//daoApp := db.GetApplianceDao(ctx)
+	//daoApp.Find(ctx, sys.ID)
+	// TODO: find system WITH appliance details
+
+	// TODO use credentials stored in DB (see appliance service for example
 	v := libvirt.NewWithDialer(dialers.NewLocal())
 	if err := v.Connect(); err != nil {
 		return fmt.Errorf("cannot connect: %w", err)

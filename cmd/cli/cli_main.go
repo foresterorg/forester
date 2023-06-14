@@ -83,8 +83,8 @@ type applianceListCmd struct {
 }
 
 type applianceEnlistCmd struct {
-	ID          int64  `arg:"positional,required" placeholder:"APPLIANCE_ID"`
-	NamePattern string `arg:"-n" placeholder:"REGEXP_NAME_PATTERN" default:".*"`
+	Name          string `arg:"positional,required" placeholder:"APPLIANCE_NAME"`
+	SystemPattern string `arg:"-n" placeholder:"REGEXP_SYSTEM_PATTERN" default:".*"`
 }
 
 type applianceCmd struct {
@@ -376,7 +376,7 @@ func applianceList(ctx context.Context, cmdArgs *applianceListCmd) error {
 
 func applianceEnlist(ctx context.Context, cmdArgs *applianceEnlistCmd) error {
 	client := ctl.NewApplianceServiceClient(args.URL, http.DefaultClient)
-	err := client.Enlist(ctx, cmdArgs.ID, cmdArgs.NamePattern)
+	err := client.Enlist(ctx, cmdArgs.Name, cmdArgs.SystemPattern)
 	if err != nil {
 		return fmt.Errorf("cannot enlist systems: %w", err)
 	}

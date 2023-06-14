@@ -29,6 +29,18 @@ func (dao applianceDao) Create(ctx context.Context, a *model.Appliance) error {
 	return nil
 }
 
+func (dao applianceDao) Find(ctx context.Context, name string) (*model.Appliance, error) {
+	query := `SELECT * FROM appliances WHERE name = $1 LIMIT 1`
+
+	result := &model.Appliance{}
+	err := pgxscan.Get(ctx, Pool, result, query, name)
+	if err != nil {
+		return nil, fmt.Errorf("select error: %w", err)
+	}
+
+	return result, nil
+}
+
 func (dao applianceDao) List(ctx context.Context, limit, offset int64) ([]*model.Appliance, error) {
 	query := `SELECT * FROM appliances ORDER BY id LIMIT $1 OFFSET $2`
 

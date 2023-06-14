@@ -24,6 +24,7 @@ var GetImageDao func(ctx context.Context) ImageDao
 
 type ImageDao interface {
 	Create(ctx context.Context, image *model.Image) error
+	// TODO rename to FindByID
 	GetById(ctx context.Context, id int64) (*model.Image, error)
 	Find(ctx context.Context, pattern string) (*model.Image, error)
 	List(ctx context.Context, limit, offset int64) ([]*model.Image, error)
@@ -45,6 +46,7 @@ var GetApplianceDao func(ctx context.Context) ApplianceDao
 
 type ApplianceDao interface {
 	Create(ctx context.Context, a *model.Appliance) error
+	Find(ctx context.Context, name string) (*model.Appliance, error)
 	List(ctx context.Context, limit, offset int64) ([]*model.Appliance, error)
 	Delete(ctx context.Context, id int64) error
 }
