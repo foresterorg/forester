@@ -13,6 +13,12 @@ type System struct {
 	// Auto-generated human-readable name
 	Name string `db:"name"`
 
+	// Appliance ID where this system belongs or nil for manual systems
+	ApplianceID *int64 `db:"appliance_id"`
+
+	// UID is unique id (typically UUID) of a system
+	UID string `db:"uid"`
+
 	// MAC addresses
 	HwAddrs []net.HardwareAddr `db:"hwaddrs"`
 
@@ -48,35 +54,6 @@ func (f *Facts) FactsMap() map[string]string {
 		result[f.Key] = f.Value
 	}
 	return result
-}
-
-var KnownFactKeys = [...]string{
-	"bios_vendor",
-	"bios_version",
-	"bios_release_date",
-	"bios_revision",
-	"firmware_revision",
-	"system_manufacturer",
-	"system_product_name",
-	"system_version",
-	"system_serial_number",
-	"system_uuid",
-	"system_sku_number",
-	"system_family",
-	"baseboard_manufacturer",
-	"baseboard_product_name",
-	"baseboard_version",
-	"baseboard_serial_number",
-	"baseboard_asset_tag",
-	"chassis_manufacturer",
-	"chassis_type",
-	"chassis_version",
-	"chassis_serial_number",
-	"chassis_asset_tag",
-	"processor_family",
-	"processor_manufacturer",
-	"processor_version",
-	"processor_frequency",
 }
 
 func (s System) Installable() bool {

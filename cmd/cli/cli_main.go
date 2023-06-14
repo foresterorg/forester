@@ -71,14 +71,37 @@ type imageCmd struct {
 	List   *imageListCmd   `arg:"subcommand:list" help:"list images"`
 }
 
+type applianceCreateCmd struct {
+	Name string `arg:"-n,required"`
+	Kind int16  `arg:"-k" default:"1"`
+	URI  string `arg:"-u" default:"unix:///var/run/libvirt/libvirt-sock"`
+}
+
+type applianceListCmd struct {
+	Limit  int64 `arg:"-m" default:"100"`
+	Offset int64 `arg:"-o" default:"0"`
+}
+
+type applianceEnlistCmd struct {
+	ID          int64  `arg:"positional,required" placeholder:"APPLIANCE_ID"`
+	NamePattern string `arg:"-n" placeholder:"REGEXP_NAME_PATTERN" default:".*"`
+}
+
+type applianceCmd struct {
+	Create *applianceCreateCmd `arg:"subcommand:create" help:"create appliance"`
+	List   *applianceListCmd   `arg:"subcommand:list" help:"list appliances"`
+	Enlist *applianceEnlistCmd `arg:"subcommand:enlist" help:"enlist systems of appliance"`
+}
+
 var args struct {
-	Image   *imageCmd  `arg:"subcommand:image" help:"image related commands"`
-	System  *systemCmd `arg:"subcommand:system" help:"system related commands"`
-	URL     string     `arg:"-u" default:"http://localhost:8000"`
-	Config  string     `arg:"-c" default:"config/forester.env"`
-	Quiet   bool       `arg:"-q"`
-	Verbose bool       `arg:"-v"`
-	Debug   bool       `arg:"-d"`
+	Image     *imageCmd     `arg:"subcommand:image" help:"image related commands"`
+	System    *systemCmd    `arg:"subcommand:system" help:"system related commands"`
+	Appliance *applianceCmd `arg:"subcommand:appliance" help:"appliance related commands"`
+	URL       string        `arg:"-u" default:"http://localhost:8000"`
+	Config    string        `arg:"-c" default:"config/forester.env"`
+	Quiet     bool          `arg:"-q"`
+	Verbose   bool          `arg:"-v"`
+	Debug     bool          `arg:"-d"`
 }
 
 func main() {
@@ -126,7 +149,17 @@ func main() {
 		} else if cmd := args.System.Release; cmd != nil {
 			err = systemRelease(ctx, cmd)
 		} else {
-			_ = parser.FailSubcommand("unknown subcommand", "image")
+			_ = parser.FailSubcommand("unknown subcommand", "system")
+		}
+	case args.Appliance != nil:
+		if cmd := args.Appliance.Create; cmd != nil {
+			err = applianceCreate(ctx, cmd)
+		} else if cmd := args.Appliance.List; cmd != nil {
+			err = applianceList(ctx, cmd)
+		} else if cmd := args.Appliance.Enlist; cmd != nil {
+			err = applianceEnlist(ctx, cmd)
+		} else {
+			_ = parser.FailSubcommand("unknown subcommand", "appliance")
 		}
 	default:
 		parser.Fail("missing subcommand")
@@ -309,6 +342,43 @@ func systemRelease(ctx context.Context, cmdArgs *systemReleaseCmd) error {
 	err := client.Release(ctx, cmdArgs.Pattern)
 	if err != nil {
 		return fmt.Errorf("cannot release system: %w", err)
+	}
+
+	return nil
+}
+
+func applianceCreate(ctx context.Context, cmdArgs *applianceCreateCmd) error {
+	client := ctl.NewApplianceServiceClient(args.URL, http.DefaultClient)
+	err := client.Create(ctx, cmdArgs.Name, cmdArgs.Kind, cmdArgs.URI)
+	if err != nil {
+		return fmt.Errorf("cannot create appliance: %w", err)
+	}
+
+	return nil
+}
+
+func applianceList(ctx context.Context, cmdArgs *applianceListCmd) error {
+	client := ctl.NewApplianceServiceClient(args.URL, http.DefaultClient)
+	appliances, err := client.List(ctx, cmdArgs.Limit, cmdArgs.Offset)
+	if err != nil {
+		return fmt.Errorf("cannot list appliances: %w", err)
+	}
+
+	w := newTabWriter()
+	fmt.Fprintln(w, "ID\tName\tKind\tURI")
+	for _, a := range appliances {
+		fmt.Fprintf(w, "%d\t%s\t%d\t%s\n", a.ID, a.Name, a.Kind, a.URI)
+	}
+	w.Flush()
+
+	return nil
+}
+
+func applianceEnlist(ctx context.Context, cmdArgs *applianceEnlistCmd) error {
+	client := ctl.NewApplianceServiceClient(args.URL, http.DefaultClient)
+	err := client.Enlist(ctx, cmdArgs.ID, cmdArgs.NamePattern)
+	if err != nil {
+		return fmt.Errorf("cannot enlist systems: %w", err)
 	}
 
 	return nil

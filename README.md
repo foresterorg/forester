@@ -138,4 +138,7 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 
 **TODO**
 
-* Out of band management
+* Enlisting should take name not ID
+* System registration finds and updates existing systems
+* Enlisting registers systems
+* Discovery CLI

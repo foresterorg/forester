@@ -24,6 +24,6 @@ DECLARE
 BEGIN
   SELECT value INTO n1 FROM random_names WHERE id = (SELECT rand_between(1, 512));
   SELECT value INTO n2 FROM random_names WHERE id = (SELECT rand_between(513, 66048));
-  RETURN n1 || ' ' || n2;
+  RETURN INITCAP(n1) || ' ' || INITCAP(n2);
 END;
 $$ LANGUAGE 'plpgsql' STABLE STRICT;

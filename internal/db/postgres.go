@@ -40,3 +40,11 @@ type SystemDao interface {
 	Find(ctx context.Context, pattern string) (*model.System, error)
 	FindByMac(ctx context.Context, mac net.HardwareAddr) (*model.System, error)
 }
+
+var GetApplianceDao func(ctx context.Context) ApplianceDao
+
+type ApplianceDao interface {
+	Create(ctx context.Context, a *model.Appliance) error
+	List(ctx context.Context, limit, offset int64) ([]*model.Appliance, error)
+	Delete(ctx context.Context, id int64) error
+}

@@ -2,10 +2,16 @@ package ctl
 
 import (
 	"context"
+	"encoding/xml"
 	"fmt"
 	"forester/internal/db"
 	"forester/internal/model"
 	"net"
+
+	"github.com/digitalocean/go-libvirt"
+	"github.com/digitalocean/go-libvirt/socket/dialers"
+	"github.com/google/uuid"
+	"libvirt.org/go/libvirtxml"
 )
 
 var _ SystemService = SystemServiceImpl{}
@@ -119,6 +125,64 @@ func (i SystemServiceImpl) Release(ctx context.Context, systemPattern string) er
 	err = dao.Release(ctx, system.ID)
 	if err != nil {
 		return fmt.Errorf("cannot release: %w", err)
+	}
+
+	return nil
+}
+
+func (i SystemServiceImpl) Reset(ctx context.Context, systemID int64) error {
+	// TODO use credentials stored in DB
+	v := libvirt.NewWithDialer(dialers.NewLocal())
+	if err := v.Connect(); err != nil {
+		return fmt.Errorf("cannot connect: %w", err)
+	}
+
+	// TODO find system uid
+	uid := uuid.MustParse("")
+	d, err := v.DomainLookupByUUID(libvirt.UUID(uid))
+	if err != nil {
+		return fmt.Errorf("cannot lookup %s: %w", uid.String(), err)
+	}
+
+	xmlString, err := v.DomainGetXMLDesc(d, 0)
+	if err != nil {
+		return fmt.Errorf("cannot get domain: %w", err)
+	}
+	domain := libvirtxml.Domain{}
+	if err := xml.Unmarshal([]byte(xmlString), &domain); err != nil {
+		return fmt.Errorf("cannot unmarshal domain XML: %w", err)
+	}
+	domain.OS.BootDevices = []libvirtxml.DomainBootDevice{{Dev: "network"}}
+	bytes, err := xml.Marshal(domain)
+	if err != nil {
+		return fmt.Errorf("cannot marshal domain XML: %w", err)
+	}
+
+	d, err = v.DomainDefineXML(string(bytes))
+	if err != nil {
+		return fmt.Errorf("cannot redefine domain: %w", err)
+	}
+	state, _, err := v.DomainGetState(d, 0)
+	if err != nil {
+		return fmt.Errorf("cannot get domain state: %w", err)
+	}
+
+	if state == 1 {
+		// domain is running
+		err = v.DomainReset(d, 0)
+		if err != nil {
+			return fmt.Errorf("cannot reset domain: %w", err)
+		}
+	} else {
+		// domain was not running
+		err = v.DomainCreate(d)
+		if err != nil {
+			return fmt.Errorf("cannot create domain: %w", err)
+		}
+	}
+
+	if err := v.Disconnect(); err != nil {
+		return fmt.Errorf("cannot connect to libvirt: %w", err)
 	}
 
 	return nil
