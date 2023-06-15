@@ -141,3 +141,5 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 **TODO**
 
 * Fix bugs
+* After restart, new EFI entry is not booted by qemu and system boots from network again
+* Cockpit has "Install" button instead of "Start" button for the initial installation (but still use `<boot dev='hd'/>`)
