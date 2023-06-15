@@ -101,12 +101,37 @@ Check it:
     ID         2
     Name       Fedora37
 
-Configure libvirt environment for booting from network via UEFI HTTP Boot, add the five "dnsmasq" options into the "default" libvirt network:
+Create appliance, the only supported one is libvirt through local UNIX socket:
+
+    ./forester-cli appliance create -name libvirt
+
+Kind is automatically set to 1 (libvirt) for now:
+
+    ./forester-cli appliance list
+    ID  Name     Kind  URI
+    1   libvirt  1     unix:///var/run/libvirt/libvirt-sock
+
+Configure libvirt environment for booting from network via UEFI HTTP Boot, add the five "dnsmasq" options into the "default" libvirt network. Also, optionally configure PXEv4 and IPEv6 to return a non-existing file ("USE_HTTP" in the example) to speed up OVMF firmware to fallback to HTTPv4:
 
     sudo virsh net-edit default
     <network xmlns:dnsmasq='http://libvirt.org/schemas/network/dnsmasq/1.0'>
       <name>default</name>
-      …
+      <uuid>9f3e4377-3d33-42df-b34c-7880295d24ee</uuid>
+      <forward mode='nat'/>
+      <bridge name='virbr0' zone='trusted' stp='on' delay='0'/>
+      <mac address='52:54:00:7a:00:01'/>
+      <ip address='192.168.122.1' netmask='255.255.255.0'>
+        <tftp root='/var/lib/tftpboot'/>
+        <dhcp>
+          <range start='192.168.122.2' end='192.168.122.254'/>
+          <bootp file='USE_HTTP'/>
+        </dhcp>
+      </ip>
+      <ip family='ipv6' address='2001:db8:dead:beef:fe::2' prefix='96'>
+        <dhcp>
+          <range start='2001:db8:dead:beef:fe::1000' end='2001:db8:dead:beef:fe::2000'/>
+        </dhcp>
+      </ip>
       <dnsmasq:options>
         <dnsmasq:option value='dhcp-vendorclass=set:efi-http,HTTPClient:Arch:00016'/>
         <dnsmasq:option value='dhcp-option-force=tag:efi-http,60,HTTPClient'/>
