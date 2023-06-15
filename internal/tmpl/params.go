@@ -19,3 +19,8 @@ type KickstartParams struct {
 	*CommonParams
 	ImageID int64
 }
+
+type KickstartErrorParams struct {
+	*CommonParams
+	Message string
+}

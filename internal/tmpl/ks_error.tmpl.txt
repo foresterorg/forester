@@ -1,0 +1,8 @@
+# FORESTER PROJECT version {{ .Version }}
+
+%pre --log=/mnt/sysimage/root/ks-pre-error.log
+echo "{{ .Message }}"
+logger "{{ .Message }}"
+sleep 15m
+poweroff
+%end

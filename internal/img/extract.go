@@ -11,13 +11,19 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+// ExtractedPaths is a mapping between files and target names. Some images do not
+// use iso9660 extensions and therefore longer names may be shortened.
 var ExtractedPaths = map[string]string{
+	"/_discinfo":                 "/.discinfo",
 	"/_discinf.":                 "/.discinfo",
 	"/efi/boot/bootx64.efi":      "/shim.efi",
 	"/efi/boot/grubx64.efi":      "/grubx64.efi",
+	"/liveimg.tar.gz":            "/liveimg.tar.gz",
+	"/liveimg_tar.gz":            "/liveimg.tar.gz",
 	"/liveimg_.gz":               "/liveimg.tar.gz",
 	"/images/install.img":        "/images/install.img",
 	"/images/pxeboot/initrd.img": "/images/pxeboot/initrd.img",
+	"/images/pxeboot/vmlinuz":    "/images/pxeboot/vmlinuz",
 	"/images/pxeboot/vmlinuz.":   "/images/pxeboot/vmlinuz",
 }
 

@@ -9,7 +9,7 @@ timezone Etc/UTC --utc
 keyboard 'us'
 lang en_US.UTF-8
 firstboot --disable
-liveimg --url={{ .BaseURL }}/img/{{ .ImageID }}/liveimg.tar.xz
+liveimg --url={{ .BaseURL }}/img/{{ .ImageID }}/liveimg.tar.gz
 rootpw --iscrypted --lock locked
 firewall --enabled --ssh
 selinux --enforcing
@@ -18,4 +18,4 @@ zerombr
 bootloader --location=mbr --timeout=1 --append="console=tty1 console=ttyS0,115200n8"
 clearpart --all --initlabel
 autopart
-shutdown
+reboot

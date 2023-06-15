@@ -62,3 +62,15 @@ func RenderKickstartDiscover(w io.Writer) error {
 
 	return Render(w, "ks_discover.tmpl.txt", params)
 }
+
+func RenderKickstartInstall(w io.Writer, params KickstartParams) error {
+	params.CommonParams = commonParams()
+
+	return Render(w, "ks_install.tmpl.txt", params)
+}
+
+func RenderKickstartError(w io.Writer, params KickstartErrorParams) error {
+	params.CommonParams = commonParams()
+
+	return Render(w, "ks_error.tmpl.txt", params)
+}
