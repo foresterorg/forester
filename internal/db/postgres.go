@@ -24,8 +24,7 @@ var GetImageDao func(ctx context.Context) ImageDao
 
 type ImageDao interface {
 	Create(ctx context.Context, image *model.Image) error
-	// TODO rename to FindByID
-	GetById(ctx context.Context, id int64) (*model.Image, error)
+	FindByID(ctx context.Context, id int64) (*model.Image, error)
 	Find(ctx context.Context, pattern string) (*model.Image, error)
 	List(ctx context.Context, limit, offset int64) ([]*model.Image, error)
 	Delete(ctx context.Context, id int64) error
@@ -35,6 +34,7 @@ var GetSystemDao func(ctx context.Context) SystemDao
 
 type SystemDao interface {
 	Register(ctx context.Context, sys *model.System) error
+	RegisterExisting(ctx context.Context, id int64, sys *model.System) error
 	List(ctx context.Context, limit, offset int64) ([]*model.System, error)
 	Acquire(ctx context.Context, systemId, imageId int64, comment string) error
 	Release(ctx context.Context, systemId int64) error
@@ -49,6 +49,7 @@ var GetApplianceDao func(ctx context.Context) ApplianceDao
 type ApplianceDao interface {
 	Create(ctx context.Context, a *model.Appliance) error
 	Find(ctx context.Context, name string) (*model.Appliance, error)
+	FindByID(ctx context.Context, id int64) (*model.Appliance, error)
 	List(ctx context.Context, limit, offset int64) ([]*model.Appliance, error)
 	Delete(ctx context.Context, id int64) error
 }

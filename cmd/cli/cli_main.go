@@ -9,6 +9,7 @@ import (
 	"forester/internal/logging"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"text/tabwriter"
@@ -45,12 +46,17 @@ type systemReleaseCmd struct {
 	Pattern string `arg:"positional,required" placeholder:"MAC_OR_NAME"`
 }
 
+type systemResetCmd struct {
+	Pattern string `arg:"positional,required" placeholder:"MAC_OR_NAME"`
+}
+
 type systemCmd struct {
 	Register *systemRegisterCmd `arg:"subcommand:register" help:"register system"`
 	List     *systemListCmd     `arg:"subcommand:list" help:"list systems"`
 	Show     *systemShowCmd     `arg:"subcommand:show" help:"show system"`
 	Acquire  *systemAcquireCmd  `arg:"subcommand:acquire" help:"acquire system"`
 	Release  *systemReleaseCmd  `arg:"subcommand:release" help:"release system"`
+	Reset    *systemResetCmd    `arg:"subcommand:reset" help:"reset (hard reboot) system"`
 }
 
 type imageUploadCmd struct {
@@ -150,6 +156,8 @@ func main() {
 			err = systemAcquire(ctx, cmd)
 		} else if cmd := args.System.Release; cmd != nil {
 			err = systemRelease(ctx, cmd)
+		} else if cmd := args.System.Reset; cmd != nil {
+			err = systemReset(ctx, cmd)
 		} else {
 			_ = parser.FailSubcommand("unknown subcommand", "system")
 		}
@@ -298,9 +306,16 @@ func systemShow(ctx context.Context, cmdArgs *systemShowCmd) error {
 		fmt.Fprintf(w, "%s\t%s\n", "UID", *result.UID)
 	}
 	if len(result.Facts) > 0 {
+		keys := make([]string, 0, len(result.Facts))
+
+		for k := range result.Facts {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+
 		fmt.Fprintln(w, "\nFact\tValue")
-		for k, v := range result.Facts {
-			fmt.Fprintf(w, "%s\t%s\n", k, v)
+		for _, k := range keys {
+			fmt.Fprintf(w, "%s\t%s\n", k, result.Facts[k])
 		}
 	}
 	w.Flush()
@@ -357,6 +372,16 @@ func systemRelease(ctx context.Context, cmdArgs *systemReleaseCmd) error {
 	err := client.Release(ctx, cmdArgs.Pattern)
 	if err != nil {
 		return fmt.Errorf("cannot release system: %w", err)
+	}
+
+	return nil
+}
+
+func systemReset(ctx context.Context, cmdArgs *systemResetCmd) error {
+	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
+	err := client.Reset(ctx, cmdArgs.Pattern)
+	if err != nil {
+		return fmt.Errorf("cannot reset system: %w", err)
 	}
 
 	return nil

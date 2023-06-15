@@ -28,7 +28,7 @@ func (i ImageServiceImpl) Create(ctx context.Context, image *Image) (int64, stri
 
 func (i ImageServiceImpl) GetByID(ctx context.Context, imageID int64) (*Image, error) {
 	dao := db.GetImageDao(ctx)
-	result, err := dao.GetById(ctx, imageID)
+	result, err := dao.FindByID(ctx, imageID)
 	if err != nil {
 		return nil, fmt.Errorf("cannot find: %w", err)
 	}

@@ -138,5 +138,4 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 
 **TODO**
 
-* System registration finds and updates existing systems
-* Discovery CLI
+* Fix bugs

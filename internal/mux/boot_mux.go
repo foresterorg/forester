@@ -75,15 +75,15 @@ func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
 		renderGrubError(err, w, r)
 		return
 	} else {
-		slog.InfoCtx(r.Context(), "known system - booting installer", "mac", mac.String())
 		if !system.Installable() || system.ImageID == nil {
-			slog.ErrorCtx(r.Context(), "error while finding system", "mac", mac.String(), "err", err)
-			renderGrubError(ErrSystemNotInstallable, w, r)
-			return
+			slog.InfoCtx(r.Context(), "known system - booting discovery", "mac", mac.String())
+			imageId = config.Images.BootId
+		} else {
+			imageId = *system.ImageID
 		}
-		imageId = *system.ImageID
 	}
 
+	slog.InfoCtx(r.Context(), "known system - booting installer", "mac", mac.String())
 	w.WriteHeader(http.StatusOK)
 	err = tmpl.RenderGrubKernel(w, tmpl.GrubKernelParams{ImageID: imageId})
 	if err != nil {

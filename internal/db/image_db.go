@@ -29,7 +29,7 @@ func (dao imageDao) Create(ctx context.Context, image *model.Image) error {
 	return nil
 }
 
-func (dao imageDao) GetById(ctx context.Context, id int64) (*model.Image, error) {
+func (dao imageDao) FindByID(ctx context.Context, id int64) (*model.Image, error) {
 	query := `SELECT * FROM images WHERE id = $1 LIMIT 1`
 
 	result := &model.Image{}

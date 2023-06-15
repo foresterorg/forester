@@ -31,6 +31,17 @@ func (dao systemDao) Register(ctx context.Context, sys *model.System) error {
 	return nil
 }
 
+func (dao systemDao) RegisterExisting(ctx context.Context, id int64, sys *model.System) error {
+	query := `UPDATE systems SET hwaddrs = $1, facts = $2 RETURNING id`
+
+	err := Pool.QueryRow(ctx, query, sys.HwAddrs, sys.Facts).Scan(&sys.ID)
+	if err != nil {
+		return fmt.Errorf("insert error: %w", err)
+	}
+
+	return nil
+}
+
 func (dao systemDao) List(ctx context.Context, limit, offset int64) ([]*model.System, error) {
 	query := `SELECT * FROM systems ORDER BY id LIMIT $1 OFFSET $2`
 
@@ -159,7 +170,7 @@ func (dao systemDao) FindByMacRelated(ctx context.Context, mac net.HardwareAddr)
 }
 
 func (dao systemDao) FindByMac(ctx context.Context, mac net.HardwareAddr) (*model.System, error) {
-	query := `SELECT * WHERE $1 = ANY(hwaddrs) LIMIT 1`
+	query := `SELECT * FROM systems WHERE $1 = ANY(hwaddrs) LIMIT 1`
 
 	result := &model.System{}
 	err := pgxscan.Get(ctx, Pool, result, query, mac)

@@ -33,7 +33,7 @@ def run_pipe(*cmd):
         stdout = proc.stdout.read().decode().strip()
         stderr = proc.stderr.read().decode().strip()
         if len(stderr) > 0: log_write(" ".join(cmd), stderr)
-        return stdout.strip()
+        return ' + '.join(stdout.splitlines())
     except FileNotFoundError:
         return ""
 
@@ -41,7 +41,7 @@ def run_pipe(*cmd):
 def log_write(prefix, message):
     global log
     log.append([prefix, str(message)])
-    syslog(': '.join(["hardcap", prefix, str(message)]))
+    syslog(': '.join(["forester", prefix, str(message)]))
 
 
 def ks_write(line):
@@ -67,9 +67,9 @@ def gather_serial():
 def gather_facts():
     global log
     result = {
-            "system": {
-                "hw_addrs": gather_mac(),
-                "facts": {
+            "System": {
+                "HwAddrs": gather_mac(),
+                "Facts": {
                     "serial": gather_serial(), # as in dracut/anaconda-ks-sendheaders.sh
                     # TODO try with psutil package contains a lot of useful stuff
                     "cpuinfo-processor-count": str(open('/proc/cpuinfo').read().count('processor\t:')),
@@ -84,8 +84,7 @@ def gather_facts():
                     'chassis-manufacturer', 'chassis-type', 'chassis-version', 'chassis-serial-number',
                     'chassis-asset-tag', 'processor-family', 'processor-manufacturer', 'processor-version',
                     'processor-frequency']:
-        result["system"]["facts"][keyword] = run_pipe(*(dmidecode + ["-s", keyword]))
-    #result["log"] = log
+        result["System"]["Facts"][keyword] = run_pipe(*(dmidecode + ["-s", keyword]))
     return result
 
 

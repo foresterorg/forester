@@ -3,14 +3,15 @@ package ctl
 import (
 	"context"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"forester/internal/db"
 	"forester/internal/model"
 	"net"
 
 	"github.com/digitalocean/go-libvirt"
-	"github.com/digitalocean/go-libvirt/socket/dialers"
 	"github.com/google/uuid"
+	"golang.org/x/exp/slog"
 	"libvirt.org/go/libvirtxml"
 )
 
@@ -19,20 +20,42 @@ var _ SystemService = SystemServiceImpl{}
 type SystemServiceImpl struct{}
 
 func (i SystemServiceImpl) Register(ctx context.Context, system *NewSystem) error {
-	dao := db.GetSystemDao(ctx)
+	var sys *model.System
+	var existingSystem *model.System
 	var hwAddrs []net.HardwareAddr
+	var err error
+
+	dao := db.GetSystemDao(ctx)
+
 	for _, a := range system.HwAddrs {
 		mac, err := net.ParseMAC(a)
 		if err != nil {
 			return fmt.Errorf("cannot parse hardware address '%s': %w", a, err)
 		}
+		slog.DebugCtx(ctx, "searching for existing host", "mac", mac.String())
+		sys, err := dao.FindByMac(ctx, mac)
+		if err != nil && !errors.Is(err, db.ErrNoRows) {
+			return fmt.Errorf("cannot search existing systems for mac '%s': %w", mac.String(), err)
+		}
+		if sys != nil {
+			slog.DebugCtx(ctx, "found existing host", "mac", mac.String(), "id", sys.ID)
+			existingSystem = sys
+		}
+
 		hwAddrs = append(hwAddrs, mac)
 	}
+
 	var facts model.Facts
 	for k, v := range system.Facts {
 		facts.List = append(facts.List, model.Fact{Key: k, Value: v})
 	}
-	dbSystem := model.System{
+	if existingSystem != nil {
+		for _, fn := range existingSystem.Facts.List {
+			facts.List = append(facts.List, fn)
+		}
+	}
+
+	sys = &model.System{
 		HwAddrs: hwAddrs,
 		Facts:   facts,
 		UID:     system.UID,
@@ -44,10 +67,14 @@ func (i SystemServiceImpl) Register(ctx context.Context, system *NewSystem) erro
 		if err != nil {
 			return fmt.Errorf("cannot find appliance named '%s': %w", system.ApplianceName, err)
 		}
-		dbSystem.ApplianceID = &app.ID
+		sys.ApplianceID = &app.ID
 	}
 
-	err := dao.Register(ctx, &dbSystem)
+	if existingSystem != nil {
+		err = dao.RegisterExisting(ctx, existingSystem.ID, sys)
+	} else {
+		err = dao.Register(ctx, sys)
+	}
 	if err != nil {
 		return fmt.Errorf("cannot create: %w", err)
 	}
@@ -131,6 +158,11 @@ func (i SystemServiceImpl) Acquire(ctx context.Context, systemPattern, imagePatt
 		return fmt.Errorf("cannot acquire: %w", err)
 	}
 
+	err = i.Reset(ctx, systemPattern)
+	if err != nil {
+		return fmt.Errorf("cannot reset after acquire: %w", err)
+	}
+
 	return nil
 }
 
@@ -150,19 +182,40 @@ func (i SystemServiceImpl) Release(ctx context.Context, systemPattern string) er
 	return nil
 }
 
-func (i SystemServiceImpl) Reset(ctx context.Context, systemPattern string) error {
-	//daoApp := db.GetApplianceDao(ctx)
-	//daoApp.Find(ctx, sys.ID)
-	// TODO: find system WITH appliance details
+var ErrSystemWithNoAppliance = errors.New("system has no appliance associated")
+var ErrSystemWithNoUID = errors.New("system has no UID set")
 
-	// TODO use credentials stored in DB (see appliance service for example
-	v := libvirt.NewWithDialer(dialers.NewLocal())
+func (i SystemServiceImpl) Reset(ctx context.Context, systemPattern string) error {
+	dao := db.GetSystemDao(ctx)
+	system, err := dao.Find(ctx, systemPattern)
+	if err != nil {
+		return fmt.Errorf("cannot find: %w", err)
+	}
+
+	if system.ApplianceID == nil {
+		return ErrSystemWithNoAppliance
+	}
+
+	if system.UID == nil {
+		return ErrSystemWithNoUID
+	}
+
+	daoApp := db.GetApplianceDao(ctx)
+	app, err := daoApp.FindByID(ctx, *system.ApplianceID)
+	if err != nil {
+		return fmt.Errorf("cannot find appliance with id %d: %w", system.ApplianceID, err)
+	}
+
+	dialer, err := dialerFromURI(ctx, app.URI)
+	if err != nil {
+		return fmt.Errorf("URI '%s' error: %w", app.URI, err)
+	}
+	v := libvirt.NewWithDialer(dialer)
 	if err := v.Connect(); err != nil {
 		return fmt.Errorf("cannot connect: %w", err)
 	}
 
-	// TODO find system uid
-	uid := uuid.MustParse("")
+	uid := uuid.MustParse(*system.UID)
 	d, err := v.DomainLookupByUUID(libvirt.UUID(uid))
 	if err != nil {
 		return fmt.Errorf("cannot lookup %s: %w", uid.String(), err)
