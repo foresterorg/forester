@@ -35,19 +35,16 @@ func (i SystemServiceImpl) Register(ctx context.Context, system *NewSystem) erro
 	dbSystem := model.System{
 		HwAddrs: hwAddrs,
 		Facts:   facts,
+		UID:     system.UID,
 	}
 
-	if system.ApplianceName != "" {
+	if system.ApplianceName != nil {
 		ad := db.GetApplianceDao(ctx)
-		app, err := ad.Find(ctx, system.ApplianceName)
+		app, err := ad.Find(ctx, *system.ApplianceName)
 		if err != nil {
 			return fmt.Errorf("cannot find appliance named '%s': %w", system.ApplianceName, err)
 		}
 		dbSystem.ApplianceID = &app.ID
-	}
-
-	if system.UID != "" {
-		dbSystem.UID = &system.UID
 	}
 
 	err := dao.Register(ctx, &dbSystem)

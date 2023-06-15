@@ -259,8 +259,8 @@ func systemRegister(ctx context.Context, cmdArgs *systemRegisterCmd) error {
 	sys := ctl.NewSystem{
 		HwAddrs:       cmdArgs.HwAddrs,
 		Facts:         cmdArgs.Facts,
-		ApplianceName: cmdArgs.ApplianceName,
-		UID:           cmdArgs.UID,
+		ApplianceName: &cmdArgs.ApplianceName,
+		UID:           &cmdArgs.UID,
 	}
 	err := client.Register(ctx, &sys)
 	if err != nil {

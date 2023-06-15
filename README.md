@@ -140,4 +140,3 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 
 * System registration finds and updates existing systems
 * Discovery CLI
-* Remove "json" tags from IDL

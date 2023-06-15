@@ -5,9 +5,7 @@ version = v0.0.1
 
 struct Image
   - ID: int64
-    + json = id
   - Name: string
-    + json = name
 
 service ImageService
   - Create(image: Image) => (id: int64, uploadURL: string)
@@ -18,13 +16,9 @@ service ImageService
 
 struct Appliance
   - ID: int64
-    + json = id
   - Name: string
-    + json = name
   - Kind: int16
-    + json = kind
   - URI: string
-    + json = uri
 
 service ApplianceService
   - Create(name: string, kind: int16, uri: string)
@@ -35,37 +29,22 @@ service ApplianceService
 
 struct NewSystem
   - HwAddrs: []string
-    + json = hw_addrs
   - Facts: map<string,string>
-    + json = facts
-  - ApplianceName: string
-    + json = appliance_name,omitempty
-  - UID: string
-    + json = uid,omitempty
+  - ApplianceName?: string
+  - UID?: string
 
 struct System
   - ID: int64
-    + json = id
   - Name: string
-    + json = name
   - HwAddrs: []string
-    + json = hw_addrs
   - Facts: map<string,string>
-    + json = facts
   - Acquired: bool
-    + json = acquired
   - AcquiredAt: timestamp
-    + json = acquired_at
   - ImageID?: int64
-    + json = image_id,omitempty
   - Comment: string
-    + json = comment
   - ApplianceID?: int64
-    + json = appliance_id,omitempty
   - Appliance?: Appliance
-    + json = appliance,omitempty
   - UID?: string
-    + json = uid,omitempty
 
 service SystemService
   - Register(system: NewSystem)

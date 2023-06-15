@@ -125,8 +125,8 @@ func (i ApplianceServiceImpl) Enlist(ctx context.Context, name string, namePatte
 	}
 
 	for _, d := range domains {
-		uid := uuid.UUID(d.UUID)
-		slog.InfoCtx(ctx, "enlisting system", "name", d.Name, "uuid", uid.String())
+		uid := uuid.UUID(d.UUID).String()
+		slog.InfoCtx(ctx, "enlisting system", "name", d.Name, "uuid", uid)
 		xmlString, err := v.DomainGetXMLDesc(d, 0)
 		if err != nil {
 			return fmt.Errorf("cannot get domain details: %w", err)
@@ -149,16 +149,16 @@ func (i ApplianceServiceImpl) Enlist(ctx context.Context, name string, namePatte
 			newSystem := &NewSystem{
 				HwAddrs:       addrs,
 				Facts:         facts,
-				ApplianceName: app.Name,
-				UID:           uid.String(),
+				ApplianceName: &app.Name,
+				UID:           &uid,
 			}
-			slog.InfoCtx(ctx, "registering system", "mac", strings.Join(addrs, ","), "uuid", uid.String(), "appliance", app.Name)
+			slog.InfoCtx(ctx, "registering system", "mac", strings.Join(addrs, ","), "uuid", uid, "appliance", app.Name)
 			err = Service.System.Register(ctx, newSystem)
 			if err != nil {
 				return fmt.Errorf("cannot register system: %w", err)
 			}
 		} else {
-			slog.DebugCtx(ctx, "system does not match the pattern", "pattern", namePattern, "name", d.Name, "uuid", uid.String())
+			slog.DebugCtx(ctx, "system does not match the pattern", "pattern", namePattern, "name", d.Name, "uuid", uid)
 		}
 	}
 
