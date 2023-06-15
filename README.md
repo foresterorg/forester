@@ -2,6 +2,8 @@
 
 Bare-metal provisioning service for Red Hat Anaconda (Fedora, RHEL, CentOS Stream, Alma Linux...)
 
+**DEMO**: https://www.youtube.com/watch?v=jxCHU_nzluY
+
 **Requirements**:
 
 * Go 1.20+
