@@ -19,8 +19,8 @@ type System struct {
 	// Appliance is associated record, if present. Not all DAO functions do set this field.
 	Appliance *Appliance
 
-	// UID is unique id (typically UUID) of a system
-	UID string `db:"uid"`
+	// UID is unique id (typically UUID) of a system or nil for manual systems
+	UID *string `db:"uid"`
 
 	// MAC addresses
 	HwAddrs []net.HardwareAddr `db:"hwaddrs"`

@@ -37,6 +37,19 @@ func (i SystemServiceImpl) Register(ctx context.Context, system *NewSystem) erro
 		Facts:   facts,
 	}
 
+	if system.ApplianceName != "" {
+		ad := db.GetApplianceDao(ctx)
+		app, err := ad.Find(ctx, system.ApplianceName)
+		if err != nil {
+			return fmt.Errorf("cannot find appliance named '%s': %w", system.ApplianceName, err)
+		}
+		dbSystem.ApplianceID = &app.ID
+	}
+
+	if system.UID != "" {
+		dbSystem.UID = &system.UID
+	}
+
 	err := dao.Register(ctx, &dbSystem)
 	if err != nil {
 		return fmt.Errorf("cannot create: %w", err)
@@ -66,6 +79,7 @@ func (i SystemServiceImpl) Find(ctx context.Context, pattern string) (*System, e
 		AcquiredAt: result.System.AcquiredAt,
 		ImageID:    result.System.ImageID,
 		Comment:    result.System.Comment,
+		UID:        result.System.UID,
 	}
 
 	payload.Appliance = &Appliance{

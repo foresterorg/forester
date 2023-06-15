@@ -21,9 +21,9 @@ func getSystemDao(ctx context.Context) SystemDao {
 }
 
 func (dao systemDao) Register(ctx context.Context, sys *model.System) error {
-	query := `INSERT INTO systems (hwaddrs, facts) VALUES ($1, $2) RETURNING id`
+	query := `INSERT INTO systems (hwaddrs, facts, appliance_id, uid) VALUES ($1, $2, $3, $4) RETURNING id`
 
-	err := Pool.QueryRow(ctx, query, sys.HwAddrs, sys.Facts).Scan(&sys.ID)
+	err := Pool.QueryRow(ctx, query, sys.HwAddrs, sys.Facts, sys.ApplianceID, sys.UID).Scan(&sys.ID)
 	if err != nil {
 		return fmt.Errorf("insert error: %w", err)
 	}
@@ -92,7 +92,7 @@ func (dao systemDao) FindRelated(ctx context.Context, pattern string) (*model.Sy
 		return dao.FindByMacRelated(ctx, mac)
 	}
 
-	name := strings.Title(pattern)
+	name := fmt.Sprintf("%%%s%%", strings.Title(pattern))
 	result := &model.SystemAppliance{}
 	query := `SELECT s.id AS "s.id",
 		s.name AS "s.name",
@@ -107,7 +107,7 @@ func (dao systemDao) FindRelated(ctx context.Context, pattern string) (*model.Sy
 		COALESCE(a.name, '') AS "a.name",
 		COALESCE(a.kind, 0) AS "a.kind",
 		COALESCE(a.uri, '') AS "a.uri"
-		FROM systems AS s LEFT JOIN appliances AS a ON a.id = s.appliance_id WHERE s.name = $1 LIMIT 1`
+		FROM systems AS s LEFT JOIN appliances AS a ON a.id = s.appliance_id WHERE s.name LIKE $1 LIMIT 1`
 
 	err := pgxscan.Get(ctx, Pool, result, query, name)
 	if err != nil {
@@ -122,8 +122,8 @@ func (dao systemDao) Find(ctx context.Context, pattern string) (*model.System, e
 		return dao.FindByMac(ctx, mac)
 	}
 
-	query := `SELECT * FROM systems WHERE name = $1 LIMIT 1`
-	name := strings.Title(pattern)
+	name := fmt.Sprintf("%%%s%%", strings.Title(pattern))
+	query := `SELECT * FROM systems WHERE name LIKE $1 LIMIT 1`
 
 	result := &model.System{}
 	err := pgxscan.Get(ctx, Pool, result, query, name)

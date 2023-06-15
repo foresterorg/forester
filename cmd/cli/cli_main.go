@@ -19,8 +19,10 @@ import (
 )
 
 type systemRegisterCmd struct {
-	HwAddrs []string          `arg:"-m,required"`
-	Facts   map[string]string `arg:"-f"`
+	HwAddrs       []string          `arg:"-m,required"`
+	Facts         map[string]string `arg:"-f"`
+	ApplianceName string            `arg:"-a"`
+	UID           string            `arg:"-u"`
 }
 
 type systemShowCmd struct {
@@ -97,11 +99,11 @@ var args struct {
 	Image     *imageCmd     `arg:"subcommand:image" help:"image related commands"`
 	System    *systemCmd    `arg:"subcommand:system" help:"system related commands"`
 	Appliance *applianceCmd `arg:"subcommand:appliance" help:"appliance related commands"`
-	URL       string        `arg:"-u" default:"http://localhost:8000"`
-	Config    string        `arg:"-c" default:"config/forester.env"`
-	Quiet     bool          `arg:"-q"`
-	Verbose   bool          `arg:"-v"`
-	Debug     bool          `arg:"-d"`
+	URL       string        `default:"http://localhost:8000"`
+	Config    string        `default:"config/forester.env"`
+	Quiet     bool
+	Verbose   bool
+	Debug     bool
 }
 
 func main() {
@@ -255,8 +257,10 @@ func imageList(ctx context.Context, cmdArgs *imageListCmd) error {
 func systemRegister(ctx context.Context, cmdArgs *systemRegisterCmd) error {
 	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
 	sys := ctl.NewSystem{
-		HwAddrs: cmdArgs.HwAddrs,
-		Facts:   cmdArgs.Facts,
+		HwAddrs:       cmdArgs.HwAddrs,
+		Facts:         cmdArgs.Facts,
+		ApplianceName: cmdArgs.ApplianceName,
+		UID:           cmdArgs.UID,
 	}
 	err := client.Register(ctx, &sys)
 	if err != nil {
@@ -285,13 +289,19 @@ func systemShow(ctx context.Context, cmdArgs *systemShowCmd) error {
 	for _, mac := range result.HwAddrs {
 		fmt.Fprintf(w, "%s\t%s\n", "MAC", mac)
 	}
-	for k, v := range result.Facts {
-		fmt.Fprintf(w, "Fact '%s'\t%s\n", k, v)
-	}
-	if result.Appliance != nil {
+	if result.Appliance != nil && result.Appliance.Name != "" {
 		fmt.Fprintf(w, "%s\t%s\n", "Appliance Name", result.Appliance.Name)
 		fmt.Fprintf(w, "%s\t%d\n", "Appliance Kind", result.Appliance.Kind)
 		fmt.Fprintf(w, "%s\t%s\n", "Appliance URI", result.Appliance.URI)
+	}
+	if result.UID != nil {
+		fmt.Fprintf(w, "%s\t%s\n", "UID", *result.UID)
+	}
+	if len(result.Facts) > 0 {
+		fmt.Fprintln(w, "\nFact\tValue")
+		for k, v := range result.Facts {
+			fmt.Fprintf(w, "%s\t%s\n", k, v)
+		}
 	}
 	w.Flush()
 

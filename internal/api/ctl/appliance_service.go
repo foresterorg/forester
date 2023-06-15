@@ -9,6 +9,7 @@ import (
 	"forester/internal/model"
 	"net/url"
 	"regexp"
+	"strings"
 
 	"github.com/digitalocean/go-libvirt"
 	"github.com/digitalocean/go-libvirt/socket"
@@ -99,7 +100,7 @@ func (i ApplianceServiceImpl) Enlist(ctx context.Context, name string, namePatte
 	dao := db.GetApplianceDao(ctx)
 	app, err := dao.Find(ctx, name)
 	if err != nil {
-		return fmt.Errorf("unknown appliance %s: %w", name, err)
+		return fmt.Errorf("unknown appliance '%s': %w", name, err)
 	}
 
 	dialer, err := dialerFromURI(ctx, app.URI)
@@ -135,8 +136,26 @@ func (i ApplianceServiceImpl) Enlist(ctx context.Context, name string, namePatte
 			return fmt.Errorf("cannot unmarshal domain XML: %w", err)
 		}
 		if rg.MatchString(domain.Name) {
+			var addrs []string
 			for _, iface := range domain.Devices.Interfaces {
-				slog.InfoCtx(ctx, "found network device", "mac", iface.MAC.Address, "uuid", uid.String())
+				addrs = append(addrs, iface.MAC.Address)
+			}
+			facts := map[string]string{
+				"vm_title":      domain.Title,
+				"vm_emulator":   domain.Devices.Emulator,
+				"vm_bootloader": domain.Bootloader,
+			}
+
+			newSystem := &NewSystem{
+				HwAddrs:       addrs,
+				Facts:         facts,
+				ApplianceName: app.Name,
+				UID:           uid.String(),
+			}
+			slog.InfoCtx(ctx, "registering system", "mac", strings.Join(addrs, ","), "uuid", uid.String(), "appliance", app.Name)
+			err = Service.System.Register(ctx, newSystem)
+			if err != nil {
+				return fmt.Errorf("cannot register system: %w", err)
 			}
 		} else {
 			slog.DebugCtx(ctx, "system does not match the pattern", "pattern", namePattern, "name", d.Name, "uuid", uid.String())

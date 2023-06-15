@@ -38,6 +38,10 @@ struct NewSystem
     + json = hw_addrs
   - Facts: map<string,string>
     + json = facts
+  - ApplianceName: string
+    + json = appliance_name,omitempty
+  - UID: string
+    + json = uid,omitempty
 
 struct System
   - ID: int64
@@ -60,6 +64,8 @@ struct System
     + json = appliance_id,omitempty
   - Appliance?: Appliance
     + json = appliance,omitempty
+  - UID?: string
+    + json = uid,omitempty
 
 service SystemService
   - Register(system: NewSystem)
