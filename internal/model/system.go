@@ -70,3 +70,8 @@ func (s System) HwAddrStrings() []string {
 	}
 	return result
 }
+
+type SystemAppliance struct {
+	System    `db:"s"`
+	Appliance `db:"a"`
+}

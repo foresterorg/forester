@@ -56,6 +56,10 @@ struct System
     + json = image_id,omitempty
   - Comment: string
     + json = comment
+  - ApplianceID?: int64
+    + json = appliance_id,omitempty
+  - Appliance?: Appliance
+    + json = appliance,omitempty
 
 service SystemService
   - Register(system: NewSystem)

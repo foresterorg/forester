@@ -288,6 +288,11 @@ func systemShow(ctx context.Context, cmdArgs *systemShowCmd) error {
 	for k, v := range result.Facts {
 		fmt.Fprintf(w, "Fact '%s'\t%s\n", k, v)
 	}
+	if result.Appliance != nil {
+		fmt.Fprintf(w, "%s\t%s\n", "Appliance Name", result.Appliance.Name)
+		fmt.Fprintf(w, "%s\t%d\n", "Appliance Kind", result.Appliance.Kind)
+		fmt.Fprintf(w, "%s\t%s\n", "Appliance URI", result.Appliance.URI)
+	}
 	w.Flush()
 
 	return nil

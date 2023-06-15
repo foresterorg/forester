@@ -47,26 +47,35 @@ func (i SystemServiceImpl) Register(ctx context.Context, system *NewSystem) erro
 
 func (i SystemServiceImpl) Find(ctx context.Context, pattern string) (*System, error) {
 	dao := db.GetSystemDao(ctx)
-	result, err := dao.Find(ctx, pattern)
+	result, err := dao.FindRelated(ctx, pattern)
 	if err != nil {
 		return nil, fmt.Errorf("cannot find: %w", err)
 	}
 
-	hwa := make([]string, len(result.HwAddrs))
-	for i, _ := range result.HwAddrs {
-		hwa[i] = result.HwAddrs[i].String()
+	hwa := make([]string, len(result.System.HwAddrs))
+	for i, _ := range result.System.HwAddrs {
+		hwa[i] = result.System.HwAddrs[i].String()
 	}
 
-	return &System{
-		ID:         result.ID,
-		Name:       result.Name,
+	payload := &System{
+		ID:         result.System.ID,
+		Name:       result.System.Name,
 		HwAddrs:    hwa,
-		Facts:      result.Facts.FactsMap(),
-		Acquired:   result.Acquired,
-		AcquiredAt: result.AcquiredAt,
-		ImageID:    result.ImageID,
-		Comment:    result.Comment,
-	}, nil
+		Facts:      result.System.Facts.FactsMap(),
+		Acquired:   result.System.Acquired,
+		AcquiredAt: result.System.AcquiredAt,
+		ImageID:    result.System.ImageID,
+		Comment:    result.System.Comment,
+	}
+
+	payload.Appliance = &Appliance{
+		ID:   result.Appliance.ID,
+		Name: result.Appliance.Name,
+		Kind: int16(result.Appliance.Kind),
+		URI:  result.Appliance.URI,
+	}
+
+	return payload, nil
 }
 
 func (i SystemServiceImpl) List(ctx context.Context, limit int64, offset int64) ([]*System, error) {
