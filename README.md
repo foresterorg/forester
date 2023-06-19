@@ -2,6 +2,8 @@
 
 Bare-metal provisioning service for Red Hat Anaconda (Fedora, RHEL, CentOS Stream, Alma Linux...)
 
+**DevConf 2023 talk**: https://www.youtube.com/live/6nRP0si2wKI?feature=share&t=8674
+
 **DEMO**: https://www.youtube.com/watch?v=jxCHU_nzluY
 
 **Requirements**:
