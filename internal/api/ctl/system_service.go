@@ -158,7 +158,7 @@ func (i SystemServiceImpl) Acquire(ctx context.Context, systemPattern, imagePatt
 		return fmt.Errorf("cannot acquire: %w", err)
 	}
 
-	err = i.Reset(ctx, systemPattern)
+	err = i.BootNetwork(ctx, systemPattern)
 	if err != nil {
 		return fmt.Errorf("cannot reset after acquire: %w", err)
 	}
@@ -185,7 +185,21 @@ func (i SystemServiceImpl) Release(ctx context.Context, systemPattern string) er
 var ErrSystemWithNoAppliance = errors.New("system has no appliance associated")
 var ErrSystemWithNoUID = errors.New("system has no UID set")
 
-func (i SystemServiceImpl) Reset(ctx context.Context, systemPattern string) error {
+func updateDomainBootDeviceXML(xmlString, device string) (string, error) {
+	domain := libvirtxml.Domain{}
+	if err := xml.Unmarshal([]byte(xmlString), &domain); err != nil {
+		return "", fmt.Errorf("cannot unmarshal domain XML: %w", err)
+	}
+	domain.OS.BootDevices = []libvirtxml.DomainBootDevice{{Dev: device}}
+	bytes, err := xml.Marshal(domain)
+	if err != nil {
+		return "", fmt.Errorf("cannot marshal domain XML: %w", err)
+	}
+
+	return string(bytes), nil
+}
+
+func (i SystemServiceImpl) bootDevice(ctx context.Context, systemPattern, device string) error {
 	dao := db.GetSystemDao(ctx)
 	system, err := dao.Find(ctx, systemPattern)
 	if err != nil {
@@ -214,6 +228,7 @@ func (i SystemServiceImpl) Reset(ctx context.Context, systemPattern string) erro
 	if err := v.Connect(); err != nil {
 		return fmt.Errorf("cannot connect: %w", err)
 	}
+	defer v.Disconnect()
 
 	uid := uuid.MustParse(*system.UID)
 	d, err := v.DomainLookupByUUID(libvirt.UUID(uid))
@@ -225,17 +240,14 @@ func (i SystemServiceImpl) Reset(ctx context.Context, systemPattern string) erro
 	if err != nil {
 		return fmt.Errorf("cannot get domain: %w", err)
 	}
-	domain := libvirtxml.Domain{}
-	if err := xml.Unmarshal([]byte(xmlString), &domain); err != nil {
-		return fmt.Errorf("cannot unmarshal domain XML: %w", err)
-	}
-	domain.OS.BootDevices = []libvirtxml.DomainBootDevice{{Dev: "network"}}
-	bytes, err := xml.Marshal(domain)
+
+	newXML, err := updateDomainBootDeviceXML(xmlString, device)
+
 	if err != nil {
-		return fmt.Errorf("cannot marshal domain XML: %w", err)
+		return fmt.Errorf("cannot update domain XML: %w", err)
 	}
 
-	d, err = v.DomainDefineXML(string(bytes))
+	d, err = v.DomainDefineXML(newXML)
 	if err != nil {
 		return fmt.Errorf("cannot redefine domain: %w", err)
 	}
@@ -258,9 +270,13 @@ func (i SystemServiceImpl) Reset(ctx context.Context, systemPattern string) erro
 		}
 	}
 
-	if err := v.Disconnect(); err != nil {
-		return fmt.Errorf("cannot connect to libvirt: %w", err)
-	}
-
 	return nil
+}
+
+func (i SystemServiceImpl) BootNetwork(ctx context.Context, systemPattern string) error {
+	return i.bootDevice(ctx, systemPattern, "network")
+}
+
+func (i SystemServiceImpl) BootLocal(ctx context.Context, systemPattern string) error {
+	return i.bootDevice(ctx, systemPattern, "hd")
 }

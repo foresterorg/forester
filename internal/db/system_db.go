@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"forester/internal/model"
 	"net"
+	"strconv"
 	"strings"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
@@ -132,6 +133,9 @@ func (dao systemDao) Find(ctx context.Context, pattern string) (*model.System, e
 	if mac, err := net.ParseMAC(pattern); err == nil {
 		return dao.FindByMac(ctx, mac)
 	}
+	if id, err := strconv.Atoi(pattern); err == nil {
+		return dao.FindByID(ctx, int64(id))
+	}
 
 	name := fmt.Sprintf("%%%s%%", strings.Title(pattern))
 	query := `SELECT * FROM systems WHERE name LIKE $1 LIMIT 1`
@@ -174,6 +178,18 @@ func (dao systemDao) FindByMac(ctx context.Context, mac net.HardwareAddr) (*mode
 
 	result := &model.System{}
 	err := pgxscan.Get(ctx, Pool, result, query, mac)
+	if err != nil {
+		return nil, fmt.Errorf("select error: %w", err)
+	}
+
+	return result, nil
+}
+
+func (dao systemDao) FindByID(ctx context.Context, id int64) (*model.System, error) {
+	query := `SELECT * FROM systems WHERE id = $1 LIMIT 1`
+
+	result := &model.System{}
+	err := pgxscan.Get(ctx, Pool, result, query, id)
 	if err != nil {
 		return nil, fmt.Errorf("select error: %w", err)
 	}

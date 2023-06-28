@@ -52,4 +52,5 @@ service SystemService
   - Acquire(systemPattern: string, imagePattern: string, comment: string)
   - Release(systemPattern: string)
   - List(limit: int64, offset: int64) => (systems: []System)
-  - Reset(systemPattern: string)
+  - BootNetwork(systemPattern: string)
+  - BootLocal(systemPattern: string)

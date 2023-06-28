@@ -39,6 +39,7 @@ type SystemDao interface {
 	Acquire(ctx context.Context, systemId, imageId int64, comment string) error
 	Release(ctx context.Context, systemId int64) error
 	Find(ctx context.Context, pattern string) (*model.System, error)
+	FindByID(ctx context.Context, id int64) (*model.System, error)
 	FindByMac(ctx context.Context, mac net.HardwareAddr) (*model.System, error)
 	FindRelated(ctx context.Context, pattern string) (*model.SystemAppliance, error)
 	FindByMacRelated(ctx context.Context, mac net.HardwareAddr) (*model.SystemAppliance, error)

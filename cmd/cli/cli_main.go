@@ -46,17 +46,22 @@ type systemReleaseCmd struct {
 	Pattern string `arg:"positional,required" placeholder:"MAC_OR_NAME"`
 }
 
-type systemResetCmd struct {
+type systemBootNetworkCmd struct {
+	Pattern string `arg:"positional,required" placeholder:"MAC_OR_NAME"`
+}
+
+type systemBootLocalCmd struct {
 	Pattern string `arg:"positional,required" placeholder:"MAC_OR_NAME"`
 }
 
 type systemCmd struct {
-	Register *systemRegisterCmd `arg:"subcommand:register" help:"register system"`
-	List     *systemListCmd     `arg:"subcommand:list" help:"list systems"`
-	Show     *systemShowCmd     `arg:"subcommand:show" help:"show system"`
-	Acquire  *systemAcquireCmd  `arg:"subcommand:acquire" help:"acquire system"`
-	Release  *systemReleaseCmd  `arg:"subcommand:release" help:"release system"`
-	Reset    *systemResetCmd    `arg:"subcommand:reset" help:"reset (hard reboot) system"`
+	Register    *systemRegisterCmd    `arg:"subcommand:register" help:"register system"`
+	List        *systemListCmd        `arg:"subcommand:list" help:"list systems"`
+	Show        *systemShowCmd        `arg:"subcommand:show" help:"show system"`
+	Acquire     *systemAcquireCmd     `arg:"subcommand:acquire" help:"acquire system"`
+	Release     *systemReleaseCmd     `arg:"subcommand:release" help:"release system"`
+	BootNetwork *systemBootNetworkCmd `arg:"subcommand:bootnet" help:"reset (hard reboot) system and boot from network"`
+	BootLocal   *systemBootLocalCmd   `arg:"subcommand:bootlocal" help:"reset (hard reboot) system and boot from local drive"`
 }
 
 type imageUploadCmd struct {
@@ -156,8 +161,10 @@ func main() {
 			err = systemAcquire(ctx, cmd)
 		} else if cmd := args.System.Release; cmd != nil {
 			err = systemRelease(ctx, cmd)
-		} else if cmd := args.System.Reset; cmd != nil {
-			err = systemReset(ctx, cmd)
+		} else if cmd := args.System.BootNetwork; cmd != nil {
+			err = systemBootNetwork(ctx, cmd)
+		} else if cmd := args.System.BootLocal; cmd != nil {
+			err = systemBootLocal(ctx, cmd)
 		} else {
 			_ = parser.FailSubcommand("unknown subcommand", "system")
 		}
@@ -377,9 +384,19 @@ func systemRelease(ctx context.Context, cmdArgs *systemReleaseCmd) error {
 	return nil
 }
 
-func systemReset(ctx context.Context, cmdArgs *systemResetCmd) error {
+func systemBootNetwork(ctx context.Context, cmdArgs *systemBootNetworkCmd) error {
 	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
-	err := client.Reset(ctx, cmdArgs.Pattern)
+	err := client.BootNetwork(ctx, cmdArgs.Pattern)
+	if err != nil {
+		return fmt.Errorf("cannot reset system: %w", err)
+	}
+
+	return nil
+}
+
+func systemBootLocal(ctx context.Context, cmdArgs *systemBootLocalCmd) error {
+	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
+	err := client.BootLocal(ctx, cmdArgs.Pattern)
 	if err != nil {
 		return fmt.Errorf("cannot reset system: %w", err)
 	}
