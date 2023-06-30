@@ -3,6 +3,7 @@ package model
 import (
 	"forester/internal/config"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -63,12 +64,24 @@ func (s System) Installable() bool {
 	return s.Acquired && s.ImageID != nil && time.Now().Sub(s.AcquiredAt) < config.Application.InstallDuration
 }
 
+func (s System) HwAddrsUnique() []net.HardwareAddr {
+	result := make([]net.HardwareAddr, 0, len(s.HwAddrs))
+
+	// TODO implement and use sorted and unique mac addresses to prevent duplicities
+
+	return result
+}
+
 func (s System) HwAddrStrings() []string {
 	result := make([]string, len(s.HwAddrs))
 	for i, a := range s.HwAddrs {
 		result[i] = a.String()
 	}
 	return result
+}
+
+func (s System) HwAddrString() string {
+	return strings.Join(s.HwAddrStrings(), ",")
 }
 
 type SystemAppliance struct {

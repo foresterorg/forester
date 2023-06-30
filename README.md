@@ -150,6 +150,18 @@ Now, boot an empty UEFI VM on this network from network, it must be set for UEFI
 
 Boot the VM into discovery mode.
 
+**Redfish emulators**
+
+There are several emulators available. The official one
+
+    podman run --rm -p 5000:5000 dmtf/redfish-interface-emulator:latest
+
+does not allow updates (reboot). However, there is another one from DMTF
+
+    podman run --rm -p 5000:8000 dmtf/redfish-mockup-server:latest
+
+which works.
+
 **TLS**
 
 - Sign server.cer with ca.cer

@@ -19,6 +19,7 @@ type ApplianceKind int16
 const (
 	ReservedKind = iota
 	LibvirtKind  = iota
+	RedfishKind  = iota
 )
 
 func ParseKind(i int16) ApplianceKind {
@@ -27,6 +28,8 @@ func ParseKind(i int16) ApplianceKind {
 		return ReservedKind
 	case 1:
 		return LibvirtKind
+	case 2:
+		return RedfishKind
 	default:
 		return -1
 	}

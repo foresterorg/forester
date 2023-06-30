@@ -2,17 +2,14 @@ package ctl
 
 import (
 	"context"
-	"encoding/xml"
 	"errors"
 	"fmt"
 	"forester/internal/db"
+	"forester/internal/metal"
 	"forester/internal/model"
 	"net"
 
-	"github.com/digitalocean/go-libvirt"
-	"github.com/google/uuid"
 	"golang.org/x/exp/slog"
-	"libvirt.org/go/libvirtxml"
 )
 
 var _ SystemService = SystemServiceImpl{}
@@ -71,8 +68,13 @@ func (i SystemServiceImpl) Register(ctx context.Context, system *NewSystem) erro
 	}
 
 	if existingSystem != nil {
+		slog.DebugCtx(ctx, "updating existing system record",
+			"id", existingSystem.ID,
+			"mac", sys.HwAddrString(),
+		)
 		err = dao.RegisterExisting(ctx, existingSystem.ID, sys)
 	} else {
+		slog.DebugCtx(ctx, "creating new system record", "mac", sys.HwAddrString())
 		err = dao.Register(ctx, sys)
 	}
 	if err != nil {
@@ -182,101 +184,22 @@ func (i SystemServiceImpl) Release(ctx context.Context, systemPattern string) er
 	return nil
 }
 
-var ErrSystemWithNoAppliance = errors.New("system has no appliance associated")
-var ErrSystemWithNoUID = errors.New("system has no UID set")
-
-func updateDomainBootDeviceXML(xmlString, device string) (string, error) {
-	domain := libvirtxml.Domain{}
-	if err := xml.Unmarshal([]byte(xmlString), &domain); err != nil {
-		return "", fmt.Errorf("cannot unmarshal domain XML: %w", err)
-	}
-	domain.OS.BootDevices = []libvirtxml.DomainBootDevice{{Dev: device}}
-	bytes, err := xml.Marshal(domain)
-	if err != nil {
-		return "", fmt.Errorf("cannot marshal domain XML: %w", err)
-	}
-
-	return string(bytes), nil
-}
-
-func (i SystemServiceImpl) bootDevice(ctx context.Context, systemPattern, device string) error {
+func (i SystemServiceImpl) BootNetwork(ctx context.Context, systemPattern string) error {
 	dao := db.GetSystemDao(ctx)
 	system, err := dao.Find(ctx, systemPattern)
 	if err != nil {
 		return fmt.Errorf("cannot find: %w", err)
 	}
 
-	if system.ApplianceID == nil {
-		return ErrSystemWithNoAppliance
-	}
-
-	if system.UID == nil {
-		return ErrSystemWithNoUID
-	}
-
-	daoApp := db.GetApplianceDao(ctx)
-	app, err := daoApp.FindByID(ctx, *system.ApplianceID)
-	if err != nil {
-		return fmt.Errorf("cannot find appliance with id %d: %w", system.ApplianceID, err)
-	}
-
-	dialer, err := dialerFromURI(ctx, app.URI)
-	if err != nil {
-		return fmt.Errorf("URI '%s' error: %w", app.URI, err)
-	}
-	v := libvirt.NewWithDialer(dialer)
-	if err := v.Connect(); err != nil {
-		return fmt.Errorf("cannot connect: %w", err)
-	}
-	defer v.Disconnect()
-
-	uid := uuid.MustParse(*system.UID)
-	d, err := v.DomainLookupByUUID(libvirt.UUID(uid))
-	if err != nil {
-		return fmt.Errorf("cannot lookup %s: %w", uid.String(), err)
-	}
-
-	xmlString, err := v.DomainGetXMLDesc(d, 0)
-	if err != nil {
-		return fmt.Errorf("cannot get domain: %w", err)
-	}
-
-	newXML, err := updateDomainBootDeviceXML(xmlString, device)
-
-	if err != nil {
-		return fmt.Errorf("cannot update domain XML: %w", err)
-	}
-
-	d, err = v.DomainDefineXML(newXML)
-	if err != nil {
-		return fmt.Errorf("cannot redefine domain: %w", err)
-	}
-	state, _, err := v.DomainGetState(d, 0)
-	if err != nil {
-		return fmt.Errorf("cannot get domain state: %w", err)
-	}
-
-	if state == 1 {
-		// domain is running
-		err = v.DomainReset(d, 0)
-		if err != nil {
-			return fmt.Errorf("cannot reset domain: %w", err)
-		}
-	} else {
-		// domain was not running
-		err = v.DomainCreate(d)
-		if err != nil {
-			return fmt.Errorf("cannot create domain: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (i SystemServiceImpl) BootNetwork(ctx context.Context, systemPattern string) error {
-	return i.bootDevice(ctx, systemPattern, "network")
+	return metal.BootNetwork(ctx, system)
 }
 
 func (i SystemServiceImpl) BootLocal(ctx context.Context, systemPattern string) error {
-	return i.bootDevice(ctx, systemPattern, "hd")
+	dao := db.GetSystemDao(ctx)
+	system, err := dao.Find(ctx, systemPattern)
+	if err != nil {
+		return fmt.Errorf("cannot find: %w", err)
+	}
+
+	return metal.BootLocal(ctx, system)
 }

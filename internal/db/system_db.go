@@ -33,9 +33,9 @@ func (dao systemDao) Register(ctx context.Context, sys *model.System) error {
 }
 
 func (dao systemDao) RegisterExisting(ctx context.Context, id int64, sys *model.System) error {
-	query := `UPDATE systems SET hwaddrs = $1, facts = $2 RETURNING id`
+	query := `UPDATE systems SET hwaddrs = $2, facts = $3 WHERE id = $1 RETURNING id`
 
-	err := Pool.QueryRow(ctx, query, sys.HwAddrs, sys.Facts).Scan(&sys.ID)
+	err := Pool.QueryRow(ctx, query, id, sys.HwAddrs, sys.Facts).Scan(&sys.ID)
 	if err != nil {
 		return fmt.Errorf("insert error: %w", err)
 	}

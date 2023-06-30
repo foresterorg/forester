@@ -13,6 +13,7 @@ require (
 	github.com/hooklift/iso9660 v1.0.0
 	github.com/ilyakaznacheev/cleanenv v1.4.2
 	github.com/jackc/pgx/v5 v5.3.1
+	github.com/stmcginnis/gofish v0.14.0
 	github.com/thanhpk/randstr v1.0.6
 	golang.org/x/exp v0.0.0-20230515195305-f3d0a9c9a5cc
 	libvirt.org/go/libvirtxml v1.9004.0
