@@ -24,7 +24,7 @@ type System struct {
 	UID *string `db:"uid"`
 
 	// MAC addresses
-	HwAddrs []net.HardwareAddr `db:"hwaddrs"`
+	HwAddrs HwAddrSlice `db:"hwaddrs"`
 
 	// Details about the system
 	Facts Facts `db:"facts"`
@@ -64,17 +64,14 @@ func (s System) Installable() bool {
 	return s.Acquired && s.ImageID != nil && time.Now().Sub(s.AcquiredAt) < config.Application.InstallDuration
 }
 
-func (s System) HwAddrsUnique() []net.HardwareAddr {
-	result := make([]net.HardwareAddr, 0, len(s.HwAddrs))
-
-	// TODO implement and use sorted and unique mac addresses to prevent duplicities
-
-	return result
+func (s System) UniqueHwAddrs() []net.HardwareAddr {
+	return s.HwAddrs.Unique()
 }
 
 func (s System) HwAddrStrings() []string {
-	result := make([]string, len(s.HwAddrs))
-	for i, a := range s.HwAddrs {
+	hwa := s.UniqueHwAddrs()
+	result := make([]string, len(hwa))
+	for i, a := range hwa {
 		result[i] = a.String()
 	}
 	return result

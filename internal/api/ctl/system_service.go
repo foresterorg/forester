@@ -19,7 +19,7 @@ type SystemServiceImpl struct{}
 func (i SystemServiceImpl) Register(ctx context.Context, system *NewSystem) error {
 	var sys *model.System
 	var existingSystem *model.System
-	var hwAddrs []net.HardwareAddr
+	var hwAddrs model.HwAddrSlice
 	var err error
 
 	dao := db.GetSystemDao(ctx)
@@ -53,7 +53,7 @@ func (i SystemServiceImpl) Register(ctx context.Context, system *NewSystem) erro
 	}
 
 	sys = &model.System{
-		HwAddrs: hwAddrs,
+		HwAddrs: hwAddrs.Unique(),
 		Facts:   facts,
 		UID:     system.UID,
 	}
@@ -92,7 +92,7 @@ func (i SystemServiceImpl) Find(ctx context.Context, pattern string) (*System, e
 	}
 
 	hwa := make([]string, len(result.System.HwAddrs))
-	for i, _ := range result.System.HwAddrs {
+	for i := range result.System.HwAddrs {
 		hwa[i] = result.System.HwAddrs[i].String()
 	}
 
