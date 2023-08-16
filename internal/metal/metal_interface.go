@@ -8,8 +8,8 @@ import (
 
 type Metal interface {
 	Enlist(ctx context.Context, app *model.Appliance, pattern string) ([]*EnlistResult, error)
-	BootNetwork(ctx context.Context, system *model.System) error
-	BootLocal(ctx context.Context, system *model.System) error
+	BootNetwork(ctx context.Context, system *model.SystemAppliance) error
+	BootLocal(ctx context.Context, system *model.SystemAppliance) error
 }
 
 type EnlistResult struct {
@@ -40,7 +40,7 @@ func Enlist(ctx context.Context, app *model.Appliance, pattern string) ([]*Enlis
 var ErrSystemWithNoAppliance = errors.New("system has no appliance associated")
 var ErrSystemWithNoUID = errors.New("system has no UID set")
 
-func BootNetwork(ctx context.Context, system *model.System) error {
+func BootNetwork(ctx context.Context, system *model.SystemAppliance) error {
 	if system.ApplianceID == nil {
 		return ErrSystemWithNoAppliance
 	}
@@ -53,7 +53,7 @@ func BootNetwork(ctx context.Context, system *model.System) error {
 	return metal.BootNetwork(ctx, system)
 }
 
-func BootLocal(ctx context.Context, system *model.System) error {
+func BootLocal(ctx context.Context, system *model.SystemAppliance) error {
 	if system.ApplianceID == nil {
 		return ErrSystemWithNoAppliance
 	}

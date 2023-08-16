@@ -52,7 +52,7 @@ func dialerFromURI(ctx context.Context, uri string) (socket.Dialer, error) {
 	return v, nil
 }
 
-func bootDevice(ctx context.Context, system *model.System, device string) error {
+func bootDevice(ctx context.Context, system *model.SystemAppliance, device string) error {
 	daoApp := db.GetApplianceDao(ctx)
 	app, err := daoApp.FindByID(ctx, *system.ApplianceID)
 	if err != nil {
@@ -182,10 +182,10 @@ func (m LibvirtMetal) Enlist(ctx context.Context, app *model.Appliance, pattern 
 	return result, nil
 }
 
-func (m LibvirtMetal) BootNetwork(ctx context.Context, system *model.System) error {
+func (m LibvirtMetal) BootNetwork(ctx context.Context, system *model.SystemAppliance) error {
 	return bootDevice(ctx, system, "network")
 }
 
-func (m LibvirtMetal) BootLocal(ctx context.Context, system *model.System) error {
+func (m LibvirtMetal) BootLocal(ctx context.Context, system *model.SystemAppliance) error {
 	return bootDevice(ctx, system, "hd")
 }

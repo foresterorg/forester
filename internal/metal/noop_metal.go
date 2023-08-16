@@ -14,12 +14,12 @@ func (m NoopMetal) Enlist(ctx context.Context, app *model.Appliance, pattern str
 	return []*EnlistResult{}, nil
 }
 
-func (m NoopMetal) BootNetwork(ctx context.Context, system *model.System) error {
+func (m NoopMetal) BootNetwork(ctx context.Context, system *model.SystemAppliance) error {
 	slog.InfoCtx(ctx, "noop operation", "function", "BootNetwork")
 	return nil
 }
 
-func (m NoopMetal) BootLocal(ctx context.Context, system *model.System) error {
+func (m NoopMetal) BootLocal(ctx context.Context, system *model.SystemAppliance) error {
 	slog.InfoCtx(ctx, "noop operation", "function", "BootLocal")
 	return nil
 }

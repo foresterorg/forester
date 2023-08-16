@@ -60,6 +60,7 @@ func (m RedfishMetal) Enlist(ctx context.Context, app *model.Appliance, pattern 
 			}
 
 			facts := map[string]string{
+				"redfish_oid":             rSystem.ODataID,
 				"redfish_model":           rSystem.Model,
 				"redfish_name":            rSystem.Name,
 				"redfish_description":     rSystem.Description,
@@ -78,7 +79,7 @@ func (m RedfishMetal) Enlist(ctx context.Context, app *model.Appliance, pattern 
 			er := &EnlistResult{
 				HwAddrs: addrs,
 				Facts:   facts,
-				UID:     rSystem.ODataID,
+				UID:     rSystem.UUID,
 			}
 
 			result = append(result, er)
@@ -94,8 +95,8 @@ func (m RedfishMetal) Enlist(ctx context.Context, app *model.Appliance, pattern 
 	return result, nil
 }
 
-func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.System) error {
-	config := configFromApp(ctx, system.Appliance)
+func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppliance) error {
+	config := configFromApp(ctx, &system.Appliance)
 
 	c, err := gofish.Connect(config)
 	if err != nil {
@@ -114,10 +115,8 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.System) err
 	}
 
 	for _, rSystem := range rSystems {
-		slog.DebugCtx(ctx, "redfish system", "id", rSystem.ID, "uuid", rSystem.UUID)
-
-		// TODO find the system by ID or UUID or maybe directly via Get?
-		if false {
+		if rSystem.UUID == *system.UID {
+			slog.DebugCtx(ctx, "found redfish system", "id", rSystem.ID, "uuid", rSystem.UUID, "uid", *system.UID)
 			err := rSystem.SetBoot(bootOverride)
 			if err != nil {
 				return fmt.Errorf("redfish error: %w", err)
@@ -126,13 +125,15 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.System) err
 			if err != nil {
 				return fmt.Errorf("redfish error: %w", err)
 			}
+		} else {
+			slog.DebugCtx(ctx, "checking redfish system", "id", rSystem.ID, "uuid", rSystem.UUID, "uid", *system.UID)
 		}
 	}
 
 	return nil
 }
 
-func (m RedfishMetal) BootLocal(ctx context.Context, system *model.System) error {
+func (m RedfishMetal) BootLocal(ctx context.Context, system *model.SystemAppliance) error {
 	slog.InfoCtx(ctx, "noop operation", "function", "BootLocal")
 	return nil
 }

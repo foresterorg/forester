@@ -186,7 +186,7 @@ func (i SystemServiceImpl) Release(ctx context.Context, systemPattern string) er
 
 func (i SystemServiceImpl) BootNetwork(ctx context.Context, systemPattern string) error {
 	dao := db.GetSystemDao(ctx)
-	system, err := dao.Find(ctx, systemPattern)
+	system, err := dao.FindRelated(ctx, systemPattern)
 	if err != nil {
 		return fmt.Errorf("cannot find: %w", err)
 	}
@@ -196,7 +196,7 @@ func (i SystemServiceImpl) BootNetwork(ctx context.Context, systemPattern string
 
 func (i SystemServiceImpl) BootLocal(ctx context.Context, systemPattern string) error {
 	dao := db.GetSystemDao(ctx)
-	system, err := dao.Find(ctx, systemPattern)
+	system, err := dao.FindRelated(ctx, systemPattern)
 	if err != nil {
 		return fmt.Errorf("cannot find: %w", err)
 	}
