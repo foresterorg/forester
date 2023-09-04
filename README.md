@@ -203,7 +203,26 @@ Warning: There is no authentication or authentication in the API, anyone can acq
 
 **Redfish hardware setup**:
 
-Configure your servers for UEFI HTTP Boot and set the UEFI HTTP Boot URL to `http://forester:8000/boot/shim.efi`. This can be either done via DHCP or in the BIOS. For example, on DELL iDrac go to Configuration - BIOS Settings - Network Settings and disable PXE devices but enable HTTP device and set the URI. Then apply and commit the change (requires reboot).
+Servers need to boot via UEFI HTTP Boot (not UEFI PXE) a particular URL `http://forester:8000/boot/shim.efi` (where `forester` is a machine running the Forester controller). There are currently two options how to achieve that.
+
+First option, which is great for PoC or testing out Forester on just a handful of machines, is to configure the HTTP UEFI Boot URL in BIOS directly. For example, on DELL iDrac go to Configuration - BIOS Settings - Network Settings and enable HTTP device and set the URI. Then apply and commit the change (requires reboot). To speed the boot process up, disable PXE devices on the same page.
+
+Second option is to configure the URL on the DHCP server so no changes are required through out of band management. Example configuration for ISC DHCPv4:
+
+```
+class "httpclients" {
+  match if substring (option vendor-class-identifier, 0, 10) = "HTTPClient";
+  option vendor-class-identifier "HTTPClient";
+  filename "http://forester:8000/boot/shim.efi";
+}
+subnet 192.168.42.0 netmask 255.255.255.0 {
+  range dynamic-bootp 192.168.42.100 192.168.42.120;
+  default-lease-time 14400;
+  max-lease-time 172800;
+}
+```
+
+Warning: only HTTP scheme is currently supported by the project.
 
 **Libvirt setup**:
 
