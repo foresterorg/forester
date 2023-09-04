@@ -3,6 +3,7 @@ package metal
 import (
 	"context"
 	"fmt"
+	"forester/internal/logging"
 	"forester/internal/model"
 	"math"
 	"regexp"
@@ -16,9 +17,11 @@ import (
 type RedfishMetal struct{}
 
 func configFromApp(ctx context.Context, app *model.Appliance) gofish.ClientConfig {
+	sw := logging.SlogWriter{Logger: slog.Default(), Level: slog.LevelInfo, Context: ctx}
 	return gofish.ClientConfig{
-		Endpoint: app.URI,
-		Insecure: true,
+		Endpoint:   app.URI,
+		Insecure:   true,
+		DumpWriter: sw,
 	}
 }
 
@@ -109,6 +112,15 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppli
 		return fmt.Errorf("redfish error: %w", err)
 	}
 
+	// Not supported by iDRAC yet
+	/*
+		bootOverride := redfish.Boot{
+			BootSourceOverrideTarget:  redfish.UefiHTTPBootSourceOverrideTarget,
+			BootSourceOverrideEnabled: redfish.OnceBootSourceOverrideEnabled,
+			HttpBootURI:               "https://boot.ipxe.org/ipxe.efi",
+		}
+	*/
+
 	bootOverride := redfish.Boot{
 		BootSourceOverrideTarget:  redfish.PxeBootSourceOverrideTarget,
 		BootSourceOverrideEnabled: redfish.OnceBootSourceOverrideEnabled,
@@ -121,7 +133,11 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppli
 			if err != nil {
 				return fmt.Errorf("redfish error: %w", err)
 			}
-			err = rSystem.Reset(redfish.ForceRestartResetType)
+			if rSystem.PowerState == redfish.OnPowerState {
+				err = rSystem.Reset(redfish.PowerCycleResetType)
+			} else {
+				err = rSystem.Reset(redfish.OnResetType)
+			}
 			if err != nil {
 				return fmt.Errorf("redfish error: %w", err)
 			}

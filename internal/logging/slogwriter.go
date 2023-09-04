@@ -12,12 +12,13 @@ import (
 // to standard error. It is used to prevent "missed messages"
 // of some libraries which can possibly write via stdlib log.
 type SlogWriter struct {
-	Logger *slog.Logger
-	Level  slog.Level
+	Logger  *slog.Logger
+	Level   slog.Level
+	Context context.Context
 }
 
 func (slw SlogWriter) Write(p []byte) (n int, err error) {
-	slw.Logger.Log(context.Background(), slw.Level, string(p))
+	slw.Logger.Log(slw.Context, slw.Level, string(p))
 	fmt.Fprintln(os.Stderr, string(p))
 
 	return len(p), nil

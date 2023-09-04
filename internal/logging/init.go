@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"context"
 	"log"
 	"os"
 
@@ -28,5 +29,5 @@ func Initialize(level slog.Level) {
 	logger := slog.New(NewContextHandler(th))
 	slog.SetDefault(logger)
 
-	log.SetOutput(SlogWriter{logger, slog.LevelInfo})
+	log.SetOutput(SlogWriter{logger, slog.LevelInfo, context.Background()})
 }
