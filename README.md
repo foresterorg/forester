@@ -25,13 +25,7 @@ Build the project, the script will also install required CLI tools for code gene
 
 Create postgres database, configure the migrator and run it:
 
-    cat config/tern.conf
-    [database]
-    host = localhost
-    port = 5432
-    database = forester
-    user = postgres
-
+    go install github.com/jackc/tern/v2@latest
     ./migrate.sh
 
 Check possible environmental variables:
