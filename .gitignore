@@ -28,4 +28,5 @@ tern.conf
 
 # data files
 /images
+/composer-api-*
 /*.iso

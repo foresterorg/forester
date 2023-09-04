@@ -122,7 +122,7 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppli
 	*/
 
 	bootOverride := redfish.Boot{
-		BootSourceOverrideTarget:  redfish.PxeBootSourceOverrideTarget,
+		BootSourceOverrideTarget:  redfish.UefiHTTPBootSourceOverrideTarget,
 		BootSourceOverrideEnabled: redfish.OnceBootSourceOverrideEnabled,
 	}
 

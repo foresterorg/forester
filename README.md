@@ -11,9 +11,9 @@ Bare-metal provisioning service for Red Hat Anaconda (Fedora, RHEL, CentOS Strea
 * Go 1.20+
 * Postgres
 
-**Feedback and support**
+**Hardware setup**:
 
-Visit our [discussion forums](https://github.com/foresterorg/forester/discussions)!
+Configure your servers for UEFI HTTP Boot and set the UEFI HTTP Boot URL to `http://forester:8000/boot/shim.efi`. This can be either done via DHCP or in the BIOS. For example, on DELL iDrac go to Configuration - BIOS Settings - Network Settings and disable PXE devices but enable HTTP device and set the URI. Then apply and commit the change (requires reboot).
 
 **Hacking**
 
@@ -164,6 +164,10 @@ which works.
 - mcopy -i letsencrypt.img letsencrypt.cer ::/ca.cer
 - mdir -i letsencrypt.img
 - Enroll the certificate into EFI
+
+**Feedback and support**
+
+Visit our [discussion forums](https://github.com/foresterorg/forester/discussions)!
 
 **License**
 
