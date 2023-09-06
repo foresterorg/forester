@@ -17,7 +17,7 @@ To start the Forester controller and Postgres database on port 8000 with data fo
     curl https://raw.githubusercontent.com/foresterorg/forester/main/compose.yaml > compose.yaml
     EXPOSED_APP_PORT=8000 DATA_DIR=./data podman-compose up -d
 
-You can use Podman Compose as well, it is known to work but be aware we do not test against Podman during development.
+This command requires [podman-compose](https://github.com/containers/podman-compose) (available in Fedora and EPEL). You can use docker-compose as well, it is known to work but be aware we do not test against Docker during development.
 
 To remove Forester completely, stop containers and remove them, and the data directory.
 
