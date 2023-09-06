@@ -16,6 +16,7 @@ TAGS
 /forester-cli
 
 # config
+/compose.env
 /config/*.env
 tern.conf
 
