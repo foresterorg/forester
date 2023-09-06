@@ -38,6 +38,11 @@ func main() {
 		return
 	}
 
+	err = db.Migrate(ctx, "public")
+	if err != nil {
+		return
+	}
+
 	rootRouter := chi.NewRouter()
 	bootRouter := chi.NewRouter()
 	imgRouter := chi.NewRouter()

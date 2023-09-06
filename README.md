@@ -8,6 +8,10 @@ Bare-metal provisioning service for Red Hat Anaconda (Fedora, RHEL, CentOS Strea
 
 **Requirements**:
 
+To run the service, all you need is Podman or Docker.
+
+To build and run from source, requirements are:
+
 * Go 1.20+
 * Postgres
 
@@ -18,11 +22,6 @@ Build the project, the script will also install required CLI tools for code gene
     git clone https://github.com/foresterorg/forester
     cd forester
     ./build.sh
-
-Create postgres database, configure the migrator and run it:
-
-    go install github.com/jackc/tern/v2@latest
-    ./migrate.sh
 
 Check possible environmental variables:
 
@@ -62,9 +61,9 @@ Check possible environmental variables:
       IMAGES_BOOT_ID int
             boot shim/grub from image DB ID (default "1")
 
-Start the backend controller:
+When you start the backend for the first time, it will migrate database (create tables). By default, it connect to "localhost" database "forester" and user "postgres".
 
-    IMAGES_DIR=/var/lib/forester ./forester-controller
+    ./forester-controller
 
 Download RHEL image from console.redhat.com or build your own Fedora or CentOS image using [osbuild](https://www.osbuild.org/) (Image Builder) or Lorax (legacy image builder):
 
