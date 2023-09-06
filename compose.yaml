@@ -2,12 +2,10 @@ version: '3.7'
 
 services:
   postgres:
-    env_file:
-      - compose.env
     restart: on-failure
     image: docker.io/postgres:15.1
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d provisioning -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -d forester -U postgres"]
       interval: 2s
       timeout: 3s
       retries: 10
@@ -16,7 +14,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=forester
     volumes:
-      - ${DATA_DIR:-./data}/postgres:/var/lib/postgresql/data
+      - ${DATA_DIR:-./data}/postgres:/var/lib/postgresql/data:Z
     expose:
       - 5432
 
@@ -24,8 +22,7 @@ services:
     environment:
       - IMAGES_DIR=/images
       - DATABASE_PASSWORD=postgres
-    env_file:
-      - compose.env
+      - DATABASE_HOST=postgres
     depends_on:
       postgres:
         condition: service_healthy
@@ -35,4 +32,4 @@ services:
     ports:
       - ${EXPOSED_APP_PORT:-8000}:${APP_PORT:-8000}
     volumes:
-      - ${DATA_DIR:-./data}/images:/images
+      - ${DATA_DIR:-./data}/images:/images:Z

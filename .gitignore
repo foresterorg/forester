@@ -10,10 +10,11 @@ __debug_bin
 tags
 TAGS
 
-# build locations
+# build and data locations
 /bin
 /forester-controller
 /forester-cli
+/data
 
 # config
 /compose.env
