@@ -1,0 +1,44 @@
+---
+name: checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  GO_SVR: 1.20
+
+jobs:
+  commit:
+    name: "💾 Commit message"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+          path: code
+      - uses: actions/checkout@v3
+        with:
+          repository: "RHEnVision/changelog"
+          path: changelog
+      - run: pip3 install ./changelog
+      - run: |
+          make check-commits
+        working-directory: code
+
+  build:
+    name: "🛠️ Go Build"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_SVR }}
+          cache: true
+      - name: Build all artifacts
+        run: |
+          go build ./cmd/controller
+          go build ./cmd/cli
