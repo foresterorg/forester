@@ -55,7 +55,13 @@ Warning: only HTTP scheme is currently supported by the project.
 
 **Configuring the service**
 
-Upload the image:
+Download and extract the [CLI for your architecture](https://github.com/foresterorg/forester/releases) and try to connect to controller:
+
+    ./forester-cli --url http://forester:8000 appliance list
+
+If the service is running on localhost port 8000, you can omit the `--url` argument.
+
+The first step is to upload the image:
 
     ./forester-cli image upload --name Fedora37 f37-minimal-image.iso
 
