@@ -1,80 +1,59 @@
 **Forester Project**
 
-Bare-metal provisioning service for Red Hat Anaconda (Fedora, RHEL, CentOS Stream, Alma Linux...)
+Bare-metal image-based unattended provisioning service for Red Hat Anaconda (Fedora, RHEL, CentOS Stream, Alma Linux...) which works out-of-box. It utilizes Redfish API and UEFI HTTP Boot to deploy images created by Image Builder through Anaconda.
 
 **DevConf 2023 talk**: https://www.youtube.com/live/6nRP0si2wKI?feature=share&t=8674
 
 **DEMO**: https://www.youtube.com/watch?v=jxCHU_nzluY
 
-**Requirements**:
+**WARNING**:
 
-To run the service, all you need is Podman or Docker.
+This project is currently in proof of concept, it is fully functional for PoC testing and [feedback](https://github.com/foresterorg/forester/discussions).
 
-To build and run from source, requirements are:
+**Use**
 
-* Go 1.20+
-* Postgres
+To start the Forester controller and Postgres database on port 8000 with data for both database and images stored in `./data` directory run:
 
-**Installation and configuration**
+    curl https://raw.githubusercontent.com/foresterorg/forester/main/compose.yaml > compose.yaml
+    EXPOSED_APP_PORT=8000 DATA_DIR=./data podman-compose up -d
 
-Build the project, the script will also install required CLI tools for code generation and database migration:
+You can use Podman Compose as well, it is known to work but be aware we do not test against Podman during development.
 
-    git clone https://github.com/foresterorg/forester
-    cd forester
-    ./build.sh
+To remove Forester completely, stop containers and remove them, and the data directory.
 
-Check possible environmental variables:
+**Building images**
 
-    ./forester-controller -h
-    Environment variables:
-    
-      APP_PORT int
-            HTTP port of the API service (default "8000")
-      APP_HOSTNAME string
-            hostname of the service (default "")
-      APP_INSTALL_DURATION int64
-            duration for which the service initiates provisioning after acquire (default "1h")
-      DATABASE_HOST string
-            main database hostname (default "localhost")
-      DATABASE_PORT uint16
-            main database port (default "5432")
-      DATABASE_NAME string
-            main database name (default "forester")
-      DATABASE_USER string
-            main database username (default "postgres")
-      DATABASE_PASSWORD string
-            main database password (default "")
-      DATABASE_MIN_CONN int32
-            connection pool minimum size (default "2")
-      DATABASE_MAX_CONN int32
-            connection pool maximum size (default "50")
-      DATABASE_MAX_IDLE_TIME int64
-            connection pool idle time (time interval syntax) (default "15m")
-      DATABASE_MAX_LIFETIME int64
-            connection pool total lifetime (time interval syntax) (default "2h")
-      DATABASE_LOG_LEVEL string
-            logging level of database logs (default "trace")
-      LOGGING_LEVEL string
-            logger level (debug, info, warn, error) (default "debug")
-      IMAGES_DIR string
-            absolute path to directory with images (default "images")
-      IMAGES_BOOT_ID int
-            boot shim/grub from image DB ID (default "1")
-
-When you start the backend for the first time, it will migrate database (create tables). By default, it connect to "localhost" database "forester" and user "postgres".
-
-    ./forester-controller
-
-Download RHEL image from console.redhat.com or build your own Fedora or CentOS image using [osbuild](https://www.osbuild.org/) (Image Builder) or Lorax (legacy image builder):
+Build and download RHEL image from [console.redhat.com](https://console.redhat.com/insights/image-builder) or build your own Fedora or CentOS image using [osbuild](https://www.osbuild.org/) (also known as Red Hat Image Builder) or Lorax (legacy image builder):
 
     livemedia-creator --make-iso \
         --iso=Fedora-Server-dvd-x86_64-37-1.7.iso \
         --ks /usr/share/doc/lorax/fedora-minimal.ks \
         --image-name=f37-minimal-image.iso
 
-Start using the CLI:
+**Redfish hardware setup**:
 
-    ./forester-cli --help
+Servers need to boot via UEFI HTTP Boot (not UEFI PXE) a particular URL `http://forester:8000/boot/shim.efi` (where `forester` is a machine running the Forester controller container). There are currently two options how to achieve that.
+
+First option, which is great for PoC or testing out Forester on just a handful of machines, is to configure the HTTP UEFI Boot URL in BIOS directly. For example, on DELL iDrac go to Configuration - BIOS Settings - Network Settings and enable HTTP device and set the URI. Then apply and commit the change (requires reboot). To speed the boot process up, disable PXE devices on the same page.
+
+Second option is to configure the URL on the DHCP server so no changes are required through out of band management. Example configuration for ISC DHCPv4 (also works on DHCPv6):
+
+```
+class "httpclients" {
+  match if substring (option vendor-class-identifier, 0, 10) = "HTTPClient";
+  option vendor-class-identifier "HTTPClient";
+  filename "http://forester:8000/boot/shim.efi";
+}
+subnet 192.168.42.0 netmask 255.255.255.0 {
+  range dynamic-bootp 192.168.42.100 192.168.42.120;
+  default-lease-time 14400;
+  max-lease-time 172800;
+}
+```
+
+Warning: only HTTP scheme is currently supported by the project.
+
+**Configuring the service**
 
 Upload the image:
 
@@ -188,7 +167,7 @@ Facts which start with `redfish` were recognized via Redfish API, other facts ca
 
     ./forester-cli appliance bootnet lynn
 
-**Use**
+**Deploy images**
 
 Systems are either **released** or **acquired**. By acquisition, an operator performs installation of a specific image onto the hardware:
 
@@ -199,29 +178,6 @@ To release a system and put it back to the pool of available systems:
     ./forester-cli system release lynn
 
 Warning: There is no authentication or authentication in the API, anyone can acquire or release systems or even add new appliances.
-
-**Redfish hardware setup**:
-
-Servers need to boot via UEFI HTTP Boot (not UEFI PXE) a particular URL `http://forester:8000/boot/shim.efi` (where `forester` is a machine running the Forester controller). There are currently two options how to achieve that.
-
-First option, which is great for PoC or testing out Forester on just a handful of machines, is to configure the HTTP UEFI Boot URL in BIOS directly. For example, on DELL iDrac go to Configuration - BIOS Settings - Network Settings and enable HTTP device and set the URI. Then apply and commit the change (requires reboot). To speed the boot process up, disable PXE devices on the same page.
-
-Second option is to configure the URL on the DHCP server so no changes are required through out of band management. Example configuration for ISC DHCPv4:
-
-```
-class "httpclients" {
-  match if substring (option vendor-class-identifier, 0, 10) = "HTTPClient";
-  option vendor-class-identifier "HTTPClient";
-  filename "http://forester:8000/boot/shim.efi";
-}
-subnet 192.168.42.0 netmask 255.255.255.0 {
-  range dynamic-bootp 192.168.42.100 192.168.42.120;
-  default-lease-time 14400;
-  max-lease-time 172800;
-}
-```
-
-Warning: only HTTP scheme is currently supported by the project.
 
 **Libvirt setup**:
 
@@ -259,6 +215,18 @@ Make sure to update the HTTP address in case you want to use different network t
     sudo virsh net-start default
 
 Now, boot an empty UEFI VM on this network from network, it must be set for UEFI HTTP Boot. Enter EFI firmware by pressing ESC key after it is powered on, enter "Boot manager" screen and make "UEFI HTTPv4 [MAC]" the first boot option.
+
+**Compiling from sources**
+
+Build the project, the script will also install required CLI tools for code generation and database migration:
+
+    git clone https://github.com/foresterorg/forester
+    cd forester
+    ./build.sh
+
+When you start the backend for the first time, it will migrate database (create tables). By default, it connect to "localhost" database "forester" and user "postgres".
+
+    ./forester-controller
 
 **Redfish emulators**
 
