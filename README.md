@@ -183,7 +183,7 @@ To release a system and put it back to the pool of available systems:
 
     ./forester-cli system release lynn
 
-Warning: There is no authentication or authentication in the API, anyone can acquire or release systems or even add new appliances.
+Warning: There is no authentication or authorization in the API, anyone can acquire or release systems or even add new appliances.
 
 **Libvirt setup**:
 
