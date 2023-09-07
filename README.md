@@ -236,15 +236,16 @@ When you start the backend for the first time, it will migrate database (create 
 
 **Redfish emulators**
 
-There are several emulators available. The official one
+There are several emulators available.
+
+The official one unfortunatelly does not allow updates (reboot), you can still try it out:
 
     podman run --rm -p 5000:5000 dmtf/redfish-interface-emulator:latest
 
-does not allow updates (reboot). However, there is another one from DMTF
+However, there is another one from DMTF, which does support updates:
 
     podman run --rm -p 5000:8000 dmtf/redfish-mockup-server:latest
 
-which works.
 
 **TLS**
 
