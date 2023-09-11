@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"forester/internal/db"
 	"forester/internal/model"
+	"net"
 	"net/url"
 	"regexp"
 	"strings"
@@ -37,18 +38,28 @@ func updateDomainBootDeviceXML(xmlString, device string) (string, error) {
 
 var ErrUnsupportedLibvirtScheme = errors.New("unsupported scheme, valid options are: unix")
 
-func dialerFromURI(ctx context.Context, uri string) (socket.Dialer, error) {
+func libvirtFromURI(ctx context.Context, uri string) (*libvirt.Libvirt, error) {
+	var dialer socket.Dialer
+	var v *libvirt.Libvirt
+
+	slog.DebugCtx(ctx, "connecting to libvirt", "uri", uri)
 	parsed, err := url.Parse(uri)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse: %w", err)
 	}
 
-	if parsed.Scheme != "unix" {
+	if parsed.Scheme == "unix" {
+		dialer = dialers.NewLocal(dialers.WithSocket(parsed.Path))
+		v = libvirt.NewWithDialer(dialer)
+	} else if parsed.Scheme == "tcp" {
+		host, _, _ := net.SplitHostPort(parsed.Host)
+		dialer = dialers.NewRemote(host, dialers.UsePort(parsed.Port()))
+		slog.DebugCtx(ctx, "dialer", "d", dialer)
+		v = libvirt.NewWithDialer(dialer)
+	} else {
 		return nil, ErrUnsupportedLibvirtScheme
 	}
 
-	v := dialers.NewLocal(dialers.WithSocket(parsed.Path))
-	slog.DebugCtx(ctx, "connecting to libvirt", "socket", parsed.Path)
 	return v, nil
 }
 
@@ -59,11 +70,10 @@ func bootDevice(ctx context.Context, system *model.SystemAppliance, device strin
 		return fmt.Errorf("cannot find appliance with id %d: %w", system.ApplianceID, err)
 	}
 
-	dialer, err := dialerFromURI(ctx, app.URI)
+	v, err := libvirtFromURI(ctx, app.URI)
 	if err != nil {
 		return fmt.Errorf("URI '%s' error: %w", app.URI, err)
 	}
-	v := libvirt.NewWithDialer(dialer)
 	if err := v.Connect(); err != nil {
 		return fmt.Errorf("cannot connect: %w", err)
 	}
@@ -113,11 +123,10 @@ func bootDevice(ctx context.Context, system *model.SystemAppliance, device strin
 }
 
 func (m LibvirtMetal) Enlist(ctx context.Context, app *model.Appliance, pattern string) ([]*EnlistResult, error) {
-	dialer, err := dialerFromURI(ctx, app.URI)
+	v, err := libvirtFromURI(ctx, app.URI)
 	if err != nil {
 		return nil, fmt.Errorf("URI '%s' error: %w", app.URI, err)
 	}
-	v := libvirt.NewWithDialer(dialer)
 
 	if err := v.Connect(); err != nil {
 		return nil, fmt.Errorf("cannot connect: %w", err)
