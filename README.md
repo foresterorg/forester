@@ -10,7 +10,24 @@ Bare-metal image-based unattended provisioning service for Red Hat Anaconda (Fed
 
 This project is currently in proof of concept, it is fully functional for PoC testing and [feedback](https://github.com/foresterorg/forester/discussions).
 
-**Use**
+**Install via Podman**
+
+The following commands create two new volumes for postgres database and images, a new pod named `forester` with two containers named `forester-pg` and `forester-api` exposing port 8000 for the REST API.
+
+    podman volume create forester-pg
+    podman volume create forester-img
+    podman pod create --name forester -p 8000:8000
+    podman run -d --name forester-pg --pod forester -e POSTGRESQL_USER=forester -e POSTGRESQL_PASSWORD=forester -e POSTGRESQL_DATABASE=forester -v forester-pg:/var/lib/pgsql/data:Z quay.io/fedora/postgresql-15
+    sleep 2s
+    podman run -d --name forester-api --pod forester -e DATABASE_USER=forester -e DATABASE_PASSWORD=forester -e IMAGES_DIR=/img -v forester-img:/img:Z quay.io/forester/controller:latest
+
+To uninstall everything up including data and images:
+
+    podman rm -f forester-pg forester-app
+    podman pod rm -f forester
+    podman volume rm forester-img forester-pg
+
+**Install via Docker Compose**
 
 To start the Forester controller and Postgres database on port 8000 with data for both database and images stored in `./data` directory run:
 
