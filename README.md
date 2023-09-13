@@ -97,6 +97,10 @@ Create appliance, for hacking and development a good appliance type is libvirt t
 
     ./forester-cli appliance create --kind 1 --name libvirt
 
+Or via TCP connection (TLS is not supported):
+
+    ./forester-cli appliance create --name libvirt --kind 1 --uri tcp://my.libvirt.local:16509
+
 To create a Redfish appliance use kind number 2:
 
     ./forester-cli appliance create --kind 2 --name dellr350 --uri https://root:calvin@dr350-a14.local
