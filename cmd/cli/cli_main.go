@@ -8,6 +8,7 @@ import (
 	"forester/internal/config"
 	"forester/internal/logging"
 	"net/http"
+	"net/url"
 	"os"
 	"sort"
 	"strconv"
@@ -197,9 +198,19 @@ func newTabWriter() *tabwriter.Writer {
 
 var ErrUploadNot200 = errors.New("upload error")
 
+func uploadURL(mainURL, newPath string) (string, error) {
+	newURL, err := url.Parse(mainURL)
+	if err != nil {
+		return "", fmt.Errorf("cannot parse URL %s: %w", mainURL, err)
+	}
+	newURL.Path = newPath
+
+	return newURL.String(), nil
+}
+
 func imageUpload(ctx context.Context, cmdArgs *imageUploadCmd) error {
 	client := ctl.NewImageServiceClient(args.URL, http.DefaultClient)
-	_, uploadURL, err := client.Create(ctx, &ctl.Image{
+	_, uploadPath, err := client.Create(ctx, &ctl.Image{
 		Name: cmdArgs.Name,
 	})
 	if err != nil {
@@ -211,6 +222,11 @@ func imageUpload(ctx context.Context, cmdArgs *imageUploadCmd) error {
 		return fmt.Errorf("cannot open image: %w", err)
 	}
 	defer file.Close()
+
+	uploadURL, err := uploadURL(args.URL, uploadPath)
+	if err != nil {
+		return fmt.Errorf("cannot upload image: %w", err)
+	}
 
 	r, err := http.NewRequest("PUT", uploadURL, file)
 	if err != nil {

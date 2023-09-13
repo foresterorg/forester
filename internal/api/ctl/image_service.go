@@ -3,7 +3,6 @@ package ctl
 import (
 	"context"
 	"fmt"
-	"forester/internal/config"
 	"forester/internal/db"
 	"forester/internal/model"
 )
@@ -23,7 +22,7 @@ func (i ImageServiceImpl) Create(ctx context.Context, image *Image) (int64, stri
 		return 0, "", fmt.Errorf("cannot create: %w", err)
 	}
 
-	return dbImage.ID, fmt.Sprintf("%s/img/%d", config.BaseURL(), dbImage.ID), nil
+	return dbImage.ID, fmt.Sprintf("/img/%d", dbImage.ID), nil
 }
 
 func (i ImageServiceImpl) GetByID(ctx context.Context, imageID int64) (*Image, error) {

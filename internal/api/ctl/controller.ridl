@@ -8,7 +8,7 @@ struct Image
   - Name: string
 
 service ImageService
-  - Create(image: Image) => (id: int64, uploadURL: string)
+  - Create(image: Image) => (id: int64, uploadPath: string)
   - GetByID(imageID: int64) => (image: Image)
   - Find(pattern: string) => (image: Image)
   - List(limit: int64, offset: int64) => (images: []Image)
