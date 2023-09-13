@@ -95,15 +95,15 @@ Check it:
 
 Create appliance, for hacking and development a good appliance type is libvirt through local UNIX socket:
 
-    ./forester-cli appliance create --kind 1 --name libvirt
+    ./forester-cli appliance create --kind libvirt --name local
 
 Or via TCP connection (TLS is not supported):
 
-    ./forester-cli appliance create --name libvirt --kind 1 --uri tcp://my.libvirt.local:16509
+    ./forester-cli appliance create --kind libvirt --name remote --uri tcp://my.libvirt.local:16509
 
-To create a Redfish appliance use kind number 2:
+To create a Redfish appliance use kind named "redfish":
 
-    ./forester-cli appliance create --kind 2 --name dellr350 --uri https://root:calvin@dr350-a14.local
+    ./forester-cli appliance create --kind redfish --name dellr350 --uri https://root:calvin@dr350-a14.local
 
 Warning: username and password are currently stored as clear text and fully readable through the API.
 

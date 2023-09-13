@@ -87,7 +87,7 @@ type imageCmd struct {
 
 type applianceCreateCmd struct {
 	Name string `arg:"-n,required"`
-	Kind int16  `arg:"-k" default:"1"`
+	Kind string `arg:"-k" default:"libvirt"`
 	URI  string `arg:"-u" default:"unix:///var/run/libvirt/libvirt-sock"`
 }
 
@@ -116,6 +116,28 @@ var args struct {
 	Quiet     bool
 	Verbose   bool
 	Debug     bool
+}
+
+func kindToInt(kind string) int16 {
+	switch strings.ToLower(kind) {
+	case "libvirt":
+		return 1
+	case "redfish":
+		return 2
+	default:
+		panic(fmt.Sprintf("unknown kind: %s", kind))
+	}
+}
+
+func intToKind(kind int16) string {
+	switch kind {
+	case 1:
+		return "libvirt"
+	case 2:
+		return "redfish"
+	default:
+		panic(fmt.Sprintf("unknown kind: %d", kind))
+	}
 }
 
 func main() {
@@ -322,7 +344,7 @@ func systemShow(ctx context.Context, cmdArgs *systemShowCmd) error {
 	}
 	if result.Appliance != nil && result.Appliance.Name != "" {
 		fmt.Fprintf(w, "%s\t%s\n", "Appliance Name", result.Appliance.Name)
-		fmt.Fprintf(w, "%s\t%d\n", "Appliance Kind", result.Appliance.Kind)
+		fmt.Fprintf(w, "%s\t%s\n", "Appliance Kind", intToKind(result.Appliance.Kind))
 		fmt.Fprintf(w, "%s\t%s\n", "Appliance URI", result.Appliance.URI)
 	}
 	if result.UID != nil {
@@ -422,7 +444,7 @@ func systemBootLocal(ctx context.Context, cmdArgs *systemBootLocalCmd) error {
 
 func applianceCreate(ctx context.Context, cmdArgs *applianceCreateCmd) error {
 	client := ctl.NewApplianceServiceClient(args.URL, http.DefaultClient)
-	err := client.Create(ctx, cmdArgs.Name, cmdArgs.Kind, cmdArgs.URI)
+	err := client.Create(ctx, cmdArgs.Name, kindToInt(cmdArgs.Kind), cmdArgs.URI)
 	if err != nil {
 		return fmt.Errorf("cannot create appliance: %w", err)
 	}
@@ -440,7 +462,7 @@ func applianceList(ctx context.Context, cmdArgs *applianceListCmd) error {
 	w := newTabWriter()
 	fmt.Fprintln(w, "ID\tName\tKind\tURI")
 	for _, a := range appliances {
-		fmt.Fprintf(w, "%d\t%s\t%d\t%s\n", a.ID, a.Name, a.Kind, a.URI)
+		fmt.Fprintf(w, "%d\t%s\t%s\t%s\n", a.ID, a.Name, intToKind(a.Kind), a.URI)
 	}
 	w.Flush()
 
