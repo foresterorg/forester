@@ -377,6 +377,8 @@ func systemList(ctx context.Context, cmdArgs *systemListCmd) error {
 
 	if len(cmdArgs.DisplayFacts) == 0 {
 		cmdArgs.DisplayFacts = []string{
+			"redfish_manufacturer",
+			"redfish_model",
 			"system-manufacturer",
 			"system-product-name",
 		}
