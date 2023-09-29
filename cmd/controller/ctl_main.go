@@ -69,23 +69,23 @@ func main() {
 		signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
 		<-sigint
 		if err := rootServer.Shutdown(context.Background()); err != nil {
-			slog.ErrorCtx(ctx, "shutdown error", "err", err)
+			slog.ErrorContext(ctx, "shutdown error", "err", err)
 		}
 		close(waitForSignal)
 	}()
 
-	slog.DebugCtx(ctx, "starting service", "port", config.Application.Port)
+	slog.DebugContext(ctx, "starting service", "port", config.Application.Port)
 
 	if err := rootServer.ListenAndServe(); err != nil {
 		if !errors.Is(err, http.ErrServerClosed) {
-			slog.ErrorCtx(ctx, "listen error", "err", err)
+			slog.ErrorContext(ctx, "listen error", "err", err)
 		}
 	}
 
 	<-waitForSignal
 
-	slog.DebugCtx(ctx, "waiting for extracting jobs to complete")
+	slog.DebugContext(ctx, "waiting for extracting jobs to complete")
 	img.ExtractWG.Wait()
 
-	slog.DebugCtx(ctx, "shutdown complete")
+	slog.DebugContext(ctx, "shutdown complete")
 }

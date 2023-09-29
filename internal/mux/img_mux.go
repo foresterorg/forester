@@ -23,18 +23,18 @@ func uploadImage(w http.ResponseWriter, r *http.Request) {
 	}
 	id, err := strconv.ParseInt(chi.URLParam(r, "ID"), 10, 64)
 	if err != nil {
-		slog.ErrorCtx(r.Context(), "invalid ID", "err", err)
+		slog.ErrorContext(r.Context(), "invalid ID", "err", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	n, err := img.Copy(r.Context(), id, r.Body)
 	if err != nil {
-		slog.ErrorCtx(r.Context(), "cannot copy image", "err", err)
+		slog.ErrorContext(r.Context(), "cannot copy image", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	slog.DebugCtx(r.Context(), "image written", "size", n)
+	slog.DebugContext(r.Context(), "image written", "size", n)
 
 	go img.Extract(r.Context(), id)
 }

@@ -47,7 +47,7 @@ func (m RedfishMetal) Enlist(ctx context.Context, app *model.Appliance, pattern 
 	var result []*EnlistResult
 	for _, rSystem := range rSystems {
 		if rg.MatchString(rSystem.ID) {
-			slog.DebugCtx(ctx, "found redfish system",
+			slog.DebugContext(ctx, "found redfish system",
 				"id", rSystem.ID,
 				"uuid", rSystem.UUID,
 				"oid", rSystem.ODataID,
@@ -87,7 +87,7 @@ func (m RedfishMetal) Enlist(ctx context.Context, app *model.Appliance, pattern 
 
 			result = append(result, er)
 		} else {
-			slog.DebugCtx(ctx, "redfish system does not match the pattern",
+			slog.DebugContext(ctx, "redfish system does not match the pattern",
 				"id", rSystem.ID,
 				"uuid", rSystem.UUID,
 				"oid", rSystem.ODataID,
@@ -128,7 +128,7 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppli
 
 	for _, rSystem := range rSystems {
 		if rSystem.UUID == *system.UID {
-			slog.DebugCtx(ctx, "found redfish system", "id", rSystem.ID, "uuid", rSystem.UUID, "uid", *system.UID)
+			slog.DebugContext(ctx, "found redfish system", "id", rSystem.ID, "uuid", rSystem.UUID, "uid", *system.UID)
 			err := rSystem.SetBoot(bootOverride)
 			if err != nil {
 				return fmt.Errorf("redfish error: %w", err)
@@ -142,7 +142,7 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppli
 				return fmt.Errorf("redfish error: %w", err)
 			}
 		} else {
-			slog.DebugCtx(ctx, "checking redfish system", "id", rSystem.ID, "uuid", rSystem.UUID, "uid", *system.UID)
+			slog.DebugContext(ctx, "checking redfish system", "id", rSystem.ID, "uuid", rSystem.UUID, "uid", *system.UID)
 		}
 	}
 
@@ -150,6 +150,6 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppli
 }
 
 func (m RedfishMetal) BootLocal(ctx context.Context, system *model.SystemAppliance) error {
-	slog.InfoCtx(ctx, "noop operation", "function", "BootLocal")
+	slog.InfoContext(ctx, "noop operation", "function", "BootLocal")
 	return nil
 }

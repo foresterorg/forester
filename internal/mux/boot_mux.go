@@ -68,22 +68,22 @@ func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
 	sDao := db.GetSystemDao(r.Context())
 	system, err := sDao.FindByMac(r.Context(), mac)
 	if errors.Is(err, pgx.ErrNoRows) {
-		slog.InfoCtx(r.Context(), "unknown system - booting discovery", "mac", mac.String())
+		slog.InfoContext(r.Context(), "unknown system - booting discovery", "mac", mac.String())
 		imageId = config.Images.BootId
 	} else if err != nil {
-		slog.ErrorCtx(r.Context(), "error while finding system", "mac", mac.String(), "err", err)
+		slog.ErrorContext(r.Context(), "error while finding system", "mac", mac.String(), "err", err)
 		renderGrubError(err, w, r)
 		return
 	} else {
 		if !system.Installable() || system.ImageID == nil {
-			slog.InfoCtx(r.Context(), "known system - booting discovery", "mac", mac.String())
+			slog.InfoContext(r.Context(), "known system - booting discovery", "mac", mac.String())
 			imageId = config.Images.BootId
 		} else {
 			imageId = *system.ImageID
 		}
 	}
 
-	slog.InfoCtx(r.Context(), "known system - booting installer", "mac", mac.String())
+	slog.InfoContext(r.Context(), "known system - booting installer", "mac", mac.String())
 	w.WriteHeader(http.StatusOK)
 	err = tmpl.RenderGrubKernel(w, tmpl.GrubKernelParams{ImageID: imageId})
 	if err != nil {
@@ -94,10 +94,10 @@ func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
 
 func renderGrubError(gerr error, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	slog.ErrorCtx(r.Context(), "rendering error as grub message", "err", gerr)
+	slog.ErrorContext(r.Context(), "rendering error as grub message", "err", gerr)
 	err := tmpl.RenderGrubError(w, tmpl.GrubErrorParams{Error: gerr})
 	if err != nil {
-		slog.ErrorCtx(r.Context(), "cannot render template", "err", err)
+		slog.ErrorContext(r.Context(), "cannot render template", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }

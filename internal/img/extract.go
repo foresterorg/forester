@@ -36,22 +36,22 @@ func Extract(ctx context.Context, imageId int64) {
 
 	err := ensureDir(imageId)
 	if err != nil {
-		slog.ErrorCtx(ctx, "cannot create directory", "err", err)
+		slog.ErrorContext(ctx, "cannot create directory", "err", err)
 		return
 	}
 
 	path := isoPath(imageId)
-	slog.DebugCtx(ctx, "extracting iso", "file", path)
+	slog.DebugContext(ctx, "extracting iso", "file", path)
 	file, err := os.Open(path)
 	if err != nil {
-		slog.ErrorCtx(ctx, "cannot open image", "err", err)
+		slog.ErrorContext(ctx, "cannot open image", "err", err)
 		return
 	}
 	defer file.Close()
 
 	isoReader, err := iso9660.NewReader(file)
 	if err != nil {
-		slog.ErrorCtx(ctx, "cannot read iso9660", "err", err)
+		slog.ErrorContext(ctx, "cannot read iso9660", "err", err)
 		return
 	}
 
@@ -62,21 +62,21 @@ func Extract(ctx context.Context, imageId int64) {
 			break
 		}
 		if err != nil {
-			slog.ErrorCtx(ctx, "cannot list iso9660 entry", "err", err)
+			slog.ErrorContext(ctx, "cannot list iso9660 entry", "err", err)
 			return
 		}
 
 		mappedName, ok := ExtractedPaths[fileInfo.Name()]
 		if !ok {
-			slog.DebugCtx(ctx, "skipping uploaded iso9660 entry", "iso_path", fileInfo.Name())
+			slog.DebugContext(ctx, "skipping uploaded iso9660 entry", "iso_path", fileInfo.Name())
 			continue
 		}
 
 		filePath := filepath.Join(dirPath(imageId), mappedName)
-		slog.DebugCtx(ctx, "extracting uploaded iso9660 entry", "iso_path", fileInfo.Name(), "dest_path", filePath)
+		slog.DebugContext(ctx, "extracting uploaded iso9660 entry", "iso_path", fileInfo.Name(), "dest_path", filePath)
 		if fileInfo.IsDir() {
 			if err := os.MkdirAll(filePath, 0744); err != nil {
-				slog.ErrorCtx(ctx, "cannot create dir", "err", err)
+				slog.ErrorContext(ctx, "cannot create dir", "err", err)
 				return
 			}
 			continue
@@ -84,14 +84,14 @@ func Extract(ctx context.Context, imageId int64) {
 
 		parentDir, _ := filepath.Split(filePath)
 		if err := os.MkdirAll(parentDir, 0744); err != nil {
-			slog.ErrorCtx(ctx, "cannot create dir", "err", err)
+			slog.ErrorContext(ctx, "cannot create dir", "err", err)
 			return
 		}
 
 		reader := fileInfo.Sys().(io.Reader)
 		ff, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 		if err != nil {
-			slog.ErrorCtx(ctx, "cannot open file for writing", "err", err, "file", filePath)
+			slog.ErrorContext(ctx, "cannot open file for writing", "err", err, "file", filePath)
 			return
 		}
 
@@ -101,19 +101,19 @@ func Extract(ctx context.Context, imageId int64) {
 		closeErr := ff.Close()
 
 		if err != nil {
-			slog.ErrorCtx(ctx, "iso9660 copy error", "err", err)
+			slog.ErrorContext(ctx, "iso9660 copy error", "err", err)
 			return
 		} else if closeErr != nil {
-			slog.ErrorCtx(ctx, "close error", "err", err)
+			slog.ErrorContext(ctx, "close error", "err", err)
 			return
 		}
 
 		fileCount += 1
 		if fileCount > 100 {
-			slog.ErrorCtx(ctx, "too many files, giving up", "err", err)
+			slog.ErrorContext(ctx, "too many files, giving up", "err", err)
 			return
 		}
 
-		slog.InfoCtx(ctx, "extraction done", "file", path)
+		slog.InfoContext(ctx, "extraction done", "file", path)
 	}
 }

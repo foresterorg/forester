@@ -29,13 +29,13 @@ func (i SystemServiceImpl) Register(ctx context.Context, system *NewSystem) erro
 		if err != nil {
 			return fmt.Errorf("cannot parse hardware address '%s': %w", a, err)
 		}
-		slog.DebugCtx(ctx, "searching for existing host", "mac", mac.String())
+		slog.DebugContext(ctx, "searching for existing host", "mac", mac.String())
 		sys, err := dao.FindByMac(ctx, mac)
 		if err != nil && !errors.Is(err, db.ErrNoRows) {
 			return fmt.Errorf("cannot search existing systems for mac '%s': %w", mac.String(), err)
 		}
 		if sys != nil {
-			slog.DebugCtx(ctx, "found existing host", "mac", mac.String(), "id", sys.ID)
+			slog.DebugContext(ctx, "found existing host", "mac", mac.String(), "id", sys.ID)
 			existingSystem = sys
 		}
 
@@ -68,13 +68,13 @@ func (i SystemServiceImpl) Register(ctx context.Context, system *NewSystem) erro
 	}
 
 	if existingSystem != nil {
-		slog.DebugCtx(ctx, "updating existing system record",
+		slog.DebugContext(ctx, "updating existing system record",
 			"id", existingSystem.ID,
 			"mac", sys.HwAddrString(),
 		)
 		err = dao.RegisterExisting(ctx, existingSystem.ID, sys)
 	} else {
-		slog.DebugCtx(ctx, "creating new system record", "mac", sys.HwAddrString())
+		slog.DebugContext(ctx, "creating new system record", "mac", sys.HwAddrString())
 		err = dao.Register(ctx, sys)
 	}
 	if err != nil {

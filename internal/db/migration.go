@@ -57,7 +57,7 @@ var (
 )
 
 func Migrate(ctx context.Context, schema string) error {
-	slog.DebugCtx(ctx, "checking migrations")
+	slog.DebugContext(ctx, "checking migrations")
 	if schema == "" {
 		schema = "public"
 	}
@@ -83,7 +83,7 @@ func Migrate(ctx context.Context, schema string) error {
 	}
 
 	migrator.OnStart = func(sequence int32, name, direction, sql string) {
-		slog.InfoCtx(ctx, "executing  migration", "name", name, "direction", direction)
+		slog.InfoContext(ctx, "executing  migration", "name", name, "direction", direction)
 	}
 
 	err = migrator.Migrate(ctx)
@@ -91,7 +91,7 @@ func Migrate(ctx context.Context, schema string) error {
 		var mgErr *migrate.MigrationPgError
 		var pgErr *pgconn.PgError
 		if errors.As(err, &mgErr) && errors.As(err, &pgErr) {
-			slog.ErrorCtx(ctx, "migration error", "file", pgErr.File, "code", pgErr.Code, "detail", pgErr.Detail)
+			slog.ErrorContext(ctx, "migration error", "file", pgErr.File, "code", pgErr.Code, "detail", pgErr.Detail)
 			return fmt.Errorf("%w: %s", ErrMigration, pgErr.Message)
 		} else {
 			return fmt.Errorf("unable to perform migration: %w", err)

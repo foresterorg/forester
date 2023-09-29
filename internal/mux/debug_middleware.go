@@ -16,7 +16,7 @@ func DebugMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(wrw, r)
 		if slog.Default().Enabled(r.Context(), slog.LevelDebug) {
-			slog.DebugCtx(r.Context(), "payload contents", "payload", sb.String())
+			slog.DebugContext(r.Context(), "payload contents", "payload", sb.String())
 		}
 	}
 	return http.HandlerFunc(fn)

@@ -91,7 +91,7 @@ func (i ApplianceServiceImpl) Enlist(ctx context.Context, name string, namePatte
 			UID:           &system.UID,
 		}
 
-		slog.InfoCtx(ctx, "registering system",
+		slog.InfoContext(ctx, "registering system",
 			"mac", strings.Join(ns.HwAddrs, ","),
 			"uuid", system.UID,
 			"appliance", app.Name,

@@ -12,7 +12,7 @@ var emptyAttr = slog.Attr{}
 
 // Initialize configures logging system. Use slog package to create log entries.
 // Make sure to use context variants when context is available, for example
-// slog.InfoCtx.
+// slog.InfoContext.
 func Initialize(level slog.Level) {
 	th := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: level,

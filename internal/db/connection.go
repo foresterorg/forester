@@ -50,7 +50,7 @@ func Initialize(ctx context.Context, schema string) error {
 	if err != nil {
 		return fmt.Errorf("unable to parse db configuration: %w", err)
 	}
-	slog.DebugCtx(ctx, "connecting to database", "conn_string", connStr)
+	slog.DebugContext(ctx, "connecting to database", "conn_string", connStr)
 
 	poolConfig.MaxConns = config.Database.MaxConn
 	poolConfig.MinConns = config.Database.MinConn

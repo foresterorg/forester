@@ -42,7 +42,7 @@ func libvirtFromURI(ctx context.Context, uri string) (*libvirt.Libvirt, error) {
 	var dialer socket.Dialer
 	var v *libvirt.Libvirt
 
-	slog.DebugCtx(ctx, "connecting to libvirt", "uri", uri)
+	slog.DebugContext(ctx, "connecting to libvirt", "uri", uri)
 	parsed, err := url.Parse(uri)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse: %w", err)
@@ -54,7 +54,7 @@ func libvirtFromURI(ctx context.Context, uri string) (*libvirt.Libvirt, error) {
 	} else if parsed.Scheme == "tcp" {
 		host, _, _ := net.SplitHostPort(parsed.Host)
 		dialer = dialers.NewRemote(host, dialers.UsePort(parsed.Port()))
-		slog.DebugCtx(ctx, "dialer", "d", dialer)
+		slog.DebugContext(ctx, "dialer", "d", dialer)
 		v = libvirt.NewWithDialer(dialer)
 	} else {
 		return nil, ErrUnsupportedLibvirtScheme
@@ -171,7 +171,7 @@ func (m LibvirtMetal) Enlist(ctx context.Context, app *model.Appliance, pattern 
 				Facts:   facts,
 				UID:     uid,
 			}
-			slog.InfoCtx(ctx, "found system",
+			slog.InfoContext(ctx, "found system",
 				"mac", strings.Join(addrs, ","),
 				"uuid", uid,
 				"appliance", app.Name,
@@ -179,7 +179,7 @@ func (m LibvirtMetal) Enlist(ctx context.Context, app *model.Appliance, pattern 
 			)
 			result = append(result, er)
 		} else {
-			slog.InfoCtx(ctx, "system does not match the pattern",
+			slog.InfoContext(ctx, "system does not match the pattern",
 				"pattern", pattern,
 				"appliance", app.Name,
 				"name", d.Name,
