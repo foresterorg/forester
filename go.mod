@@ -18,6 +18,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/thanhpk/randstr v1.0.6
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
+	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 	libvirt.org/go/libvirtxml v1.9004.0
 )
 

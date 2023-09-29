@@ -17,7 +17,49 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/exp/slog"
+	"gopkg.in/mcuadros/go-syslog.v2"
 )
+
+func syslogd() {
+	channel := make(syslog.LogPartsChannel)
+	handler := syslog.NewChannelHandler(channel)
+
+	server := syslog.NewServer()
+	server.SetFormat(syslog.Automatic)
+	server.SetHandler(handler)
+	err := server.ListenUDP(fmt.Sprintf("0.0.0.0:%d", config.Application.SyslogPort))
+	if err != nil {
+		fmt.Printf("Cannot listen on UDP port %d: %s", config.Application.SyslogPort, err.Error())
+		os.Exit(1)
+	}
+	err = server.ListenTCP(fmt.Sprintf("0.0.0.0:%d", config.Application.SyslogPort))
+	if err != nil {
+		fmt.Printf("Cannot listen on TCP port %d: %s", config.Application.SyslogPort, err.Error())
+		os.Exit(1)
+	}
+	err = server.Boot()
+	if err != nil {
+		fmt.Printf("Cannot start syslog server on UDP port %d: %s", config.Application.SyslogPort, err.Error())
+		os.Exit(1)
+	}
+
+	go func(channel syslog.LogPartsChannel) {
+		// In the future, some ring-buffer could allow displaying or following live logs. Alternatively,
+		// logs could be stored in text files under hostname/session.log format where session would be
+		// hash of syslog.client field (IP:PORT). Send logs to the app logger for now.
+		for logParts := range channel {
+			var attrs []slog.Attr
+			for k, v := range logParts {
+				if k != "content" {
+					attrs = append(attrs, slog.Any(k, v))
+				}
+			}
+			slog.Debug(fmt.Sprintf("%s", logParts["content"]), "syslog", attrs)
+		}
+	}(channel)
+
+	server.Wait()
+}
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "-h" {
@@ -32,6 +74,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	go syslogd()
 
 	err = db.Initialize(ctx, "public")
 	if err != nil {

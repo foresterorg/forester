@@ -1,6 +1,6 @@
 echo "FORESTER PROJECT version {{ .Version }}"
 echo "Booting Anaconda..."
 
-linuxefi /img/{{ .ImageID }}/images/pxeboot/vmlinuz inst.stage2={{ .BaseURL }}/img/{{ .ImageID }} ip=dhcp inst.text inst.sshd inst.ks.sendmac inst.ks={{ .BaseURL }}/ks
+linuxefi /img/{{ .ImageID }}/images/pxeboot/vmlinuz inst.stage2={{ .BaseURL }}/img/{{ .ImageID }} ip=dhcp inst.text inst.sshd inst.ks.sendmac inst.ks={{ .BaseURL }}/ks inst.syslog={{ .BaseHost }}:{{ .SyslogPort }}
 initrdefi /img/{{ .ImageID }}/images/pxeboot/initrd.img
 boot

@@ -1,8 +1,8 @@
 # deprecated/removed
 #install
 #auth  --useshadow  --passalgo=sha512
-#logging --level=info
 
+logging --host {{ .BaseHost }} --port {{ .SyslogPort }}
 text
 skipx
 timezone Etc/UTC --utc
@@ -19,3 +19,8 @@ bootloader --location=mbr --timeout=1 --append="console=tty1 console=ttyS0,11520
 clearpart --all --initlabel
 autopart
 reboot
+
+#poweroff
+#%post
+#curl --silent -X POST "{{ .BaseURL }}/done/"
+#%end

@@ -54,7 +54,6 @@ func libvirtFromURI(ctx context.Context, uri string) (*libvirt.Libvirt, error) {
 	} else if parsed.Scheme == "tcp" {
 		host, _, _ := net.SplitHostPort(parsed.Host)
 		dialer = dialers.NewRemote(host, dialers.UsePort(parsed.Port()))
-		slog.DebugContext(ctx, "dialer", "d", dialer)
 		v = libvirt.NewWithDialer(dialer)
 	} else {
 		return nil, ErrUnsupportedLibvirtScheme
@@ -129,14 +128,17 @@ func (m LibvirtMetal) Enlist(ctx context.Context, app *model.Appliance, pattern 
 	}
 
 	if err := v.Connect(); err != nil {
+		slog.ErrorContext(ctx, "cannot connect to libvirt", "err", err.Error())
 		return nil, fmt.Errorf("cannot connect: %w", err)
 	}
 	defer v.Disconnect()
 
 	domains, _, err := v.ConnectListAllDomains(1, 0)
 	if err != nil {
+		slog.ErrorContext(ctx, "cannot list libvirt domains", "err", err.Error())
 		return nil, fmt.Errorf("cannot list domains: %w", err)
 	}
+	slog.DebugContext(ctx, "listed all libvirt domains", "count", len(domains))
 
 	rg, err := regexp.Compile(pattern)
 	if err != nil {
@@ -146,6 +148,7 @@ func (m LibvirtMetal) Enlist(ctx context.Context, app *model.Appliance, pattern 
 	var result []*EnlistResult
 	for _, d := range domains {
 		uid := uuid.UUID(d.UUID).String()
+		slog.DebugContext(ctx, "looking up vm", "uuid", uid)
 		xmlString, err := v.DomainGetXMLDesc(d, 0)
 		if err != nil {
 			return nil, fmt.Errorf("cannot get domain details: %w", err)

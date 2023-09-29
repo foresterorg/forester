@@ -80,6 +80,7 @@ func (i ApplianceServiceImpl) Enlist(ctx context.Context, name string, namePatte
 	}
 	systems, err := metal.Enlist(ctx, app, namePattern)
 	if err != nil {
+		slog.ErrorContext(ctx, "error when enlisting", "err", err.Error())
 		return fmt.Errorf("cannot enlist: %w", err)
 	}
 

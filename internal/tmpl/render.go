@@ -6,6 +6,7 @@ import (
 	"forester/internal/config"
 	"forester/internal/version"
 	"io"
+	"strconv"
 	"text/template"
 )
 import _ "embed"
@@ -25,8 +26,10 @@ func init() {
 
 func commonParams() *CommonParams {
 	return &CommonParams{
-		BaseURL: config.BaseURL(),
-		Version: version.BuildTag,
+		BaseHost:   config.Hostname,
+		BaseURL:    config.BaseURL(),
+		Version:    version.BuildTag,
+		SyslogPort: strconv.Itoa(config.Application.SyslogPort),
 	}
 }
 

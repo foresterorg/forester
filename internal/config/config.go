@@ -16,6 +16,7 @@ import (
 var config struct {
 	App struct {
 		Port            int           `env:"PORT" env-default:"8000" env-description:"HTTP port of the API service"`
+		SyslogPort      int           `env:"SYSLOG_PORT" env-default:"8514" env-description:"syslog TCP and UDP port"`
 		Hostname        string        `env:"HOSTNAME" env-default:"" env-description:"hostname of the service"`
 		InstallDuration time.Duration `env:"INSTALL_DURATION" env-default:"1h" env-description:"duration for which the service initiates provisioning after acquire"`
 	} `env-prefix:"APP_"`
@@ -125,4 +126,8 @@ func BootPath() string {
 
 func BaseURL() string {
 	return fmt.Sprintf("http://%s:%d", Hostname, config.App.Port)
+}
+
+func BaseHost() string {
+	return Hostname
 }

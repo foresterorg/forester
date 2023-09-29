@@ -1,8 +1,10 @@
 package tmpl
 
 type CommonParams struct {
-	BaseURL string
-	Version string
+	BaseHost   string
+	BaseURL    string
+	SyslogPort string
+	Version    string
 }
 
 type GrubErrorParams struct {
