@@ -11,20 +11,22 @@ import (
 	"forester/internal/logging"
 	"forester/internal/mux"
 	"net/http"
+	"net/netip"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/exp/slog"
 	"gopkg.in/mcuadros/go-syslog.v2"
 )
 
-func syslogd() {
+func startSyslog(ctx context.Context, server *syslog.Server) {
 	channel := make(syslog.LogPartsChannel)
 	handler := syslog.NewChannelHandler(channel)
 
-	server := syslog.NewServer()
 	server.SetFormat(syslog.Automatic)
 	server.SetHandler(handler)
 	err := server.ListenUDP(fmt.Sprintf("0.0.0.0:%d", config.Application.SyslogPort))
@@ -43,22 +45,70 @@ func syslogd() {
 		os.Exit(1)
 	}
 
-	go func(channel syslog.LogPartsChannel) {
-		// In the future, some ring-buffer could allow displaying or following live logs. Alternatively,
-		// logs could be stored in text files under hostname/session.log format where session would be
-		// hash of syslog.client field (IP:PORT). Send logs to the app logger for now.
-		for logParts := range channel {
-			var attrs []slog.Attr
-			for k, v := range logParts {
-				if k != "content" {
-					attrs = append(attrs, slog.Any(k, v))
-				}
-			}
-			slog.Debug(fmt.Sprintf("%s", logParts["content"]), "syslog", attrs)
-		}
-	}(channel)
+	go syslogHandler(ctx, channel)
+}
 
-	server.Wait()
+func closeFiles(files map[netip.Addr]*os.File) {
+	for k, f := range files {
+		slog.Debug("closing syslog file", "file", f.Name())
+		err := f.Close()
+		if err != nil {
+			slog.Error("cannot close", "file", f.Name(), "err", err.Error())
+		}
+		delete(files, k)
+	}
+}
+
+func syslogHandler(ctx context.Context, channel syslog.LogPartsChannel) {
+	files := make(map[netip.Addr]*os.File)
+	defer closeFiles(files)
+	closeTicker := time.Tick(time.Second * 5)
+
+	for {
+		select {
+		case logParts := <-channel:
+			client, ok := logParts["client"]
+			if !ok {
+				client = "0.0.0.0:0"
+			}
+			ap, err := netip.ParseAddrPort(client.(string))
+			if err != nil {
+				slog.ErrorContext(ctx, "cannot parse syslog client field", "err", err.Error())
+				continue
+			}
+			f, ok := files[ap.Addr()]
+			if !ok {
+				var err error
+				name := fmt.Sprintf("%s_%s.log", time.Now().Format("2006-02-01"), ap.Addr().String())
+				slog.DebugContext(ctx, "opening syslog file", "file", name)
+				fp := path.Join(config.Logging.SyslogDir, name)
+				f, err = os.OpenFile(fp, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				if err != nil {
+					slog.ErrorContext(ctx, "cannot open file for appending", "file", fp, "err", err.Error())
+				}
+				files[ap.Addr()] = f
+				slog.DebugContext(ctx, "file map", "size", len(files))
+			}
+
+			if _, err := f.WriteString(fmt.Sprintf("%s\n", logParts["content"])); err != nil {
+				slog.ErrorContext(ctx, "cannot append to file", "file", f.Name(), "err", err.Error())
+			}
+
+			if config.Logging.Syslog {
+				var attrs []slog.Attr
+				for k, v := range logParts {
+					if k != "content" {
+						attrs = append(attrs, slog.Any(k, v))
+					}
+				}
+				slog.DebugContext(ctx, fmt.Sprintf("%s", logParts["content"]), "syslog", attrs)
+			}
+		case <-closeTicker:
+			closeFiles(files)
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 func main() {
@@ -75,7 +125,10 @@ func main() {
 		panic(err)
 	}
 
-	go syslogd()
+	syslogServer := syslog.NewServer()
+	syslogCtx, syslogCancel := context.WithCancel(ctx)
+	defer syslogCancel()
+	startSyslog(syslogCtx, syslogServer)
 
 	err = db.Initialize(ctx, "public")
 	if err != nil {
@@ -130,6 +183,13 @@ func main() {
 
 	slog.DebugContext(ctx, "waiting for extracting jobs to complete")
 	img.ExtractWG.Wait()
+
+	slog.DebugContext(ctx, "stopping syslog listeners")
+	err = syslogServer.Kill()
+	if err != nil {
+		slog.ErrorContext(ctx, "cannot stop syslog server", "err", err)
+	}
+	syslogServer.Wait()
 
 	slog.DebugContext(ctx, "shutdown complete")
 }
