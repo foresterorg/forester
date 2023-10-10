@@ -42,6 +42,7 @@ type SystemDao interface {
 	FindByID(ctx context.Context, id int64) (*model.System, error)
 	FindByMac(ctx context.Context, mac net.HardwareAddr) (*model.System, error)
 	FindRelated(ctx context.Context, pattern string) (*model.SystemAppliance, error)
+	FindByIDRelated(ctx context.Context, id int64) (*model.SystemAppliance, error)
 	FindByMacRelated(ctx context.Context, mac net.HardwareAddr) (*model.SystemAppliance, error)
 }
 

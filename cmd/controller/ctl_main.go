@@ -54,23 +54,32 @@ func startSyslog(ctx context.Context, server *syslog.Server) {
 	go syslogHandler(ctx, channel)
 }
 
-func closeFiles(files map[netip.Addr]*os.File) {
+func closeFiles(files map[netip.Addr]SyslogWriter) {
 	for k, f := range files {
-		if f == nil {
+		if f.File == nil {
 			delete(files, k)
 			continue
 		}
-		slog.Debug("closing syslog file", "file", f.Name())
-		err := f.Close()
-		if err != nil {
-			slog.Error("cannot close", "file", f.Name(), "err", err.Error())
+
+		if f.LastWrite.Before(time.Now().Add(time.Duration(-5) * time.Second)) {
+			slog.Debug("closing syslog file after timeout", "file", f.File.Name())
+			err := f.File.Close()
+			if err != nil {
+				slog.Error("cannot close", "file", f.File.Name(), "err", err.Error())
+			}
+			delete(files, k)
 		}
-		delete(files, k)
 	}
 }
 
+type SyslogWriter struct {
+	File      *os.File
+	LastWrite time.Time
+}
+
 func syslogHandler(ctx context.Context, channel syslog.LogPartsChannel) {
-	files := make(map[netip.Addr]*os.File)
+	// TODO store last access timestamp and close only
+	files := make(map[netip.Addr]SyslogWriter)
 	defer closeFiles(files)
 	closeTicker := time.Tick(time.Second * 5)
 
@@ -86,22 +95,23 @@ func syslogHandler(ctx context.Context, channel syslog.LogPartsChannel) {
 				slog.ErrorContext(ctx, "cannot parse syslog client field", "err", err.Error())
 				continue
 			}
-			f, ok := files[ap.Addr()]
+			sw, ok := files[ap.Addr()]
 			if !ok {
 				var err error
 				name := fmt.Sprintf("%s_%s.log", time.Now().Format("2006-02-01"), ap.Addr().String())
 				slog.DebugContext(ctx, "opening syslog file", "file", name)
 				fp := path.Join(config.Logging.SyslogDir, name)
-				f, err = os.OpenFile(fp, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				sw.File, err = os.OpenFile(fp, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 				if err != nil {
 					slog.ErrorContext(ctx, "cannot open file for appending", "file", fp, "err", err.Error())
 				}
-				files[ap.Addr()] = f
+				files[ap.Addr()] = sw
 				slog.DebugContext(ctx, "file map", "size", len(files))
 			}
 
-			if _, err := f.WriteString(fmt.Sprintf("%s\n", logParts["content"])); err != nil {
-				slog.ErrorContext(ctx, "cannot append to file", "file", f.Name(), "err", err.Error())
+			sw.LastWrite = time.Now()
+			if _, err := sw.File.WriteString(fmt.Sprintf("%s\n", logParts["content"])); err != nil {
+				slog.ErrorContext(ctx, "cannot append to file", "file", sw.File.Name(), "err", err.Error())
 			}
 
 			if config.Logging.Syslog {
