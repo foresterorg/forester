@@ -18,9 +18,8 @@ zerombr
 bootloader --location=mbr --timeout=1 --append="console=tty1 console=ttyS0,115200n8"
 clearpart --all --initlabel
 autopart
-reboot
+{{ .LastAction }}
 
-#poweroff
-#%post
-#curl --silent -X POST "{{ .BaseURL }}/done/"
-#%end
+%post
+curl --silent -X POST "{{ .BaseURL }}/done/{{ .SystemID }}"
+%end

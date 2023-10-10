@@ -45,11 +45,21 @@ func startSyslog(ctx context.Context, server *syslog.Server) {
 		os.Exit(1)
 	}
 
+	err = os.MkdirAll(config.Logging.SyslogDir, 0x755)
+	if err != nil {
+		fmt.Printf("Cannot create syslog dir %s: %s", config.Logging.SyslogDir, err.Error())
+		os.Exit(1)
+	}
+
 	go syslogHandler(ctx, channel)
 }
 
 func closeFiles(files map[netip.Addr]*os.File) {
 	for k, f := range files {
+		if f == nil {
+			delete(files, k)
+			continue
+		}
 		slog.Debug("closing syslog file", "file", f.Name())
 		err := f.Close()
 		if err != nil {
@@ -126,9 +136,11 @@ func main() {
 	}
 
 	syslogServer := syslog.NewServer()
-	syslogCtx, syslogCancel := context.WithCancel(ctx)
-	defer syslogCancel()
-	startSyslog(syslogCtx, syslogServer)
+	if config.Logging.Syslog {
+		syslogCtx, syslogCancel := context.WithCancel(ctx)
+		defer syslogCancel()
+		startSyslog(syslogCtx, syslogServer)
+	}
 
 	err = db.Initialize(ctx, "public")
 	if err != nil {
@@ -144,15 +156,18 @@ func main() {
 	bootRouter := chi.NewRouter()
 	imgRouter := chi.NewRouter()
 	ksRouter := chi.NewRouter()
+	doneRouter := chi.NewRouter()
 
 	rootRouter.Use(mux.TraceIdMiddleware)
 
 	mux.MountBoot(bootRouter)
 	mux.MountImages(imgRouter)
 	mux.MountKickstart(ksRouter)
+	mux.MountDone(doneRouter)
 	rootRouter.Mount("/boot", bootRouter)
 	rootRouter.Mount("/img", imgRouter)
 	rootRouter.Mount("/ks", ksRouter)
+	rootRouter.Mount("/done", doneRouter)
 	ctl.MountServices(rootRouter)
 
 	rootServer := http.Server{

@@ -17,9 +17,34 @@ type GrubKernelParams struct {
 	ImageID int64
 }
 
+type LastAction int
+
+const (
+	RebootLastAction   LastAction = iota
+	PoweroffLastAction LastAction = iota
+	ShutdownLastAction LastAction = iota
+	HaltLastAction     LastAction = iota
+)
+
+func (la LastAction) String() string {
+	switch la {
+	case RebootLastAction:
+		return "reboot"
+	case PoweroffLastAction:
+		return "poweroff"
+	case ShutdownLastAction:
+		return "shutdown"
+	case HaltLastAction:
+		return "halt"
+	}
+	return ""
+}
+
 type KickstartParams struct {
 	*CommonParams
-	ImageID int64
+	ImageID    int64
+	SystemID   int64
+	LastAction LastAction
 }
 
 type KickstartErrorParams struct {

@@ -62,7 +62,20 @@ func HandleKickstart(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if system != nil && system.Installable() {
-		err = tmpl.RenderKickstartInstall(w, tmpl.KickstartParams{ImageID: *system.ImageID})
+		la := tmpl.RebootLastAction
+		aDao := db.GetApplianceDao(r.Context())
+		appliance, err := aDao.FindByID(r.Context(), *system.ApplianceID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			slog.DebugContext(r.Context(), "installing a system without appliance")
+		} else if err != nil {
+			slog.ErrorContext(r.Context(), "error while fetching appliance for system", "id", system.ID)
+			renderKsError(err, w, r)
+			return
+		}
+		if appliance != nil && appliance.Kind == model.LibvirtKind {
+			la = tmpl.ShutdownLastAction
+		}
+		err = tmpl.RenderKickstartInstall(w, tmpl.KickstartParams{SystemID: system.ID, ImageID: *system.ImageID, LastAction: la})
 	} else if system != nil && !system.Installable() {
 		slog.WarnContext(r.Context(), "system found but not installable",
 			"id", system.ID,
