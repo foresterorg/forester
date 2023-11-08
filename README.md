@@ -8,6 +8,10 @@ Builder through Anaconda.
 More information, quick start and documentation available at
 https://foresterorg.github.io
 
+**API**
+
+The service API is RPC over HTTP with [OpenAPI Specification](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/foresterorg/forester/main/openapi.gen.yaml)
+
 **Feedback and support**
 
 Visit our [discussion forums](https://github.com/foresterorg/forester/discussions)!
