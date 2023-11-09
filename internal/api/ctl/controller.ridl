@@ -54,3 +54,16 @@ service SystemService
   - List(limit: int64, offset: int64) => (systems: []System)
   - BootNetwork(systemPattern: string)
   - BootLocal(systemPattern: string)
+
+struct Snippet
+  - ID: int64
+  - Name: string
+  - Kind: int16
+  - Body: string
+
+service SnippetService
+  - Create(name: string, kind: int16, body: string)
+  - Find(name: string) => (snippet: Snippet)
+  - Edit(name: string, body: string)
+  - List(limit: int64, offset: int64) => (snippets: []Snippet)
+  - Delete(name: string)

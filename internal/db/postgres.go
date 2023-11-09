@@ -55,3 +55,14 @@ type ApplianceDao interface {
 	List(ctx context.Context, limit, offset int64) ([]*model.Appliance, error)
 	Delete(ctx context.Context, id int64) error
 }
+
+var GetSnippetDao func(ctx context.Context) SnippetDao
+
+type SnippetDao interface {
+	Create(ctx context.Context, a *model.Snippet) error
+	Find(ctx context.Context, name string) (*model.Snippet, error)
+	FindByID(ctx context.Context, id int64) (*model.Snippet, error)
+	List(ctx context.Context, limit, offset int64) ([]*model.Snippet, error)
+	EditByName(ctx context.Context, name, body string) error
+	DeleteByName(ctx context.Context, name string) error
+}
