@@ -6,25 +6,33 @@ network --bootproto=dhcp --device=link --activate --onboot=on
 logging --host {{ .BaseHost }} --port {{ .SyslogPort }}
 text
 skipx
-timezone Etc/UTC --utc
-keyboard 'us'
+{{ range .Snippets.locale }}
+{{- . }}
+{{ else -}}
 lang en_US.UTF-8
-firstboot --disable
+keyboard 'us'
+timezone Etc/UTC --utc
+{{ end -}}
 liveimg --url={{ .BaseURL }}/img/{{ .ImageID }}/liveimg.tar.gz
 {{ range .Snippets.rootpw }}
-    {{- . }}
+{{- . }}
 {{ else -}}
-  rootpw --iscrypted --lock locked
+rootpw --iscrypted --lock locked
 {{ end -}}
+{{ range .Snippets.security }}
+{{- . }}
+{{ else -}}
+firstboot --disable
 firewall --enabled --ssh
 selinux --enforcing
+{{ end -}}
 {{ range .Snippets.disk }}
-    {{- . }}
+{{- . }}
 {{ else -}}
-  zerombr
-  clearpart --all --initlabel
-  autopart
-  bootloader --location=mbr --timeout=1 --append="console=tty1 console=ttyS0,115200n8"
+zerombr
+clearpart --all --initlabel
+autopart
+bootloader --location=mbr --timeout=1 --append="console=tty1 console=ttyS0,115200n8"
 {{ end -}}
 {{ .LastAction }}
 

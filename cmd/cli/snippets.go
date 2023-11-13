@@ -43,6 +43,10 @@ func snippetKindToInt(kind string) int16 {
 		return 2
 	case "rootpw":
 		return 3
+	case "security":
+		return 4
+	case "locale":
+		return 5
 	default:
 		panic(fmt.Sprintf("unknown kind: %s", kind))
 	}
@@ -56,6 +60,10 @@ func snippetIntToKind(kind int16) string {
 		return "post"
 	case 3:
 		return "rootpw"
+	case 4:
+		return "security"
+	case 5:
+		return "locale"
 	default:
 		panic(fmt.Sprintf("unknown kind: %d", kind))
 	}
