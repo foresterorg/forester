@@ -7,3 +7,10 @@ CREATE TABLE snippets
 );
 
 CREATE INDEX idx_snippets_kind ON snippets(kind);
+
+CREATE TABLE systems_snippets
+(
+  system_id BIGINT REFERENCES systems(id) ON DELETE CASCADE ON UPDATE CASCADE,
+  snippet_id BIGINT REFERENCES snippets(id) ON DELETE CASCADE ON UPDATE CASCADE,
+  PRIMARY KEY(system_id, snippet_id)
+)

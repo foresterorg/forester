@@ -53,6 +53,25 @@ func (dao snippetDao) FindByID(ctx context.Context, id int64) (*model.Snippet, e
 	return result, nil
 }
 
+func (dao snippetDao) FindByKind(ctx context.Context, systemID int64, kind model.SnippetKind) ([]string, error) {
+	query := `SELECT snippets.body FROM systems_snippets, snippets
+	WHERE systems_snippets.snippet_id = snippets.id AND
+    systems_snippets.system_id = $1 AND snippets.kind = $2`
+
+	var result []string
+	rows, err := Pool.Query(ctx, query, systemID, kind)
+	if err != nil {
+		return nil, fmt.Errorf("select error: %w", err)
+	}
+
+	err = pgxscan.ScanAll(&result, rows)
+	if err != nil {
+		return nil, fmt.Errorf("select error: %w", err)
+	}
+
+	return result, nil
+}
+
 func (dao snippetDao) List(ctx context.Context, limit, offset int64) ([]*model.Snippet, error) {
 	query := `SELECT * FROM snippets ORDER BY id LIMIT $1 OFFSET $2`
 

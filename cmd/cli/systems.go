@@ -27,10 +27,15 @@ type systemListCmd struct {
 	Offset       int64    `arg:"-o" default:"0"`
 }
 
+type systemKickstartCmd struct {
+	Pattern string `arg:"positional,required" placeholder:"MAC_OR_NAME"`
+}
+
 type systemAcquireCmd struct {
-	Pattern   string `arg:"positional,required" placeholder:"MAC_OR_NAME"`
-	ImageName string `arg:"-i,required"`
-	Comment   string `arg:"-c"`
+	Pattern  string   `arg:"positional,required" placeholder:"MAC_OR_NAME"`
+	Image    string   `arg:"-i,required"`
+	Snippets []string `arg:"-s"`
+	Comment  string   `arg:"-c"`
 }
 
 type systemReleaseCmd struct {
@@ -51,6 +56,7 @@ type systemCmd struct {
 	Show        *systemShowCmd        `arg:"subcommand:show" help:"show system"`
 	Acquire     *systemAcquireCmd     `arg:"subcommand:acquire" help:"acquire system"`
 	Release     *systemReleaseCmd     `arg:"subcommand:release" help:"release system"`
+	Kickstart   *systemKickstartCmd   `arg:"subcommand:kickstart" help:"show system kickstart"`
 	BootNetwork *systemBootNetworkCmd `arg:"subcommand:bootnet" help:"reset (hard reboot) system and boot from network"`
 	BootLocal   *systemBootLocalCmd   `arg:"subcommand:bootlocal" help:"reset (hard reboot) system and boot from local drive"`
 }
@@ -152,9 +158,20 @@ func systemList(ctx context.Context, cmdArgs *systemListCmd) error {
 	return nil
 }
 
+func systemKickstart(ctx context.Context, cmdArgs *systemKickstartCmd) error {
+	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
+	body, err := client.Kickstart(ctx, cmdArgs.Pattern)
+	if err != nil {
+		return fmt.Errorf("cannot render kickstart: %w", err)
+	}
+
+	fmt.Print(body)
+	return nil
+}
+
 func systemAcquire(ctx context.Context, cmdArgs *systemAcquireCmd) error {
 	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
-	err := client.Acquire(ctx, cmdArgs.Pattern, cmdArgs.ImageName, cmdArgs.Comment)
+	err := client.Acquire(ctx, cmdArgs.Pattern, cmdArgs.Image, cmdArgs.Comment, cmdArgs.Snippets)
 	if err != nil {
 		return fmt.Errorf("cannot acquire system: %w", err)
 	}

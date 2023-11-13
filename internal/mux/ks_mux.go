@@ -1,11 +1,13 @@
 package mux
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"forester/internal/db"
 	"forester/internal/model"
 	"forester/internal/tmpl"
+	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -24,6 +26,62 @@ func MountKickstart(r *chi.Mux) {
 }
 
 var ErrMACHeaderInvalid = errors.New("invalid format of RHN MAC header")
+
+func RenderKickstartForSystem(ctx context.Context, system *model.System, w io.Writer) error {
+	if system != nil && system.Installable() {
+		la := tmpl.RebootLastAction
+		aDao := db.GetApplianceDao(ctx)
+		sDao := db.GetSnippetDao(ctx)
+
+		appliance, err := aDao.FindByID(ctx, *system.ApplianceID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			slog.DebugContext(ctx, "installing a system without appliance")
+		} else if err != nil {
+			slog.ErrorContext(ctx, "error while fetching appliance for system", "id", system.ID)
+			return err
+		}
+
+		// libvirt cannot be restarted due to boot order hook
+		if appliance != nil && appliance.Kind == model.LibvirtKind {
+			la = tmpl.ShutdownLastAction
+		}
+
+		// load params and snippets
+		params := tmpl.KickstartParams{
+			SystemID:   system.ID,
+			ImageID:    *system.ImageID,
+			LastAction: la,
+			Snippets:   make(map[string][]string),
+		}
+
+		for _, kind := range model.AllSnippetKinds {
+			snippets, err := sDao.FindByKind(ctx, system.ID, kind)
+			if err != nil {
+				return err
+			}
+			params.Snippets[kind.String()] = snippets
+		}
+
+		err = tmpl.RenderKickstartInstall(w, params)
+	} else if system != nil && !system.Installable() {
+		slog.WarnContext(ctx, "system found but not installable",
+			"id", system.ID,
+			"name", system.Name,
+			"acquired_at", system.AcquiredAt.String(),
+			"image_id", system.ImageID)
+		err := tmpl.RenderKickstartDiscover(w)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := tmpl.RenderKickstartDiscover(w)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 func HandleKickstart(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
@@ -61,34 +119,9 @@ func HandleKickstart(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if system != nil && system.Installable() {
-		la := tmpl.RebootLastAction
-		aDao := db.GetApplianceDao(r.Context())
-		appliance, err := aDao.FindByID(r.Context(), *system.ApplianceID)
-		if errors.Is(err, pgx.ErrNoRows) {
-			slog.DebugContext(r.Context(), "installing a system without appliance")
-		} else if err != nil {
-			slog.ErrorContext(r.Context(), "error while fetching appliance for system", "id", system.ID)
-			renderKsError(err, w, r)
-			return
-		}
-		if appliance != nil && appliance.Kind == model.LibvirtKind {
-			la = tmpl.ShutdownLastAction
-		}
-		err = tmpl.RenderKickstartInstall(w, tmpl.KickstartParams{SystemID: system.ID, ImageID: *system.ImageID, LastAction: la})
-	} else if system != nil && !system.Installable() {
-		slog.WarnContext(r.Context(), "system found but not installable",
-			"id", system.ID,
-			"name", system.Name,
-			"acquired_at", system.AcquiredAt.String(),
-			"image_id", system.ImageID)
-		err = tmpl.RenderKickstartDiscover(w)
-	} else {
-		err = tmpl.RenderKickstartDiscover(w)
-	}
+	err = RenderKickstartForSystem(r.Context(), system, w)
 	if err != nil {
 		renderKsError(err, w, r)
-		return
 	}
 }
 

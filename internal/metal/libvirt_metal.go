@@ -22,10 +22,14 @@ import (
 
 type LibvirtMetal struct{}
 
-func updateDomainBootDeviceXML(xmlString, device string) (string, error) {
+func updateDomainBootDeviceXML(ctx context.Context, xmlString, device string) (string, error) {
 	domain := libvirtxml.Domain{}
 	if err := xml.Unmarshal([]byte(xmlString), &domain); err != nil {
 		return "", fmt.Errorf("cannot unmarshal domain XML: %w", err)
+	}
+	// clear existing Boot elements which cannot be mixed with BootDevices
+	for i, _ := range domain.Devices.Disks {
+		domain.Devices.Disks[i].Boot = nil
 	}
 	domain.OS.BootDevices = []libvirtxml.DomainBootDevice{{Dev: device}}
 	bytes, err := xml.Marshal(domain)
@@ -33,10 +37,11 @@ func updateDomainBootDeviceXML(xmlString, device string) (string, error) {
 		return "", fmt.Errorf("cannot marshal domain XML: %w", err)
 	}
 
+	//slog.DebugContext(ctx, "domain xml", "body", domain)
 	return string(bytes), nil
 }
 
-var ErrUnsupportedLibvirtScheme = errors.New("unsupported scheme, valid options are: unix")
+var ErrUnsupportedLibvirtScheme = errors.New("unsupported libvirt URI scheme")
 
 func libvirtFromURI(ctx context.Context, uri string) (*libvirt.Libvirt, error) {
 	var dialer socket.Dialer
@@ -48,7 +53,9 @@ func libvirtFromURI(ctx context.Context, uri string) (*libvirt.Libvirt, error) {
 		return nil, fmt.Errorf("cannot parse: %w", err)
 	}
 
-	if parsed.Scheme == "unix" {
+	if parsed.Scheme == "qemu" {
+		v = libvirt.NewWithDialer(dialers.NewLocal())
+	} else if parsed.Scheme == "unix" {
 		dialer = dialers.NewLocal(dialers.WithSocket(parsed.Path))
 		v = libvirt.NewWithDialer(dialer)
 	} else if parsed.Scheme == "tcp" {
@@ -89,7 +96,7 @@ func bootDevice(ctx context.Context, system *model.SystemAppliance, device strin
 		return fmt.Errorf("cannot get domain: %w", err)
 	}
 
-	newXML, err := updateDomainBootDeviceXML(xmlString, device)
+	newXML, err := updateDomainBootDeviceXML(ctx, xmlString, device)
 
 	if err != nil {
 		return fmt.Errorf("cannot update domain XML: %w", err)
@@ -133,12 +140,12 @@ func (m LibvirtMetal) Enlist(ctx context.Context, app *model.Appliance, pattern 
 	}
 	defer v.Disconnect()
 
-	domains, _, err := v.ConnectListAllDomains(1, 0)
+	domains, ret, err := v.ConnectListAllDomains(1, 0)
 	if err != nil {
 		slog.ErrorContext(ctx, "cannot list libvirt domains", "err", err.Error())
 		return nil, fmt.Errorf("cannot list domains: %w", err)
 	}
-	slog.DebugContext(ctx, "listed all libvirt domains", "count", len(domains))
+	slog.DebugContext(ctx, "listed all libvirt domains", "count", len(domains), "return", ret)
 
 	rg, err := regexp.Compile(pattern)
 	if err != nil {

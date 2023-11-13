@@ -2,6 +2,7 @@
 #install
 #auth  --useshadow  --passalgo=sha512
 
+network --bootproto=dhcp --device=link --activate --onboot=on
 logging --host {{ .BaseHost }} --port {{ .SyslogPort }}
 text
 skipx
@@ -10,15 +11,26 @@ keyboard 'us'
 lang en_US.UTF-8
 firstboot --disable
 liveimg --url={{ .BaseURL }}/img/{{ .ImageID }}/liveimg.tar.gz
-rootpw --iscrypted --lock locked
+{{ range .Snippets.rootpw }}
+    {{- . }}
+{{ else -}}
+  rootpw --iscrypted --lock locked
+{{ end -}}
 firewall --enabled --ssh
 selinux --enforcing
-network --bootproto=dhcp --device=link --activate --onboot=on
-zerombr
-bootloader --location=mbr --timeout=1 --append="console=tty1 console=ttyS0,115200n8"
-clearpart --all --initlabel
-autopart
+{{ range .Snippets.disk }}
+    {{- . }}
+{{ else -}}
+  zerombr
+  clearpart --all --initlabel
+  autopart
+  bootloader --location=mbr --timeout=1 --append="console=tty1 console=ttyS0,115200n8"
+{{ end -}}
 {{ .LastAction }}
+
+{{ range .Snippets.post }}
+{{- . }}
+{{ end -}}
 
 %post
 curl --silent -X POST "{{ .BaseURL }}/done/{{ .SystemID }}"

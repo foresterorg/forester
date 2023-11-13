@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"forester/internal/model"
+	"github.com/jackc/pgx/v5"
+	"golang.org/x/exp/slog"
 	"net"
 	"strconv"
 	"strings"
@@ -60,24 +62,52 @@ func (dao systemDao) List(ctx context.Context, limit, offset int64) ([]*model.Sy
 	return result, nil
 }
 
-func (dao systemDao) Acquire(ctx context.Context, systemId, imageId int64, comment string) error {
-	query := `UPDATE systems SET
+func (dao systemDao) Acquire(ctx context.Context, systemId, imageId int64, comment string, snippets []int64) error {
+	txErr := WithTransaction(ctx, func(tx pgx.Tx) error {
+		updateQuery := `UPDATE systems SET
 		acquired = true,
 		acquired_at = current_timestamp,
 		image_id = $2,
 		comment = $3
 		WHERE id = $1 AND acquired = false`
 
-	tag, err := Pool.Exec(ctx, query, systemId, imageId, comment)
-	if err != nil {
-		return fmt.Errorf("update error: %w", err)
-	}
+		tag, err := tx.Exec(ctx, updateQuery, systemId, imageId, comment)
+		if err != nil {
+			return fmt.Errorf("update error: %w", err)
+		}
 
-	if tag.RowsAffected() != 1 {
-		return fmt.Errorf("cannot find unacquired system with ID=%d: %w", systemId, ErrAffectedMismatch)
-	}
+		if tag.RowsAffected() != 1 {
+			return fmt.Errorf("cannot find unacquired system with ID=%d: %w", systemId, ErrAffectedMismatch)
+		}
 
-	return nil
+		deleteQuery := `DELETE FROM systems_snippets WHERE system_id = $1`
+		tag, err = tx.Exec(ctx, deleteQuery, systemId)
+		if err != nil {
+			return fmt.Errorf("delete snippets error: %w", err)
+		}
+		slog.DebugContext(ctx, "deleted existing snippets", "affected", tag.RowsAffected())
+
+		batch := &pgx.Batch{}
+		for _, s := range snippets {
+			batch.Queue("INSERT INTO systems_snippets VALUES ($1, $2)", systemId, s)
+		}
+		br := tx.SendBatch(ctx, batch)
+		defer br.Close()
+		tag, err = br.Exec()
+
+		if err != nil {
+			return fmt.Errorf("batch insert error: %w", err)
+		}
+
+		if tag.RowsAffected() != 1 {
+			return fmt.Errorf("batch insert row mismatch, expected %d got %d", len(snippets), tag.RowsAffected())
+		}
+		slog.DebugContext(ctx, "saved snippets", "affected", tag.RowsAffected())
+
+		return nil
+	})
+
+	return txErr
 }
 
 func (dao systemDao) Release(ctx context.Context, systemId int64) error {

@@ -58,7 +58,7 @@ func HandleDone(w http.ResponseWriter, r *http.Request) {
 
 func bootLocal(ctx context.Context, m metal.Metal, s *model.SystemAppliance) {
 	slog.InfoContext(ctx, "will boot system locally", "system_id", s.System.ID)
-	time.Sleep(5 * time.Second)
+	time.Sleep(30 * time.Second)
 	slog.InfoContext(ctx, "booting system locally", "system_id", s.System.ID)
 	err := m.BootLocal(ctx, s)
 	if err != nil {

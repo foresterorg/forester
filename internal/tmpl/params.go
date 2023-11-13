@@ -45,6 +45,7 @@ type KickstartParams struct {
 	ImageID    int64
 	SystemID   int64
 	LastAction LastAction
+	Snippets   map[string][]string
 }
 
 type KickstartErrorParams struct {

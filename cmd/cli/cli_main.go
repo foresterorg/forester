@@ -63,6 +63,8 @@ func main() {
 			err = systemShow(ctx, cmd)
 		} else if cmd := args.System.List; cmd != nil {
 			err = systemList(ctx, cmd)
+		} else if cmd := args.System.Kickstart; cmd != nil {
+			err = systemKickstart(ctx, cmd)
 		} else if cmd := args.System.Acquire; cmd != nil {
 			err = systemAcquire(ctx, cmd)
 		} else if cmd := args.System.Release; cmd != nil {

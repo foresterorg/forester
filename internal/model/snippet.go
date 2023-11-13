@@ -20,7 +20,14 @@ const (
 	ReservedSnippetKind = iota
 	DiskSnippetKind     = iota
 	PostSnippetKind     = iota
+	RootPwSnippetKind   = iota
 )
+
+var AllSnippetKinds = []SnippetKind{
+	DiskSnippetKind,
+	PostSnippetKind,
+	RootPwSnippetKind,
+}
 
 func ParseSnippetKind(i int16) SnippetKind {
 	switch i {
@@ -30,7 +37,21 @@ func ParseSnippetKind(i int16) SnippetKind {
 		return DiskSnippetKind
 	case 2:
 		return PostSnippetKind
+	case 3:
+		return RootPwSnippetKind
 	default:
 		return -1
 	}
+}
+
+func (sk SnippetKind) String() string {
+	switch sk {
+	case DiskSnippetKind:
+		return "disk"
+	case PostSnippetKind:
+		return "post"
+	case RootPwSnippetKind:
+		return "rootpw"
+	}
+	return ""
 }

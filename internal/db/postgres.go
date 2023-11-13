@@ -36,7 +36,7 @@ type SystemDao interface {
 	Register(ctx context.Context, sys *model.System) error
 	RegisterExisting(ctx context.Context, id int64, sys *model.System) error
 	List(ctx context.Context, limit, offset int64) ([]*model.System, error)
-	Acquire(ctx context.Context, systemId, imageId int64, comment string) error
+	Acquire(ctx context.Context, systemId, imageId int64, comment string, snippets []int64) error
 	Release(ctx context.Context, systemId int64) error
 	Find(ctx context.Context, pattern string) (*model.System, error)
 	FindByID(ctx context.Context, id int64) (*model.System, error)
@@ -62,6 +62,7 @@ type SnippetDao interface {
 	Create(ctx context.Context, a *model.Snippet) error
 	Find(ctx context.Context, name string) (*model.Snippet, error)
 	FindByID(ctx context.Context, id int64) (*model.Snippet, error)
+	FindByKind(ctx context.Context, systemID int64, kind model.SnippetKind) ([]string, error)
 	List(ctx context.Context, limit, offset int64) ([]*model.Snippet, error)
 	EditByName(ctx context.Context, name, body string) error
 	DeleteByName(ctx context.Context, name string) error

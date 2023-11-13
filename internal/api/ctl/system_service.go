@@ -7,7 +7,9 @@ import (
 	"forester/internal/db"
 	"forester/internal/metal"
 	"forester/internal/model"
+	"forester/internal/mux"
 	"net"
+	"strings"
 
 	"golang.org/x/exp/slog"
 )
@@ -142,9 +144,10 @@ func (i SystemServiceImpl) List(ctx context.Context, limit int64, offset int64) 
 	return result, nil
 }
 
-func (i SystemServiceImpl) Acquire(ctx context.Context, systemPattern, imagePattern, comment string) error {
+func (i SystemServiceImpl) Acquire(ctx context.Context, systemPattern, imagePattern, comment string, snippets []string) error {
 	daoSystem := db.GetSystemDao(ctx)
 	daoImage := db.GetImageDao(ctx)
+	daoSnip := db.GetSnippetDao(ctx)
 
 	image, err := daoImage.Find(ctx, imagePattern)
 	if err != nil {
@@ -155,7 +158,17 @@ func (i SystemServiceImpl) Acquire(ctx context.Context, systemPattern, imagePatt
 		return fmt.Errorf("cannot find: %w", err)
 	}
 
-	err = daoSystem.Acquire(ctx, system.ID, image.ID, comment)
+	snippetIDs := make([]int64, len(snippets))
+	for i, snippet := range snippets {
+		slog.DebugContext(ctx, "checking snippet", "name", snippet)
+		s, err := daoSnip.Find(ctx, snippet)
+		if err != nil {
+			return fmt.Errorf("cannot find snippet named %s: %w", snippet, err)
+		}
+		snippetIDs[i] = s.ID
+	}
+
+	err = daoSystem.Acquire(ctx, system.ID, image.ID, comment, snippetIDs)
 	if err != nil {
 		return fmt.Errorf("cannot acquire: %w", err)
 	}
@@ -202,4 +215,20 @@ func (i SystemServiceImpl) BootLocal(ctx context.Context, systemPattern string) 
 	}
 
 	return metal.BootLocal(ctx, system)
+}
+
+func (i SystemServiceImpl) Kickstart(ctx context.Context, pattern string) (string, error) {
+	dao := db.GetSystemDao(ctx)
+	system, err := dao.Find(ctx, pattern)
+	if err != nil {
+		return "", err
+	}
+
+	buf := strings.Builder{}
+	err = mux.RenderKickstartForSystem(ctx, system, &buf)
+	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
 }
