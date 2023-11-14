@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"forester/internal/db"
+	"forester/internal/logstore"
 	"forester/internal/metal"
 	"forester/internal/model"
 	"forester/internal/mux"
+	"golang.org/x/exp/slog"
 	"net"
 	"strings"
-
-	"golang.org/x/exp/slog"
 )
 
 var _ SystemService = SystemServiceImpl{}
@@ -99,15 +99,16 @@ func (i SystemServiceImpl) Find(ctx context.Context, pattern string) (*System, e
 	}
 
 	payload := &System{
-		ID:         result.System.ID,
-		Name:       result.System.Name,
-		HwAddrs:    hwa,
-		Facts:      result.System.Facts.FactsMap(),
-		Acquired:   result.System.Acquired,
-		AcquiredAt: result.System.AcquiredAt,
-		ImageID:    result.System.ImageID,
-		Comment:    result.System.Comment,
-		UID:        result.System.UID,
+		ID:          result.System.ID,
+		Name:        result.System.Name,
+		HwAddrs:     hwa,
+		Facts:       result.System.Facts.FactsMap(),
+		Acquired:    result.System.Acquired,
+		AcquiredAt:  result.System.AcquiredAt,
+		ImageID:     result.System.ImageID,
+		Comment:     result.System.Comment,
+		UID:         result.System.UID,
+		InstallUUID: result.System.InstallUUID.String(),
 	}
 
 	payload.Appliance = &Appliance{
@@ -231,4 +232,30 @@ func (i SystemServiceImpl) Kickstart(ctx context.Context, pattern string) (strin
 	}
 
 	return buf.String(), nil
+}
+
+func (i SystemServiceImpl) Logs(ctx context.Context, systemPattern string) ([]*LogEntry, error) {
+	dao := db.GetSystemDao(ctx)
+	system, err := dao.Find(ctx, systemPattern)
+	if err != nil {
+		return nil, err
+	}
+
+	logEntries, err := logstore.LogsForSystem(ctx, system.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*LogEntry, 0, len(logEntries))
+	for _, le := range logEntries {
+		nle := LogEntry{
+			Path:       le.Path,
+			Size:       le.Size,
+			CreatedAt:  le.CreatedAt,
+			ModifiedAt: le.ModifiedAt,
+		}
+		result = append(result, &nle)
+	}
+
+	return result, nil
 }

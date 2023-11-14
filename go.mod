@@ -5,6 +5,8 @@ go 1.20
 require (
 	github.com/alexflint/go-arg v1.4.3
 	github.com/digitalocean/go-libvirt v0.0.0-20221205150000-2939327a8519
+	github.com/djherbis/atime v1.1.0
+	github.com/djherbis/times v1.6.0
 	github.com/georgysavva/scany/v2 v2.0.0
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/go-chi/render v1.0.3
@@ -45,6 +47,7 @@ require (
 	github.com/spf13/cast v1.5.1 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
+	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	olympos.io/encoding/edn v0.0.0-20201019073823-d3554ca0b0a3 // indirect

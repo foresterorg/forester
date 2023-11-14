@@ -24,10 +24,9 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 
 **TODO**
 
-* Snippets / templates for customization of partitioning and post scripts via table SNIPPET(ID,TYPE,BODY)
-* Default snippets are hardcoded (if-else template statement)
-* Refactor: move both kind types into client-shared package and remove kindToInt/intToKind
 * API/CLI for logs
+* restarting libvirt does not work (shutdown, edit domain, start needed)
+* Refactor: move both kind types into client-shared package and remove kindToInt/intToKind
 * Support for hash in `liveimg --checksum=<sha256>`: SHA of ISO itself and image tarball via table CHECKSUM(ID,OBJECT,ALG,SUM)
 * Validate kickstart of existing host (CLI -> calls ksvalidate)
 * BIOS support (at least investigate how much work is this)

@@ -47,7 +47,7 @@ func serveBootPath(w http.ResponseWriter, r *http.Request) {
 
 func HandleBootstrapConfig(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	err := tmpl.RenderGrubBootstrap(w)
+	err := tmpl.RenderGrubBootstrap(r.Context(), w)
 	if err != nil {
 		renderGrubError(err, w, r)
 		return
@@ -85,7 +85,7 @@ func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
 
 	slog.InfoContext(r.Context(), "known system - booting installer", "mac", mac.String())
 	w.WriteHeader(http.StatusOK)
-	err = tmpl.RenderGrubKernel(w, tmpl.GrubKernelParams{ImageID: imageId})
+	err = tmpl.RenderGrubKernel(r.Context(), w, tmpl.GrubKernelParams{ImageID: imageId, SystemID: system.ID, InstallUUID: system.InstallUUID.String()})
 	if err != nil {
 		renderGrubError(err, w, r)
 		return
@@ -95,7 +95,7 @@ func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
 func renderGrubError(gerr error, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	slog.ErrorContext(r.Context(), "rendering error as grub message", "err", gerr)
-	err := tmpl.RenderGrubError(w, tmpl.GrubErrorParams{Error: gerr})
+	err := tmpl.RenderGrubError(r.Context(), w, tmpl.GrubErrorParams{Error: gerr})
 	if err != nil {
 		slog.ErrorContext(r.Context(), "cannot render template", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)

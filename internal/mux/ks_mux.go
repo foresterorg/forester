@@ -48,10 +48,11 @@ func RenderKickstartForSystem(ctx context.Context, system *model.System, w io.Wr
 
 		// load params and snippets
 		params := tmpl.KickstartParams{
-			SystemID:   system.ID,
-			ImageID:    *system.ImageID,
-			LastAction: la,
-			Snippets:   make(map[string][]string),
+			SystemID:    system.ID,
+			ImageID:     *system.ImageID,
+			InstallUUID: system.InstallUUID.String(),
+			LastAction:  la,
+			Snippets:    make(map[string][]string),
 		}
 
 		for _, kind := range model.AllSnippetKinds {
@@ -62,19 +63,19 @@ func RenderKickstartForSystem(ctx context.Context, system *model.System, w io.Wr
 			params.Snippets[kind.String()] = snippets
 		}
 
-		err = tmpl.RenderKickstartInstall(w, params)
+		err = tmpl.RenderKickstartInstall(ctx, w, params)
 	} else if system != nil && !system.Installable() {
 		slog.WarnContext(ctx, "system found but not installable",
 			"id", system.ID,
 			"name", system.Name,
 			"acquired_at", system.AcquiredAt.String(),
 			"image_id", system.ImageID)
-		err := tmpl.RenderKickstartDiscover(w)
+		err := tmpl.RenderKickstartDiscover(ctx, w)
 		if err != nil {
 			return err
 		}
 	} else {
-		err := tmpl.RenderKickstartDiscover(w)
+		err := tmpl.RenderKickstartDiscover(ctx, w)
 		if err != nil {
 			return err
 		}
@@ -132,7 +133,7 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 func renderKsError(ksErr error, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	slog.ErrorContext(r.Context(), "rendering error as kickstart comment", "err", ksErr)
-	err := tmpl.RenderKickstartError(w, tmpl.KickstartErrorParams{Message: ksErr.Error()})
+	err := tmpl.RenderKickstartError(r.Context(), w, tmpl.KickstartErrorParams{Message: ksErr.Error()})
 	if err != nil {
 		slog.ErrorContext(r.Context(), "cannot render template", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)

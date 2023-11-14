@@ -7,6 +7,8 @@ import (
 	"forester/internal/logging"
 	arg "github.com/alexflint/go-arg"
 	"golang.org/x/exp/slog"
+	"io"
+	"net/http"
 	"os"
 	"text/tabwriter"
 )
@@ -65,6 +67,8 @@ func main() {
 			err = systemList(ctx, cmd)
 		} else if cmd := args.System.Kickstart; cmd != nil {
 			err = systemKickstart(ctx, cmd)
+		} else if cmd := args.System.Logs; cmd != nil {
+			err = systemLogs(ctx, cmd)
 		} else if cmd := args.System.Acquire; cmd != nil {
 			err = systemAcquire(ctx, cmd)
 		} else if cmd := args.System.Release; cmd != nil {
@@ -113,4 +117,15 @@ func main() {
 
 func newTabWriter() *tabwriter.Writer {
 	return tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+}
+
+func download(url string, w io.Writer) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	_, err = io.Copy(w, resp.Body)
+	return err
 }

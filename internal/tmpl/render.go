@@ -1,10 +1,12 @@
 package tmpl
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"forester/internal/config"
 	"forester/internal/version"
+	"golang.org/x/exp/slog"
 	"io"
 	"strconv"
 	"text/template"
@@ -33,7 +35,8 @@ func commonParams() *CommonParams {
 	}
 }
 
-func Render(w io.Writer, name string, params any) error {
+func Render(ctx context.Context, w io.Writer, name string, params any) error {
+	slog.DebugContext(ctx, "rendering emplate", "name", name, "params", params)
 	err := templates.ExecuteTemplate(w, name, params)
 	if err != nil {
 		return fmt.Errorf("error executing template: %w", err)
@@ -42,38 +45,38 @@ func Render(w io.Writer, name string, params any) error {
 	return nil
 }
 
-func RenderGrubBootstrap(w io.Writer) error {
+func RenderGrubBootstrap(ctx context.Context, w io.Writer) error {
 	params := commonParams()
 
-	return Render(w, "grub_bootstrap.tmpl.txt", params)
+	return Render(ctx, w, "grub_bootstrap.tmpl.txt", params)
 }
 
-func RenderGrubKernel(w io.Writer, params GrubKernelParams) error {
+func RenderGrubKernel(ctx context.Context, w io.Writer, params GrubKernelParams) error {
 	params.CommonParams = commonParams()
 
-	return Render(w, "grub_kernel.tmpl.txt", params)
+	return Render(ctx, w, "grub_kernel.tmpl.txt", params)
 }
 
-func RenderGrubError(w io.Writer, params GrubErrorParams) error {
+func RenderGrubError(ctx context.Context, w io.Writer, params GrubErrorParams) error {
 	params.CommonParams = commonParams()
 
-	return Render(w, "grub_error.tmpl.txt", params)
+	return Render(ctx, w, "grub_error.tmpl.txt", params)
 }
 
-func RenderKickstartDiscover(w io.Writer) error {
+func RenderKickstartDiscover(ctx context.Context, w io.Writer) error {
 	params := commonParams()
 
-	return Render(w, "ks_discover.tmpl.txt", params)
+	return Render(ctx, w, "ks_discover.tmpl.txt", params)
 }
 
-func RenderKickstartInstall(w io.Writer, params KickstartParams) error {
+func RenderKickstartInstall(ctx context.Context, w io.Writer, params KickstartParams) error {
 	params.CommonParams = commonParams()
 
-	return Render(w, "ks_install.tmpl.txt", params)
+	return Render(ctx, w, "ks_install.tmpl.txt", params)
 }
 
-func RenderKickstartError(w io.Writer, params KickstartErrorParams) error {
+func RenderKickstartError(ctx context.Context, w io.Writer, params KickstartErrorParams) error {
 	params.CommonParams = commonParams()
 
-	return Render(w, "ks_error.tmpl.txt", params)
+	return Render(ctx, w, "ks_error.tmpl.txt", params)
 }

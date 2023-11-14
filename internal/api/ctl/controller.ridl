@@ -45,6 +45,13 @@ struct System
   - ApplianceID?: int64
   - Appliance?: Appliance
   - UID?: string
+  - InstallUUID: string
+
+struct LogEntry
+  - Path: string
+  - Size: int64
+  - CreatedAt: timestamp
+  - ModifiedAt: timestamp
 
 service SystemService
   - Register(system: NewSystem)
@@ -55,6 +62,7 @@ service SystemService
   - BootNetwork(systemPattern: string)
   - BootLocal(systemPattern: string)
   - Kickstart(systemPattern: string) => (contents: string)
+  - Logs(systemPattern: string) => (logs: []LogEntry)
 
 struct Snippet
   - ID: int64

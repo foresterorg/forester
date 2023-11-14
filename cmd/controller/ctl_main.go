@@ -9,127 +9,15 @@ import (
 	"forester/internal/db"
 	"forester/internal/img"
 	"forester/internal/logging"
+	"forester/internal/logstore"
 	"forester/internal/mux"
-	"net/http"
-	"net/netip"
-	"os"
-	"os/signal"
-	"path"
-	"syscall"
-	"time"
-
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/exp/slog"
-	"gopkg.in/mcuadros/go-syslog.v2"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 )
-
-func startSyslog(ctx context.Context, server *syslog.Server) {
-	channel := make(syslog.LogPartsChannel)
-	handler := syslog.NewChannelHandler(channel)
-
-	server.SetFormat(syslog.Automatic)
-	server.SetHandler(handler)
-	err := server.ListenUDP(fmt.Sprintf("0.0.0.0:%d", config.Application.SyslogPort))
-	if err != nil {
-		fmt.Printf("Cannot listen on UDP port %d: %s", config.Application.SyslogPort, err.Error())
-		os.Exit(1)
-	}
-	err = server.ListenTCP(fmt.Sprintf("0.0.0.0:%d", config.Application.SyslogPort))
-	if err != nil {
-		fmt.Printf("Cannot listen on TCP port %d: %s", config.Application.SyslogPort, err.Error())
-		os.Exit(1)
-	}
-	err = server.Boot()
-	if err != nil {
-		fmt.Printf("Cannot start syslog server on UDP port %d: %s", config.Application.SyslogPort, err.Error())
-		os.Exit(1)
-	}
-
-	err = os.MkdirAll(config.Logging.SyslogDir, 0x755)
-	if err != nil {
-		fmt.Printf("Cannot create syslog dir %s: %s", config.Logging.SyslogDir, err.Error())
-		os.Exit(1)
-	}
-
-	go syslogHandler(ctx, channel)
-}
-
-func closeFiles(files map[netip.Addr]SyslogWriter) {
-	for k, f := range files {
-		if f.File == nil {
-			delete(files, k)
-			continue
-		}
-
-		if f.LastWrite.Before(time.Now().Add(time.Duration(-5) * time.Second)) {
-			slog.Debug("closing syslog file after timeout", "file", f.File.Name())
-			err := f.File.Close()
-			if err != nil {
-				slog.Error("cannot close", "file", f.File.Name(), "err", err.Error())
-			}
-			delete(files, k)
-		}
-	}
-}
-
-type SyslogWriter struct {
-	File      *os.File
-	LastWrite time.Time
-}
-
-func syslogHandler(ctx context.Context, channel syslog.LogPartsChannel) {
-	// TODO store last access timestamp and close only
-	files := make(map[netip.Addr]SyslogWriter)
-	defer closeFiles(files)
-	closeTicker := time.Tick(time.Second * 5)
-
-	for {
-		select {
-		case logParts := <-channel:
-			client, ok := logParts["client"]
-			if !ok {
-				client = "0.0.0.0:0"
-			}
-			ap, err := netip.ParseAddrPort(client.(string))
-			if err != nil {
-				slog.ErrorContext(ctx, "cannot parse syslog client field", "err", err.Error())
-				continue
-			}
-			sw, ok := files[ap.Addr()]
-			if !ok {
-				var err error
-				name := fmt.Sprintf("%s_%s.log", time.Now().Format("2006-02-01"), ap.Addr().String())
-				slog.DebugContext(ctx, "opening syslog file", "file", name)
-				fp := path.Join(config.Logging.SyslogDir, name)
-				sw.File, err = os.OpenFile(fp, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-				if err != nil {
-					slog.ErrorContext(ctx, "cannot open file for appending", "file", fp, "err", err.Error())
-				}
-				files[ap.Addr()] = sw
-				slog.DebugContext(ctx, "file map", "size", len(files))
-			}
-
-			sw.LastWrite = time.Now()
-			if _, err := sw.File.WriteString(fmt.Sprintf("%s\n", logParts["content"])); err != nil {
-				slog.ErrorContext(ctx, "cannot append to file", "file", sw.File.Name(), "err", err.Error())
-			}
-
-			if config.Logging.Syslog {
-				var attrs []slog.Attr
-				for k, v := range logParts {
-					if k != "content" {
-						attrs = append(attrs, slog.Any(k, v))
-					}
-				}
-				slog.DebugContext(ctx, fmt.Sprintf("%s", logParts["content"]), "syslog", attrs)
-			}
-		case <-closeTicker:
-			closeFiles(files)
-		case <-ctx.Done():
-			return
-		}
-	}
-}
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "-h" {
@@ -145,11 +33,10 @@ func main() {
 		panic(err)
 	}
 
-	syslogServer := syslog.NewServer()
-	if config.Logging.Syslog {
-		syslogCtx, syslogCancel := context.WithCancel(ctx)
-		defer syslogCancel()
-		startSyslog(syslogCtx, syslogServer)
+	syslog, err := logstore.Start(ctx)
+	defer syslog.Stop()
+	if err != nil {
+		panic(err)
 	}
 
 	err = db.Initialize(ctx, "public")
@@ -167,6 +54,7 @@ func main() {
 	imgRouter := chi.NewRouter()
 	ksRouter := chi.NewRouter()
 	doneRouter := chi.NewRouter()
+	logsRouter := chi.NewRouter()
 
 	rootRouter.Use(mux.TraceIdMiddleware)
 
@@ -174,10 +62,12 @@ func main() {
 	mux.MountImages(imgRouter)
 	mux.MountKickstart(ksRouter)
 	mux.MountDone(doneRouter)
+	mux.MountLogs(logsRouter)
 	rootRouter.Mount("/boot", bootRouter)
 	rootRouter.Mount("/img", imgRouter)
 	rootRouter.Mount("/ks", ksRouter)
 	rootRouter.Mount("/done", doneRouter)
+	rootRouter.Mount("/logs", logsRouter)
 	ctl.MountServices(rootRouter)
 
 	rootServer := http.Server{
@@ -208,13 +98,6 @@ func main() {
 
 	slog.DebugContext(ctx, "waiting for extracting jobs to complete")
 	img.ExtractWG.Wait()
-
-	slog.DebugContext(ctx, "stopping syslog listeners")
-	err = syslogServer.Kill()
-	if err != nil {
-		slog.ErrorContext(ctx, "cannot stop syslog server", "err", err)
-	}
-	syslogServer.Wait()
 
 	slog.DebugContext(ctx, "shutdown complete")
 }

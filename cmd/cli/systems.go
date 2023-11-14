@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"forester/internal/api/ctl"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -29,6 +30,11 @@ type systemListCmd struct {
 
 type systemKickstartCmd struct {
 	Pattern string `arg:"positional,required" placeholder:"MAC_OR_NAME"`
+}
+
+type systemLogsCmd struct {
+	Pattern  string `arg:"positional,required" placeholder:"MAC_OR_NAME"`
+	Download string `arg:"-d"`
 }
 
 type systemAcquireCmd struct {
@@ -57,6 +63,7 @@ type systemCmd struct {
 	Acquire     *systemAcquireCmd     `arg:"subcommand:acquire" help:"acquire system"`
 	Release     *systemReleaseCmd     `arg:"subcommand:release" help:"release system"`
 	Kickstart   *systemKickstartCmd   `arg:"subcommand:kickstart" help:"show system kickstart"`
+	Logs        *systemLogsCmd        `arg:"subcommand:logs" help:"show installation log history"`
 	BootNetwork *systemBootNetworkCmd `arg:"subcommand:bootnet" help:"reset (hard reboot) system and boot from network"`
 	BootLocal   *systemBootLocalCmd   `arg:"subcommand:bootlocal" help:"reset (hard reboot) system and boot from local drive"`
 }
@@ -89,6 +96,7 @@ func systemShow(ctx context.Context, cmdArgs *systemShowCmd) error {
 	fmt.Fprintf(w, "%s\t%d\n", "ID", result.ID)
 	fmt.Fprintf(w, "%s\t%s\n", "Name", result.Name)
 	fmt.Fprintf(w, "%s\t%t\n", "Acquired", result.Acquired)
+	fmt.Fprintf(w, "%s\t%s\n", "Install UUID", result.InstallUUID)
 	if result.Acquired && result.ImageID != nil {
 		fmt.Fprintf(w, "%s\t%s\n", "Acquired at", result.AcquiredAt.Format(time.ANSIC))
 		fmt.Fprintf(w, "%s\t%d\n", "Image ID", *result.ImageID)
@@ -166,6 +174,32 @@ func systemKickstart(ctx context.Context, cmdArgs *systemKickstartCmd) error {
 	}
 
 	fmt.Print(body)
+	return nil
+}
+
+func systemLogs(ctx context.Context, cmdArgs *systemLogsCmd) error {
+	if cmdArgs.Download != "" {
+		// download log file
+		url := fmt.Sprintf("%s/logs/%s", args.URL, cmdArgs.Download)
+		err := download(url, os.Stdout)
+		if err != nil {
+			return fmt.Errorf("cannot fetch %s: %w", url, err)
+		}
+	} else {
+		// get a listing
+		client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
+		entries, err := client.Logs(ctx, cmdArgs.Pattern)
+		if err != nil {
+			return fmt.Errorf("cannot fetch logs: %w", err)
+		}
+
+		w := newTabWriter()
+		fmt.Fprintln(w, "Created\tModified\tName\tSize")
+		for _, le := range entries {
+			fmt.Fprintf(w, "%s\t%s\t%s\t%d\n", le.CreatedAt.Local().Format(time.DateTime), le.ModifiedAt.Local().Format(time.DateTime), le.Path, le.Size)
+		}
+		w.Flush()
+	}
 	return nil
 }
 

@@ -36,6 +36,11 @@ bootloader --location=mbr --timeout=1 --append="console=tty1 console=ttyS0,11520
 {{ end -}}
 {{ .LastAction }}
 
+%pre
+hostnamectl hostname f-{{ .SystemID }}-{{ .InstallUUID }}
+systemctl reload rsyslog
+%end
+
 {{ range .Snippets.post }}
 {{- . }}
 {{ end -}}

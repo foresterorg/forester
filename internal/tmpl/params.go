@@ -14,7 +14,9 @@ type GrubErrorParams struct {
 
 type GrubKernelParams struct {
 	*CommonParams
-	ImageID int64
+	ImageID     int64
+	SystemID    int64
+	InstallUUID string
 }
 
 type LastAction int
@@ -42,10 +44,11 @@ func (la LastAction) String() string {
 
 type KickstartParams struct {
 	*CommonParams
-	ImageID    int64
-	SystemID   int64
-	LastAction LastAction
-	Snippets   map[string][]string
+	ImageID     int64
+	SystemID    int64
+	InstallUUID string
+	LastAction  LastAction
+	Snippets    map[string][]string
 }
 
 type KickstartErrorParams struct {

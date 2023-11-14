@@ -2,6 +2,7 @@ package model
 
 import (
 	"forester/internal/config"
+	"github.com/google/uuid"
 	"net"
 	"strings"
 	"time"
@@ -41,6 +42,9 @@ type System struct {
 
 	// Comment, can be blank.
 	Comment string `db:"comment"`
+
+	// Installation UUID, changes on every re-installation.
+	InstallUUID uuid.UUID `db:"install_uuid"`
 }
 
 type Fact struct {

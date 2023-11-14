@@ -68,7 +68,8 @@ func (dao systemDao) Acquire(ctx context.Context, systemId, imageId int64, comme
 		acquired = true,
 		acquired_at = current_timestamp,
 		image_id = $2,
-		comment = $3
+		comment = $3,
+		install_uuid = gen_random_uuid()
 		WHERE id = $1 AND acquired = false`
 
 		tag, err := tx.Exec(ctx, updateQuery, systemId, imageId, comment)
@@ -146,6 +147,7 @@ func (dao systemDao) FindRelated(ctx context.Context, pattern string) (*model.Sy
 		s.acquired_at AS "s.acquired_at",
 		s.image_id AS "s.image_id",
 		s.comment AS "s.comment",
+		s.install_uuid AS "s.install_uuid",
 		COALESCE(a.name, '') AS "a.name",
 		COALESCE(a.kind, 0) AS "a.kind",
 		COALESCE(a.uri, '') AS "a.uri"
@@ -191,6 +193,7 @@ func (dao systemDao) FindByMacRelated(ctx context.Context, mac net.HardwareAddr)
 		s.acquired_at AS "s.acquired_at",
 		s.image_id AS "s.image_id",
 		s.comment AS "s.comment",
+		s.install_uuid AS "s.install_uuid",
 		COALESCE(a.name, '') AS "a.name",
 		COALESCE(a.kind, 0) AS "a.kind",
 		COALESCE(a.uri, '') AS "a.uri"
@@ -227,6 +230,7 @@ func (dao systemDao) FindByIDRelated(ctx context.Context, id int64) (*model.Syst
 		s.acquired_at AS "s.acquired_at",
 		s.image_id AS "s.image_id",
 		s.comment AS "s.comment",
+		s.install_uuid AS "s.install_uuid",
 		COALESCE(a.name, '') AS "a.name",
 		COALESCE(a.kind, 0) AS "a.kind",
 		COALESCE(a.uri, '') AS "a.uri"
