@@ -123,6 +123,7 @@ func (i SystemServiceImpl) Find(ctx context.Context, pattern string) (*System, e
 
 func (i SystemServiceImpl) List(ctx context.Context, limit int64, offset int64) ([]*System, error) {
 	dao := db.GetSystemDao(ctx)
+	ensureLimitNonzero(&limit)
 	list, err := dao.List(ctx, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("cannot list: %w", err)

@@ -54,6 +54,7 @@ func (i SnippetServiceImpl) Edit(ctx context.Context, name string, body string) 
 
 func (i SnippetServiceImpl) List(ctx context.Context, limit int64, offset int64) ([]*Snippet, error) {
 	dao := db.GetSnippetDao(ctx)
+	ensureLimitNonzero(&limit)
 	snippets, err := dao.List(ctx, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("cannot list: %w", err)

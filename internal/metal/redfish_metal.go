@@ -14,7 +14,9 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-type RedfishMetal struct{}
+type RedfishMetal struct {
+	Manual bool
+}
 
 func configFromApp(ctx context.Context, app *model.Appliance) gofish.ClientConfig {
 	sw := logging.SlogWriter{Logger: slog.Default(), Level: slog.LevelInfo, Context: ctx}
@@ -99,6 +101,10 @@ func (m RedfishMetal) Enlist(ctx context.Context, app *model.Appliance, pattern 
 }
 
 func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppliance) error {
+	if m.Manual {
+		return nil
+	}
+
 	config := configFromApp(ctx, &system.Appliance)
 
 	c, err := gofish.Connect(config)
@@ -150,6 +156,10 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppli
 }
 
 func (m RedfishMetal) BootLocal(ctx context.Context, system *model.SystemAppliance) error {
+	if m.Manual {
+		return nil
+	}
+
 	slog.InfoContext(ctx, "noop operation", "function", "BootLocal")
 	return nil
 }

@@ -17,9 +17,11 @@ type Appliance struct {
 type ApplianceKind int16
 
 const (
-	ReservedKind = iota
-	LibvirtKind  = iota
-	RedfishKind  = iota
+	ReservedKind      = iota
+	NoopKind          = iota
+	LibvirtKind       = iota
+	RedfishKind       = iota
+	RedfishManualKind = iota
 )
 
 func ParseKind(i int16) ApplianceKind {
@@ -27,9 +29,13 @@ func ParseKind(i int16) ApplianceKind {
 	case 0:
 		return ReservedKind
 	case 1:
-		return LibvirtKind
+		return NoopKind
 	case 2:
+		return LibvirtKind
+	case 3:
 		return RedfishKind
+	case 4:
+		return RedfishManualKind
 	default:
 		return -1
 	}

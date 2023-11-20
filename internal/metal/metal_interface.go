@@ -21,6 +21,7 @@ type EnlistResult struct {
 var noopMetal Metal = NoopMetal{}
 var libvirtMetal Metal = LibvirtMetal{}
 var redfishMetal Metal = RedfishMetal{}
+var redfishManualMetal Metal = RedfishMetal{Manual: true}
 
 func ForKind(kind model.ApplianceKind) Metal {
 	switch kind {
@@ -28,6 +29,8 @@ func ForKind(kind model.ApplianceKind) Metal {
 		return libvirtMetal
 	case model.RedfishKind:
 		return redfishMetal
+	case model.RedfishManualKind:
+		return redfishManualMetal
 	}
 	return noopMetal
 }

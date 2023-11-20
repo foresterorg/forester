@@ -53,6 +53,7 @@ func (i ImageServiceImpl) Find(ctx context.Context, pattern string) (*Image, err
 
 func (i ImageServiceImpl) List(ctx context.Context, limit int64, offset int64) ([]*Image, error) {
 	dao := db.GetImageDao(ctx)
+	ensureLimitNonzero(&limit)
 	images, err := dao.List(ctx, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("cannot list: %w", err)

@@ -106,7 +106,7 @@ func systemShow(ctx context.Context, cmdArgs *systemShowCmd) error {
 	}
 	if result.Appliance != nil && result.Appliance.Name != "" {
 		fmt.Fprintf(w, "%s\t%s\n", "Appliance Name", result.Appliance.Name)
-		fmt.Fprintf(w, "%s\t%s\n", "Appliance Kind", applianceIntToKind(result.Appliance.Kind))
+		fmt.Fprintf(w, "%s\t%s\n", "Appliance Kind", ctl.ApplianceIntToKind(result.Appliance.Kind))
 		fmt.Fprintf(w, "%s\t%s\n", "Appliance URI", result.Appliance.URI)
 	}
 	if result.UID != nil {

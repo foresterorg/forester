@@ -12,6 +12,10 @@ https://foresterorg.github.io
 
 The service API is RPC over HTTP with [OpenAPI Specification](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/foresterorg/forester/main/openapi.gen.yaml)
 
+Language clients:
+
+* [Python](https://github.com/foresterorg/forester-client-python)
+
 **Feedback and support**
 
 Visit our [discussion forums](https://github.com/foresterorg/forester/discussions)!
@@ -24,12 +28,9 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 
 **TODO**
 
-* Python bindings
-* Noop plugin for OOB
 * Add arbitrary system name (change name feature)
 * Custom snippet for acquisition (simple string)
 * Restarting running libvirt VM does not work (shutdown, edit domain, start needed)
-* Refactor: move both kind types into client-shared package and remove kindToInt/intToKind
 * Support for hash in `liveimg --checksum=<sha256>`: SHA of ISO itself and image tarball via table CHECKSUM(ID,OBJECT,ALG,SUM)
 * Validate kickstart of existing host (CLI -> calls ksvalidate)
 * Investigate how much work is BIOS support

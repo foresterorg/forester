@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"forester/internal/api/ctl"
 	"net/http"
-	"strings"
 )
 
 type applianceCreateCmd struct {
 	Name string `arg:"-n,required"`
-	Kind string `arg:"-k" default:"libvirt"`
-	URI  string `arg:"-u" default:"unix:///var/run/libvirt/libvirt-sock"`
+	Kind string `arg:"-k" default:"noop"`
+	URI  string `arg:"-u" default:"noop:///"`
 }
 
 type applianceListCmd struct {
@@ -30,31 +29,9 @@ type applianceCmd struct {
 	Enlist *applianceEnlistCmd `arg:"subcommand:enlist" help:"enlist systems of appliance"`
 }
 
-func applianceKindToInt(kind string) int16 {
-	switch strings.ToLower(kind) {
-	case "libvirt":
-		return 1
-	case "redfish":
-		return 2
-	default:
-		panic(fmt.Sprintf("unknown kind: %s", kind))
-	}
-}
-
-func applianceIntToKind(kind int16) string {
-	switch kind {
-	case 1:
-		return "libvirt"
-	case 2:
-		return "redfish"
-	default:
-		panic(fmt.Sprintf("unknown kind: %d", kind))
-	}
-}
-
 func applianceCreate(ctx context.Context, cmdArgs *applianceCreateCmd) error {
 	client := ctl.NewApplianceServiceClient(args.URL, http.DefaultClient)
-	err := client.Create(ctx, cmdArgs.Name, applianceKindToInt(cmdArgs.Kind), cmdArgs.URI)
+	err := client.Create(ctx, cmdArgs.Name, ctl.ApplianceKindToInt(cmdArgs.Kind), cmdArgs.URI)
 	if err != nil {
 		return fmt.Errorf("cannot create appliance: %w", err)
 	}
@@ -72,7 +49,7 @@ func applianceList(ctx context.Context, cmdArgs *applianceListCmd) error {
 	w := newTabWriter()
 	fmt.Fprintln(w, "ID\tName\tKind\tURI")
 	for _, a := range appliances {
-		fmt.Fprintf(w, "%d\t%s\t%s\t%s\n", a.ID, a.Name, applianceIntToKind(a.Kind), a.URI)
+		fmt.Fprintf(w, "%d\t%s\t%s\t%s\n", a.ID, a.Name, ctl.ApplianceIntToKind(a.Kind), a.URI)
 	}
 	w.Flush()
 
