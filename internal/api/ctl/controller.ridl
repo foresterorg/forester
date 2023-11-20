@@ -28,6 +28,7 @@ service ApplianceService
   - Delete(name: string)
 
 struct NewSystem
+  - Name: string
   - HwAddrs: []string
   - Facts: map<string,string>
   - ApplianceName?: string

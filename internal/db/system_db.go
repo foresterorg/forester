@@ -24,11 +24,20 @@ func getSystemDao(ctx context.Context) SystemDao {
 }
 
 func (dao systemDao) Register(ctx context.Context, sys *model.System) error {
-	query := `INSERT INTO systems (hwaddrs, facts, appliance_id, uid) VALUES ($1, $2, $3, $4) RETURNING id`
+	if sys.Name == "" {
+		query := `INSERT INTO systems (hwaddrs, facts, appliance_id, uid) VALUES ($1, $2, $3, $4) RETURNING id`
 
-	err := Pool.QueryRow(ctx, query, sys.HwAddrs, sys.Facts, sys.ApplianceID, sys.UID).Scan(&sys.ID)
-	if err != nil {
-		return fmt.Errorf("insert error: %w", err)
+		err := Pool.QueryRow(ctx, query, sys.HwAddrs, sys.Facts, sys.ApplianceID, sys.UID).Scan(&sys.ID)
+		if err != nil {
+			return fmt.Errorf("insert error: %w", err)
+		}
+	} else {
+		query := `INSERT INTO systems (hwaddrs, facts, appliance_id, uid, name) VALUES ($1, $2, $3, $4, $5) RETURNING id`
+
+		err := Pool.QueryRow(ctx, query, sys.HwAddrs, sys.Facts, sys.ApplianceID, sys.UID, sys.Name).Scan(&sys.ID)
+		if err != nil {
+			return fmt.Errorf("insert error: %w", err)
+		}
 	}
 
 	return nil

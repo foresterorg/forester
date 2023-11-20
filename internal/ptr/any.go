@@ -32,3 +32,11 @@ func FromOrEmpty[T any](ref *T) (value T) {
 func ToInt64(value int64) *int64 {
 	return &value
 }
+
+// EmptyToNil returns nil when string is empty, otherwise it returns string
+func EmptyToNil(value *string) *string {
+	if value != nil && *value == "" {
+		return nil
+	}
+	return value
+}

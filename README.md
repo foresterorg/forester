@@ -28,7 +28,7 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 
 **TODO**
 
-* Add arbitrary system name (change name feature)
+* Change name of existing (enlisted) system
 * Custom snippet for acquisition (simple string)
 * Restarting running libvirt VM does not work (shutdown, edit domain, start needed)
 * Support for hash in `liveimg --checksum=<sha256>`: SHA of ISO itself and image tarball via table CHECKSUM(ID,OBJECT,ALG,SUM)

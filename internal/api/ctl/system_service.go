@@ -55,6 +55,7 @@ func (i SystemServiceImpl) Register(ctx context.Context, system *NewSystem) erro
 	}
 
 	sys = &model.System{
+		Name:    system.Name,
 		HwAddrs: hwAddrs.Unique(),
 		Facts:   facts,
 		UID:     system.UID,

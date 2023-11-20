@@ -12,6 +12,7 @@ import (
 )
 
 type systemRegisterCmd struct {
+	Name          string            `arg:"-n"`
 	HwAddrs       []string          `arg:"-m,required"`
 	Facts         map[string]string `arg:"-f"`
 	ApplianceName string            `arg:"-a"`
@@ -71,6 +72,7 @@ type systemCmd struct {
 func systemRegister(ctx context.Context, cmdArgs *systemRegisterCmd) error {
 	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
 	sys := ctl.NewSystem{
+		Name:          cmdArgs.Name,
 		HwAddrs:       cmdArgs.HwAddrs,
 		Facts:         cmdArgs.Facts,
 		ApplianceName: &cmdArgs.ApplianceName,
