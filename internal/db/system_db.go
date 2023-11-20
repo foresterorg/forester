@@ -118,6 +118,23 @@ func (dao systemDao) Acquire(ctx context.Context, systemId, imageId int64, comme
 	return txErr
 }
 
+func (dao systemDao) Rename(ctx context.Context, systemId int64, newName string) error {
+	query := `UPDATE systems SET
+		name = $2
+		WHERE id = $1`
+
+	tag, err := Pool.Exec(ctx, query, systemId, newName)
+	if err != nil {
+		return fmt.Errorf("update error: %w", err)
+	}
+
+	if tag.RowsAffected() != 1 {
+		return fmt.Errorf("cannot find acquired system with ID=%d: %w", systemId, ErrAffectedMismatch)
+	}
+
+	return nil
+}
+
 func (dao systemDao) Release(ctx context.Context, systemId int64) error {
 	query := `UPDATE systems SET
 		acquired = false,

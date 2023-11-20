@@ -71,6 +71,8 @@ func main() {
 			err = systemLogs(ctx, cmd)
 		} else if cmd := args.System.Acquire; cmd != nil {
 			err = systemAcquire(ctx, cmd)
+		} else if cmd := args.System.Rename; cmd != nil {
+			err = systemRename(ctx, cmd)
 		} else if cmd := args.System.Release; cmd != nil {
 			err = systemRelease(ctx, cmd)
 		} else if cmd := args.System.BootNetwork; cmd != nil {

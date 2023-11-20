@@ -122,6 +122,22 @@ func (i SystemServiceImpl) Find(ctx context.Context, pattern string) (*System, e
 	return payload, nil
 }
 
+func (i SystemServiceImpl) Rename(ctx context.Context, pattern, newName string) error {
+	dao := db.GetSystemDao(ctx)
+	sys, err := dao.Find(ctx, pattern)
+	if err != nil {
+		return fmt.Errorf("cannot find system %s: %w", pattern, err)
+	}
+
+	sys.Name = newName
+	err = dao.Rename(ctx, sys.ID, newName)
+	if err != nil {
+		return fmt.Errorf("cannot update: %w", err)
+	}
+
+	return nil
+}
+
 func (i SystemServiceImpl) List(ctx context.Context, limit int64, offset int64) ([]*System, error) {
 	dao := db.GetSystemDao(ctx)
 	ensureLimitNonzero(&limit)

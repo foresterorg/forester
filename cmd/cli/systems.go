@@ -38,6 +38,11 @@ type systemLogsCmd struct {
 	Download string `arg:"-d"`
 }
 
+type systemRenameCmd struct {
+	Pattern string `arg:"positional,required" placeholder:"MAC_OR_NAME"`
+	Name    string `arg:"-n,required" placeholder:"NEW_SYSTEM_NAME"`
+}
+
 type systemAcquireCmd struct {
 	Pattern  string   `arg:"positional,required" placeholder:"MAC_OR_NAME"`
 	Image    string   `arg:"-i,required"`
@@ -61,6 +66,7 @@ type systemCmd struct {
 	Register    *systemRegisterCmd    `arg:"subcommand:register" help:"register system"`
 	List        *systemListCmd        `arg:"subcommand:list" help:"list systems"`
 	Show        *systemShowCmd        `arg:"subcommand:show" help:"show system"`
+	Rename      *systemRenameCmd      `arg:"subcommand:rename" help:"rename existing system"`
 	Acquire     *systemAcquireCmd     `arg:"subcommand:acquire" help:"acquire system"`
 	Release     *systemReleaseCmd     `arg:"subcommand:release" help:"release system"`
 	Kickstart   *systemKickstartCmd   `arg:"subcommand:kickstart" help:"show system kickstart"`
@@ -202,6 +208,16 @@ func systemLogs(ctx context.Context, cmdArgs *systemLogsCmd) error {
 		}
 		w.Flush()
 	}
+	return nil
+}
+
+func systemRename(ctx context.Context, cmdArgs *systemRenameCmd) error {
+	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
+	err := client.Rename(ctx, cmdArgs.Pattern, cmdArgs.Name)
+	if err != nil {
+		return fmt.Errorf("cannot rename system: %w", err)
+	}
+
 	return nil
 }
 
