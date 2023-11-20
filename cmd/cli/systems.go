@@ -44,10 +44,11 @@ type systemRenameCmd struct {
 }
 
 type systemAcquireCmd struct {
-	Pattern  string   `arg:"positional,required" placeholder:"MAC_OR_NAME"`
-	Image    string   `arg:"-i,required"`
-	Snippets []string `arg:"-s"`
-	Comment  string   `arg:"-c"`
+	Pattern       string   `arg:"positional,required" placeholder:"MAC_OR_NAME"`
+	Image         string   `arg:"-i,required"`
+	Snippets      []string `arg:"-s"`
+	CustomSnippet string   `arg:"-x"`
+	Comment       string   `arg:"-c"`
 }
 
 type systemReleaseCmd struct {
@@ -223,7 +224,7 @@ func systemRename(ctx context.Context, cmdArgs *systemRenameCmd) error {
 
 func systemAcquire(ctx context.Context, cmdArgs *systemAcquireCmd) error {
 	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
-	err := client.Acquire(ctx, cmdArgs.Pattern, cmdArgs.Image, cmdArgs.Comment, cmdArgs.Snippets)
+	err := client.Acquire(ctx, cmdArgs.Pattern, cmdArgs.Image, cmdArgs.Comment, cmdArgs.Snippets, cmdArgs.CustomSnippet)
 	if err != nil {
 		return fmt.Errorf("cannot acquire system: %w", err)
 	}

@@ -44,11 +44,12 @@ func (la LastAction) String() string {
 
 type KickstartParams struct {
 	*CommonParams
-	ImageID     int64
-	SystemID    int64
-	InstallUUID string
-	LastAction  LastAction
-	Snippets    map[string][]string
+	ImageID       int64
+	SystemID      int64
+	InstallUUID   string
+	LastAction    LastAction
+	Snippets      map[string][]string
+	CustomSnippet string
 }
 
 type KickstartErrorParams struct {

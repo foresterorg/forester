@@ -37,7 +37,7 @@ type SystemDao interface {
 	RegisterExisting(ctx context.Context, id int64, sys *model.System) error
 	List(ctx context.Context, limit, offset int64) ([]*model.System, error)
 	Rename(ctx context.Context, systemId int64, newName string) error
-	Acquire(ctx context.Context, systemId, imageId int64, comment string, snippets []int64) error
+	Acquire(ctx context.Context, systemId, imageId int64, comment string, snippets []int64, customSnippet string) error
 	Release(ctx context.Context, systemId int64) error
 	Find(ctx context.Context, pattern string) (*model.System, error)
 	FindByID(ctx context.Context, id int64) (*model.System, error)

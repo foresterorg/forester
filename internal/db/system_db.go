@@ -69,17 +69,18 @@ func (dao systemDao) List(ctx context.Context, limit, offset int64) ([]*model.Sy
 	return result, nil
 }
 
-func (dao systemDao) Acquire(ctx context.Context, systemId, imageId int64, comment string, snippets []int64) error {
+func (dao systemDao) Acquire(ctx context.Context, systemId, imageId int64, comment string, snippets []int64, customSnippet string) error {
 	txErr := WithTransaction(ctx, func(tx pgx.Tx) error {
 		updateQuery := `UPDATE systems SET
 		acquired = true,
 		acquired_at = current_timestamp,
 		image_id = $2,
 		comment = $3,
-		install_uuid = gen_random_uuid()
+		install_uuid = gen_random_uuid(),
+		custom_snippet = $4
 		WHERE id = $1 AND acquired = false`
 
-		tag, err := tx.Exec(ctx, updateQuery, systemId, imageId, comment)
+		tag, err := tx.Exec(ctx, updateQuery, systemId, imageId, comment, customSnippet)
 		if err != nil {
 			return fmt.Errorf("update error: %w", err)
 		}

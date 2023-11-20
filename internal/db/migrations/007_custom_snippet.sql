@@ -1,0 +1,2 @@
+ALTER TABLE systems
+ADD COLUMN custom_snippet TEXT NOT NULL DEFAULT '';

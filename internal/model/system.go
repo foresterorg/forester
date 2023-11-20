@@ -45,6 +45,9 @@ type System struct {
 
 	// Installation UUID, changes on every re-installation.
 	InstallUUID uuid.UUID `db:"install_uuid"`
+
+	// CustomSnippet, can be blank.
+	CustomSnippet string `db:"custom_snippet"`
 }
 
 type Fact struct {

@@ -48,11 +48,12 @@ func RenderKickstartForSystem(ctx context.Context, system *model.System, w io.Wr
 
 		// load params and snippets
 		params := tmpl.KickstartParams{
-			SystemID:    system.ID,
-			ImageID:     *system.ImageID,
-			InstallUUID: system.InstallUUID.String(),
-			LastAction:  la,
-			Snippets:    make(map[string][]string),
+			SystemID:      system.ID,
+			ImageID:       *system.ImageID,
+			InstallUUID:   system.InstallUUID.String(),
+			LastAction:    la,
+			Snippets:      make(map[string][]string),
+			CustomSnippet: system.CustomSnippet,
 		}
 
 		for _, kind := range model.AllSnippetKinds {
