@@ -4,13 +4,11 @@ import (
 	"context"
 	"fmt"
 	"forester/internal/model"
+	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
 	"net"
 	"strconv"
-	"strings"
-
-	"github.com/georgysavva/scany/v2/pgxscan"
 )
 
 func init() {
@@ -144,7 +142,7 @@ func (dao systemDao) FindRelated(ctx context.Context, pattern string) (*model.Sy
 		return dao.FindByMacRelated(ctx, mac)
 	}
 
-	name := fmt.Sprintf("%%%s%%", strings.Title(pattern))
+	name := fmt.Sprintf("%%%s%%", pattern)
 	result := &model.SystemAppliance{}
 	query := `SELECT s.id AS "s.id",
 		s.name AS "s.name",
@@ -160,7 +158,7 @@ func (dao systemDao) FindRelated(ctx context.Context, pattern string) (*model.Sy
 		COALESCE(a.name, '') AS "a.name",
 		COALESCE(a.kind, 0) AS "a.kind",
 		COALESCE(a.uri, '') AS "a.uri"
-		FROM systems AS s LEFT JOIN appliances AS a ON a.id = s.appliance_id WHERE s.name LIKE $1 LIMIT 1`
+		FROM systems AS s LEFT JOIN appliances AS a ON a.id = s.appliance_id WHERE s.name ILIKE $1 LIMIT 1`
 
 	err := pgxscan.Get(ctx, Pool, result, query, name)
 	if err != nil {
@@ -178,8 +176,8 @@ func (dao systemDao) Find(ctx context.Context, pattern string) (*model.System, e
 		return dao.FindByID(ctx, int64(id))
 	}
 
-	name := fmt.Sprintf("%%%s%%", strings.Title(pattern))
-	query := `SELECT * FROM systems WHERE name LIKE $1 LIMIT 1`
+	name := fmt.Sprintf("%%%s%%", pattern)
+	query := `SELECT * FROM systems WHERE name ILIKE $1 LIMIT 1`
 
 	result := &model.System{}
 	err := pgxscan.Get(ctx, Pool, result, query, name)
