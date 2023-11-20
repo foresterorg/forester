@@ -24,9 +24,12 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 
 **TODO**
 
-* API/CLI for logs
-* restarting libvirt does not work (shutdown, edit domain, start needed)
+* Python bindings
+* Noop plugin for OOB
+* Add arbitrary system name (change name feature)
+* Custom snippet for acquisition (simple string)
+* Restarting running libvirt VM does not work (shutdown, edit domain, start needed)
 * Refactor: move both kind types into client-shared package and remove kindToInt/intToKind
 * Support for hash in `liveimg --checksum=<sha256>`: SHA of ISO itself and image tarball via table CHECKSUM(ID,OBJECT,ALG,SUM)
 * Validate kickstart of existing host (CLI -> calls ksvalidate)
-* BIOS support (at least investigate how much work is this)
+* Investigate how much work is BIOS support
