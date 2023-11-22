@@ -23,6 +23,7 @@ const (
 	RootPwSnippetKind   = iota
 	SecuritySnippetKind = iota
 	LocaleSnippetKind   = iota
+	NetworkSnippetKind  = iota
 )
 
 var AllSnippetKinds = []SnippetKind{
@@ -31,6 +32,7 @@ var AllSnippetKinds = []SnippetKind{
 	RootPwSnippetKind,
 	SecuritySnippetKind,
 	LocaleSnippetKind,
+	NetworkSnippetKind,
 }
 
 func ParseSnippetKind(i int16) SnippetKind {
@@ -47,6 +49,8 @@ func ParseSnippetKind(i int16) SnippetKind {
 		return SecuritySnippetKind
 	case 5:
 		return LocaleSnippetKind
+	case 6:
+		return NetworkSnippetKind
 	default:
 		return -1
 	}
@@ -64,6 +68,8 @@ func (sk SnippetKind) String() string {
 		return "security"
 	case LocaleSnippetKind:
 		return "locale"
+	case NetworkSnippetKind:
+		return "network"
 	}
 	return ""
 }

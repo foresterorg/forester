@@ -2,10 +2,14 @@
 #install
 #auth  --useshadow  --passalgo=sha512
 
-network --bootproto=dhcp --device=link --activate --onboot=on
 logging --host {{ .BaseHost }} --port {{ .SyslogPort }}
 text
 skipx
+{{ range .Snippets.network }}
+{{- . }}
+{{ else -}}
+network --bootproto=dhcp --device=link --activate --onboot=on --hostname {{ .SystemHostname }}
+{{ end -}}
 {{ range .Snippets.locale }}
 {{- . }}
 {{ else -}}
