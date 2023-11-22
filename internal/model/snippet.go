@@ -24,6 +24,8 @@ const (
 	SecuritySnippetKind = iota
 	LocaleSnippetKind   = iota
 	NetworkSnippetKind  = iota
+	SourceSnippetKind   = iota
+	DebugSnippetKind    = iota
 )
 
 var AllSnippetKinds = []SnippetKind{
@@ -33,6 +35,8 @@ var AllSnippetKinds = []SnippetKind{
 	SecuritySnippetKind,
 	LocaleSnippetKind,
 	NetworkSnippetKind,
+	SourceSnippetKind,
+	DebugSnippetKind,
 }
 
 func ParseSnippetKind(i int16) SnippetKind {
@@ -51,6 +55,10 @@ func ParseSnippetKind(i int16) SnippetKind {
 		return LocaleSnippetKind
 	case 6:
 		return NetworkSnippetKind
+	case 7:
+		return SourceSnippetKind
+	case 8:
+		return DebugSnippetKind
 	default:
 		return -1
 	}
@@ -70,6 +78,8 @@ func (sk SnippetKind) String() string {
 		return "locale"
 	case NetworkSnippetKind:
 		return "network"
+	case SourceSnippetKind:
+		return "source"
 	}
 	return ""
 }

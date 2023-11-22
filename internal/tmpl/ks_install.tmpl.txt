@@ -1,47 +1,65 @@
-# deprecated/removed
-#install
-#auth  --useshadow  --passalgo=sha512
-
-logging --host {{ .BaseHost }} --port {{ .SyslogPort }}
-text
-skipx
-{{ range .Snippets.network }}
-{{- . }}
+# network
+{{ range .Snippets.network -}}
+{{ . }}
 {{ else -}}
 network --bootproto=dhcp --device=link --activate --onboot=on --hostname {{ .SystemHostname }}
 {{ end -}}
-{{ range .Snippets.locale }}
-{{- . }}
+# /network
+# locale
+{{ range .Snippets.locale -}}
+{{ . }}
 {{ else -}}
 lang en_US.UTF-8
 keyboard 'us'
 timezone Etc/UTC --utc
 {{ end -}}
-{{ if .LiveimgSha256 }}
+# /locale
+# source
+{{ range .Snippets.source -}}
+{{ . }}
+{{ else -}}
+{{ if .LiveimgSha256 -}}
 liveimg --url={{ .BaseURL }}/img/{{ .ImageID }}/liveimg.tar.gz --checksum {{ .LiveimgSha256 }}
 {{ else -}}
 liveimg --url={{ .BaseURL }}/img/{{ .ImageID }}/liveimg.tar.gz
 {{ end -}}
-{{ range .Snippets.rootpw }}
-{{- . }}
+{{ end -}}
+# /source
+# rootpw
+{{ range .Snippets.rootpw -}}
+{{ . }}
 {{ else -}}
 rootpw --iscrypted --lock locked
 {{ end -}}
-{{ range .Snippets.security }}
-{{- . }}
+# /rootpw
+# security
+{{ range .Snippets.security -}}
+{{ . }}
 {{ else -}}
 firstboot --disable
 firewall --enabled --ssh
 selinux --enforcing
 {{ end -}}
-{{ range .Snippets.disk }}
-{{- . }}
+# /security
+# disk
+{{ range .Snippets.disk -}}
+{{ . }}
 {{ else -}}
 zerombr
 clearpart --all --initlabel
 autopart
 bootloader --location=mbr --timeout=1 --append="console=tty1 console=ttyS0,115200n8"
 {{ end -}}
+# /disk
+# debug
+{{ range .Snippets.debug -}}
+{{ . }}
+{{ else -}}
+text
+skipx
+logging --host {{ .BaseHost }} --port {{ .SyslogPort }}
+{{ end -}}
+# /debug
 {{ .LastAction }}
 
 %pre
@@ -49,10 +67,12 @@ hostnamectl hostname f-{{ .SystemID }}-{{ .InstallUUID }}
 systemctl reload rsyslog
 %end
 
-{{ range .Snippets.post }}
-{{- . }}
+# post
+{{ range .Snippets.post -}}
+{{ . }}
 {{ end -}}
 {{ .CustomSnippet }}
+# /post
 
 %post
 curl --silent -X POST "{{ .BaseURL }}/done/{{ .SystemID }}"
