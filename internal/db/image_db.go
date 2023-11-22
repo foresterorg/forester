@@ -19,9 +19,9 @@ func getImageDao(ctx context.Context) ImageDao {
 }
 
 func (dao imageDao) Create(ctx context.Context, image *model.Image) error {
-	query := `INSERT INTO images (name) VALUES ($1) RETURNING id`
+	query := `INSERT INTO images (name, liveimg_sha256) VALUES ($1, $2) RETURNING id`
 
-	err := Pool.QueryRow(ctx, query, image.Name).Scan(&image.ID)
+	err := Pool.QueryRow(ctx, query, image.Name, image.LiveimgSha256).Scan(&image.ID)
 	if err != nil {
 		return fmt.Errorf("db error: %w", err)
 	}
@@ -68,6 +68,21 @@ func (dao imageDao) List(ctx context.Context, limit, offset int64) ([]*model.Ima
 	}
 
 	return result, nil
+}
+
+func (dao imageDao) Update(ctx context.Context, image *model.Image) error {
+	query := `UPDATE images SET name = $2, liveimg_sha256 = $3 WHERE id = $1`
+
+	tag, err := Pool.Exec(ctx, query, image.ID, image.Name, image.LiveimgSha256)
+	if err != nil {
+		return fmt.Errorf("update error: %w", err)
+	}
+
+	if tag.RowsAffected() != 1 {
+		return fmt.Errorf("expected 1 row: %w", ErrAffectedMismatch)
+	}
+
+	return nil
 }
 
 func (dao imageDao) Delete(ctx context.Context, id int64) error {

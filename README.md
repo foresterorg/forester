@@ -28,8 +28,5 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 
 **TODO**
 
-* Custom snippet for acquisition (simple string)
-* Restarting running libvirt VM does not work (shutdown, edit domain, start needed)
 * Support for hash in `liveimg --checksum=<sha256>`: SHA of ISO itself and image tarball via table CHECKSUM(ID,OBJECT,ALG,SUM)
-* Validate kickstart of existing host (CLI -> calls ksvalidate)
 * Investigate how much work is BIOS support

@@ -46,6 +46,18 @@ func RenderKickstartForSystem(ctx context.Context, system *model.System, w io.Wr
 			la = tmpl.ShutdownLastAction
 		}
 
+		// load associated image
+		var liveimgSha256 string
+		if system.ImageID != nil {
+			iDao := db.GetImageDao(ctx)
+			img, err := iDao.FindByID(ctx, *system.ImageID)
+			if err != nil {
+				slog.ErrorContext(ctx, "error loading image for system", "id", system.ID, "image_id", system.ImageID)
+				return err
+			}
+			liveimgSha256 = img.LiveimgSha256
+		}
+
 		// load params and snippets
 		params := tmpl.KickstartParams{
 			SystemID:      system.ID,
@@ -54,11 +66,13 @@ func RenderKickstartForSystem(ctx context.Context, system *model.System, w io.Wr
 			LastAction:    la,
 			Snippets:      make(map[string][]string),
 			CustomSnippet: system.CustomSnippet,
+			LiveimgSha256: liveimgSha256,
 		}
 
 		for _, kind := range model.AllSnippetKinds {
 			snippets, err := sDao.FindByKind(ctx, system.ID, kind)
 			if err != nil {
+				slog.ErrorContext(ctx, "error loading snippet", "id", system.ID, "kind", kind)
 				return err
 			}
 			params.Snippets[kind.String()] = snippets

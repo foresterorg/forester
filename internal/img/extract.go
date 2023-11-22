@@ -2,9 +2,12 @@ package img
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/hooklift/iso9660"
@@ -29,15 +32,21 @@ var ExtractedPaths = map[string]string{
 
 var ExtractWG sync.WaitGroup
 
-func Extract(ctx context.Context, imageId int64) {
+type ExtractionResult struct {
+	TotalSize     int64
+	LiveimgSha256 string
+}
+
+func Extract(ctx context.Context, imageId int64) (*ExtractionResult, error) {
 	ExtractWG.Add(1)
 	defer ExtractWG.Done()
 	ctx = WithJobId(ctx, NewJobId())
+	result := &ExtractionResult{}
 
 	err := ensureDir(imageId)
 	if err != nil {
 		slog.ErrorContext(ctx, "cannot create directory", "err", err)
-		return
+		return nil, err
 	}
 
 	path := isoPath(imageId)
@@ -45,25 +54,30 @@ func Extract(ctx context.Context, imageId int64) {
 	file, err := os.Open(path)
 	if err != nil {
 		slog.ErrorContext(ctx, "cannot open image", "err", err)
-		return
+		return nil, err
 	}
 	defer file.Close()
 
 	isoReader, err := iso9660.NewReader(file)
 	if err != nil {
 		slog.ErrorContext(ctx, "cannot read iso9660", "err", err)
-		return
+		return nil, err
 	}
 
 	var fileCount int
 	for {
+		if ctx.Err() != nil {
+			slog.WarnContext(ctx, "stopping extraction - context was cancelled")
+			return nil, ctx.Err()
+		}
+
 		fileInfo, err := isoReader.Next()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
 			slog.ErrorContext(ctx, "cannot list iso9660 entry", "err", err)
-			return
+			return nil, err
 		}
 
 		mappedName, ok := ExtractedPaths[fileInfo.Name()]
@@ -77,7 +91,7 @@ func Extract(ctx context.Context, imageId int64) {
 		if fileInfo.IsDir() {
 			if err := os.MkdirAll(filePath, 0744); err != nil {
 				slog.ErrorContext(ctx, "cannot create dir", "err", err)
-				return
+				return nil, err
 			}
 			continue
 		}
@@ -85,35 +99,47 @@ func Extract(ctx context.Context, imageId int64) {
 		parentDir, _ := filepath.Split(filePath)
 		if err := os.MkdirAll(parentDir, 0744); err != nil {
 			slog.ErrorContext(ctx, "cannot create dir", "err", err)
-			return
+			return nil, err
 		}
 
 		reader := fileInfo.Sys().(io.Reader)
 		ff, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 		if err != nil {
 			slog.ErrorContext(ctx, "cannot open file for writing", "err", err, "file", filePath)
-			return
+			return nil, err
 		}
 
-		_, err = io.Copy(ff, reader)
+		// sha sum
+		shaWriter := sha256.New()
+		tee := io.TeeReader(reader, shaWriter)
+
+		written, err := io.Copy(ff, tee)
+		result.TotalSize += written
 
 		// with or without an error from Copy, we want to attempt Close.
 		closeErr := ff.Close()
 
 		if err != nil {
 			slog.ErrorContext(ctx, "iso9660 copy error", "err", err)
-			return
+			return nil, err
 		} else if closeErr != nil {
 			slog.ErrorContext(ctx, "close error", "err", err)
-			return
+			return nil, closeErr
 		}
 
 		fileCount += 1
 		if fileCount > 100 {
 			slog.ErrorContext(ctx, "too many files, giving up", "err", err)
-			return
+			return nil, err
 		}
 
-		slog.InfoContext(ctx, "extraction done", "file", path)
+		sha256sum := hex.EncodeToString(shaWriter.Sum(nil))
+		if strings.HasSuffix(filePath, "liveimg.tar.gz") {
+			result.LiveimgSha256 = sha256sum
+		}
+
+		slog.InfoContext(ctx, "extracted file", "file", path, "size", written, "sha256", sha256sum)
 	}
+
+	return result, nil
 }

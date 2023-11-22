@@ -50,6 +50,7 @@ type KickstartParams struct {
 	LastAction    LastAction
 	Snippets      map[string][]string
 	CustomSnippet string
+	LiveimgSha256 string
 }
 
 type KickstartErrorParams struct {

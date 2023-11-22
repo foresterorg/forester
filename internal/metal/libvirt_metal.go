@@ -113,12 +113,14 @@ func bootDevice(ctx context.Context, system *model.SystemAppliance, device strin
 
 	if state == 1 {
 		// domain is running
+		slog.InfoContext(ctx, "force resetting domain", "name", d.Name, "uuid", d.UUID)
 		err = v.DomainReset(d, 0)
 		if err != nil {
 			return fmt.Errorf("cannot reset domain: %w", err)
 		}
 	} else {
 		// domain was not running
+		slog.InfoContext(ctx, "creating domain", "name", d.Name, "uuid", d.UUID)
 		err = v.DomainCreate(d)
 		if err != nil {
 			return fmt.Errorf("cannot create domain: %w", err)

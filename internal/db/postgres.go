@@ -27,6 +27,7 @@ type ImageDao interface {
 	FindByID(ctx context.Context, id int64) (*model.Image, error)
 	Find(ctx context.Context, pattern string) (*model.Image, error)
 	List(ctx context.Context, limit, offset int64) ([]*model.Image, error)
+	Update(ctx context.Context, image *model.Image) error
 	Delete(ctx context.Context, id int64) error
 }
 

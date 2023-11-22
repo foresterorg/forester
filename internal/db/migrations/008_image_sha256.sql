@@ -1,0 +1,2 @@
+ALTER TABLE images
+  ADD COLUMN liveimg_sha256 TEXT NOT NULL DEFAULT '';

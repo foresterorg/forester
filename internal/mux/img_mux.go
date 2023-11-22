@@ -1,10 +1,14 @@
 package mux
 
 import (
+	"context"
 	"forester/internal/config"
+	"forester/internal/db"
 	"forester/internal/img"
+	"forester/internal/model"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/exp/slog"
@@ -28,6 +32,14 @@ func uploadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	dao := db.GetImageDao(r.Context())
+	dbImage, err := dao.FindByID(r.Context(), id)
+	if err != nil {
+		slog.ErrorContext(r.Context(), "cannot find image with this id", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	n, err := img.Copy(r.Context(), id, r.Body)
 	if err != nil {
 		slog.ErrorContext(r.Context(), "cannot copy image", "err", err)
@@ -36,7 +48,26 @@ func uploadImage(w http.ResponseWriter, r *http.Request) {
 	}
 	slog.DebugContext(r.Context(), "image written", "size", n)
 
-	go img.Extract(r.Context(), id)
+	go extractImage(dbImage)
+}
+
+func extractImage(dbImage *model.Image) {
+	deadline := time.Now().Add(30 * time.Minute)
+	ctx, cancel := context.WithDeadline(context.Background(), deadline)
+	defer cancel()
+
+	result, err := img.Extract(ctx, dbImage.ID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error during extraction", "err", err)
+		return
+	}
+
+	dbImage.LiveimgSha256 = result.LiveimgSha256
+	dao := db.GetImageDao(ctx)
+	err = dao.Update(ctx, dbImage)
+	if err != nil {
+		slog.ErrorContext(ctx, "could not update image sha256", "err", err)
+	}
 }
 
 func serveImagePath(w http.ResponseWriter, r *http.Request) {

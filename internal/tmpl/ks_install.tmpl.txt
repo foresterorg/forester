@@ -13,7 +13,11 @@ lang en_US.UTF-8
 keyboard 'us'
 timezone Etc/UTC --utc
 {{ end -}}
+{{ if .LiveimgSha256 }}
+liveimg --url={{ .BaseURL }}/img/{{ .ImageID }}/liveimg.tar.gz --checksum {{ .LiveimgSha256 }}
+{{ else -}}
 liveimg --url={{ .BaseURL }}/img/{{ .ImageID }}/liveimg.tar.gz
+{{ end -}}
 {{ range .Snippets.rootpw }}
 {{- . }}
 {{ else -}}
