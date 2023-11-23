@@ -75,8 +75,22 @@ type LogEntry struct {
 	ModifiedAt time.Time
 }
 
-func LogsForSystem(ctx context.Context, systemID int64) ([]LogEntry, error) {
-	result := make([]LogEntry, 0)
+type LogEntries []LogEntry
+
+func (e LogEntries) Len() int {
+	return len(e)
+}
+
+func (e LogEntries) Swap(i, j int) {
+	e[i], e[j] = e[j], e[i]
+}
+
+func (e LogEntries) Less(i, j int) bool {
+	return e[i].CreatedAt.Before(e[j].CreatedAt)
+}
+
+func LogsForSystem(ctx context.Context, systemID int64) (LogEntries, error) {
+	result := make(LogEntries, 0)
 	files, err := filepath.Glob(path.Join(config.Logging.SyslogDir, fmt.Sprintf("f-%d-*", systemID)))
 	if err != nil {
 		return nil, fmt.Errorf("error while listing log entries: %w", err)
@@ -169,11 +183,10 @@ func (d *Directory) fileHandler(ctx context.Context, channel syslog.LogPartsChan
 			if !ok {
 				tag = "-"
 			}
-			timestamp := "00:00:00"
+			var timestamp time.Time
 			ts, ok := logParts["timestamp"]
 			if ok {
-				t, _ := time.Parse(time.RFC3339, ts.(string))
-				timestamp = fmt.Sprintf("%02d:%02d:%02d", t.Hour(), t.Minute(), t.Second())
+				timestamp = ts.(time.Time)
 			}
 			str := fmt.Sprintf("%s %s t:%s\n", timestamp, logParts["content"], tag)
 			if _, err := sw.File.WriteString(str); err != nil {

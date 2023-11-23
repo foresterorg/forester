@@ -36,6 +36,7 @@ rootpw --iscrypted --lock locked
 {{ range .Snippets.security -}}
 {{ . }}
 {{ else -}}
+sshpw --username forester-{{ .SystemID }} --plaintext {{ .InstallUUID }}
 firstboot --disable
 firewall --enabled --ssh
 selinux --enforcing

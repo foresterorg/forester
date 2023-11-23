@@ -69,6 +69,8 @@ func main() {
 			err = systemKickstart(ctx, cmd)
 		} else if cmd := args.System.Logs; cmd != nil {
 			err = systemLogs(ctx, cmd)
+		} else if cmd := args.System.Ssh; cmd != nil {
+			err = systemSsh(ctx, cmd)
 		} else if cmd := args.System.Acquire; cmd != nil {
 			err = systemAcquire(ctx, cmd)
 		} else if cmd := args.System.Rename; cmd != nil {

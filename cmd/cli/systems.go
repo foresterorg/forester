@@ -35,7 +35,12 @@ type systemKickstartCmd struct {
 
 type systemLogsCmd struct {
 	Pattern  string `arg:"positional,required" placeholder:"MAC_OR_NAME"`
-	Download string `arg:"-d"`
+	Download string `arg:"-d" help:"download a log" placeholder:"f-X-XXXX.log"`
+	Last     bool   `arg:"-l" help:"show last log"`
+}
+
+type systemSshCmd struct {
+	Pattern string `arg:"positional,required" placeholder:"MAC_OR_NAME"`
 }
 
 type systemRenameCmd struct {
@@ -73,6 +78,7 @@ type systemCmd struct {
 	Release     *systemReleaseCmd     `arg:"subcommand:release" help:"release system"`
 	Kickstart   *systemKickstartCmd   `arg:"subcommand:kickstart" help:"show system kickstart"`
 	Logs        *systemLogsCmd        `arg:"subcommand:logs" help:"show installation log history"`
+	Ssh         *systemSshCmd         `arg:"subcommand:ssh" help:"ssh to anaconda during installation"`
 	BootNetwork *systemBootNetworkCmd `arg:"subcommand:bootnet" help:"reset (hard reboot) system and boot from network"`
 	BootLocal   *systemBootLocalCmd   `arg:"subcommand:bootlocal" help:"reset (hard reboot) system and boot from local drive"`
 }
@@ -187,13 +193,20 @@ func systemKickstart(ctx context.Context, cmdArgs *systemKickstartCmd) error {
 	return nil
 }
 
+func downloadLog(path, uuid string) error {
+	url := fmt.Sprintf("%s/logs/%s", path, uuid)
+	err := download(url, os.Stdout)
+	if err != nil {
+		return fmt.Errorf("cannot fetch %s: %w", url, err)
+	}
+	return nil
+}
+
 func systemLogs(ctx context.Context, cmdArgs *systemLogsCmd) error {
 	if cmdArgs.Download != "" {
-		// download log file
-		url := fmt.Sprintf("%s/logs/%s", args.URL, cmdArgs.Download)
-		err := download(url, os.Stdout)
+		err := downloadLog(args.URL, cmdArgs.Download)
 		if err != nil {
-			return fmt.Errorf("cannot fetch %s: %w", url, err)
+			return fmt.Errorf("cannot download: %w", err)
 		}
 	} else {
 		// get a listing
@@ -205,11 +218,33 @@ func systemLogs(ctx context.Context, cmdArgs *systemLogsCmd) error {
 
 		w := newTabWriter()
 		fmt.Fprintln(w, "Created\tModified\tName\tSize")
+		var lastEntry *ctl.LogEntry
 		for _, le := range entries {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%d\n", le.CreatedAt.Local().Format(time.DateTime), le.ModifiedAt.Local().Format(time.DateTime), le.Path, le.Size)
+			if le.Size > 0 {
+				lastEntry = le
+				fmt.Fprintf(w, "%s\t%s\t%s\t%d\n", le.CreatedAt.Local().Format(time.DateTime), le.ModifiedAt.Local().Format(time.DateTime), le.Path, le.Size)
+			}
 		}
 		w.Flush()
+
+		if cmdArgs.Last && lastEntry != nil {
+			err := downloadLog(args.URL, lastEntry.Path)
+			if err != nil {
+				return fmt.Errorf("cannot download: %w", err)
+			}
+		}
 	}
+	return nil
+}
+
+func systemSsh(ctx context.Context, cmdArgs *systemSshCmd) error {
+	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
+	sys, err := client.Find(ctx, cmdArgs.Pattern)
+	if err != nil {
+		return fmt.Errorf("cannot find system: %w", err)
+	}
+	fmt.Printf("ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no forester-%d@IP\nPASSWORD: %s\n", sys.ID, sys.InstallUUID)
+
 	return nil
 }
 

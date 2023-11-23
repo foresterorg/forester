@@ -34,7 +34,7 @@ var config struct {
 	} `env-prefix:"DATABASE_"`
 	Logging struct {
 		Level     string `env:"LEVEL" env-default:"debug" env-description:"logger level (debug, info, warn, error)"`
-		Syslog    bool   `env:"SYSLOG" env-default:"true" env-description:"write Anaconda syslog data into application log"`
+		Syslog    bool   `env:"SYSLOG" env-default:"false" env-description:"write Anaconda syslog data into application log"`
 		SyslogDir string `env:"SYSLOG_DIR" env-default:"logs" env-description:"absolute path to directory with syslog files"`
 	} `env-prefix:"LOGGING_"`
 	Images struct {

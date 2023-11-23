@@ -7,6 +7,7 @@ import (
 	"forester/internal/tmpl"
 	"net"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -41,6 +42,14 @@ func MountBoot(r *chi.Mux) {
 }
 
 func serveBootPath(w http.ResponseWriter, r *http.Request) {
+	var headers []slog.Attr
+	for k, v := range r.Header {
+		pair := slog.String(k, strings.Join(v, " "))
+		headers = append(headers, pair)
+	}
+	if len(headers) > 0 {
+		slog.DebugContext(r.Context(), "HTTP headers", "headers", slog.GroupValue(headers...))
+	}
 	fs := http.StripPrefix("/boot", http.FileServer(http.Dir(config.BootPath())))
 	fs.ServeHTTP(w, r)
 }

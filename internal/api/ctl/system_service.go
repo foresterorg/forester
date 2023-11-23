@@ -11,6 +11,7 @@ import (
 	"forester/internal/mux"
 	"golang.org/x/exp/slog"
 	"net"
+	"sort"
 	"strings"
 )
 
@@ -264,6 +265,7 @@ func (i SystemServiceImpl) Logs(ctx context.Context, systemPattern string) ([]*L
 		return nil, err
 	}
 
+	sort.Sort(logEntries)
 	result := make([]*LogEntry, 0, len(logEntries))
 	for _, le := range logEntries {
 		nle := LogEntry{
