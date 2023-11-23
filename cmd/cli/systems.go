@@ -49,6 +49,7 @@ type systemAcquireCmd struct {
 	Snippets      []string `arg:"-s"`
 	CustomSnippet string   `arg:"-x"`
 	Comment       string   `arg:"-c"`
+	Force         bool     `arg:"-f"`
 }
 
 type systemReleaseCmd struct {
@@ -224,7 +225,7 @@ func systemRename(ctx context.Context, cmdArgs *systemRenameCmd) error {
 
 func systemAcquire(ctx context.Context, cmdArgs *systemAcquireCmd) error {
 	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
-	err := client.Acquire(ctx, cmdArgs.Pattern, cmdArgs.Image, cmdArgs.Comment, cmdArgs.Snippets, cmdArgs.CustomSnippet)
+	err := client.Acquire(ctx, cmdArgs.Pattern, cmdArgs.Image, cmdArgs.Comment, cmdArgs.Snippets, cmdArgs.CustomSnippet, cmdArgs.Force)
 	if err != nil {
 		return fmt.Errorf("cannot acquire system: %w", err)
 	}

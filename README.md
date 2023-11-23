@@ -29,3 +29,5 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 **TODO**
 
 * Investigate how much work is BIOS support
+* Shim should load Grub from the same image (not from installing image)
+* Importing shim signatures in dicovery mode: https://lukas.zapletalovi.com/posts/2021/rhelcentos-8-shim-kernel-signatures/

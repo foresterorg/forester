@@ -58,7 +58,7 @@ service SystemService
   - Register(system: NewSystem)
   - Find(pattern: string) => (system: System)
   - Rename(pattern: string, newName: string)
-  - Acquire(systemPattern: string, imagePattern: string, comment: string, snippets: []string, customSnippet: string)
+  - Acquire(systemPattern: string, imagePattern: string, comment: string, snippets: []string, customSnippet: string, force: bool)
   - Release(systemPattern: string)
   - List(limit: int64, offset: int64) => (systems: []System)
   - BootNetwork(systemPattern: string)

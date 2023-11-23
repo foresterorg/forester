@@ -163,7 +163,7 @@ func (i SystemServiceImpl) List(ctx context.Context, limit int64, offset int64) 
 	return result, nil
 }
 
-func (i SystemServiceImpl) Acquire(ctx context.Context, systemPattern, imagePattern, comment string, snippets []string, customSnippet string) error {
+func (i SystemServiceImpl) Acquire(ctx context.Context, systemPattern, imagePattern, comment string, snippets []string, customSnippet string, force bool) error {
 	daoSystem := db.GetSystemDao(ctx)
 	daoImage := db.GetImageDao(ctx)
 	daoSnip := db.GetSnippetDao(ctx)
@@ -187,7 +187,7 @@ func (i SystemServiceImpl) Acquire(ctx context.Context, systemPattern, imagePatt
 		snippetIDs[i] = s.ID
 	}
 
-	err = daoSystem.Acquire(ctx, system.ID, image.ID, comment, snippetIDs, customSnippet)
+	err = daoSystem.Acquire(ctx, system.ID, image.ID, comment, snippetIDs, customSnippet, force)
 	if err != nil {
 		return fmt.Errorf("cannot acquire: %w", err)
 	}
