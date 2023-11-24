@@ -28,8 +28,6 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 
 **TODO**
 
-* Refactor extracting with xorriso and prepare RPM/ostree docs
-* Ability to pass whole kickstart via --ks option suppressing any templating
 * Implement installation "queue" as a table (install uuid, exclusive, system id, creation time, state: queued, shim, grub, kickstart, done)
 * Move image from system to installation table (maybe others)
 * Set the global bootstrap shim image id from latest queue installation and drop global configuration
@@ -38,5 +36,6 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 * Support for loading shim via MAC address through Redfish boot URL param (/bmac/AA:BB:CC:DD:EE:FF/shim.efi)
 * Importing shim signatures in dicovery mode: https://lukas.zapletalovi.com/posts/2021/rhelcentos-8-shim-kernel-signatures/
 * Detect installation IP address (shim + %pre curl) and secure the default sshpw password with "ssh" CLI fully working
+* Ability to pass whole kickstart via --ks option suppressing any templating
 * Implement pykickstart checking of kickstart content (generated template and ks)
 * Investigate how much work is BIOS support (via dnsmasq)

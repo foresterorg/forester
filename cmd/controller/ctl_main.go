@@ -97,7 +97,7 @@ func main() {
 	<-waitForSignal
 
 	slog.DebugContext(ctx, "waiting for extracting jobs to complete")
-	img.ExtractWG.Wait()
+	img.Stop()
 
 	slog.DebugContext(ctx, "shutdown complete")
 }

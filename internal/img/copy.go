@@ -2,23 +2,23 @@ package img
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
 )
 
-func Copy(ctx context.Context, imageId int64, reader io.Reader) (int64, error) {
-	err := ensureDir(imageId)
+func Copy(ctx context.Context, destFile string, reader io.Reader) (int64, string, error) {
+	file, err := os.OpenFile(destFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		return 0, fmt.Errorf("cannot create directory: %w", err)
-	}
-
-	file, err := os.OpenFile(isoPath(imageId), os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		return 0, fmt.Errorf("cannot open image: %w", err)
+		return 0, "", fmt.Errorf("cannot open image: %w", err)
 	}
 	defer file.Close()
 
-	nBytes, err := io.Copy(file, reader)
-	return nBytes, err
+	h := sha256.New()
+	tee := io.TeeReader(reader, h)
+
+	nBytes, err := io.Copy(file, tee)
+	return nBytes, hex.EncodeToString(h.Sum(nil)), err
 }

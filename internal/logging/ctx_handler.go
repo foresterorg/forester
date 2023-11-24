@@ -2,8 +2,6 @@ package logging
 
 import (
 	"context"
-	"forester/internal/img"
-
 	"golang.org/x/exp/slog"
 )
 
@@ -33,7 +31,7 @@ func (h *ContextHandler) Handle(ctx context.Context, r slog.Record) error {
 		}
 		r.AddAttrs(traceAttr)
 	}
-	jid := img.JobId(ctx)
+	jid := JobId(ctx)
 	if jid != "" {
 		traceAttr := slog.Attr{
 			Key:   "job_id",

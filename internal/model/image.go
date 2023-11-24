@@ -7,6 +7,9 @@ type Image struct {
 	// User-facing name. Required.
 	Name string `db:"name"`
 
-	// Image liveimg.tar.gz sha256.
+	// Image ISO SHA256.
+	IsoSha256 string `db:"iso_sha256"`
+
+	// Image liveimg.tar.gz SHA256 (when present otherwise empty string).
 	LiveimgSha256 string `db:"liveimg_sha256"`
 }

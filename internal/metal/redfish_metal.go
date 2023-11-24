@@ -19,7 +19,7 @@ type RedfishMetal struct {
 }
 
 func configFromApp(ctx context.Context, app *model.Appliance) gofish.ClientConfig {
-	sw := logging.SlogWriter{Logger: slog.Default(), Level: slog.LevelInfo, Context: ctx}
+	sw := logging.SlogDualWriter{Logger: slog.Default(), Level: slog.LevelInfo, Context: ctx}
 	return gofish.ClientConfig{
 		Endpoint:   app.URI,
 		Insecure:   true,

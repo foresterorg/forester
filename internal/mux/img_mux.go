@@ -2,11 +2,19 @@ package mux
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
+	"fmt"
 	"forester/internal/config"
 	"forester/internal/db"
 	"forester/internal/img"
 	"forester/internal/model"
+	"io"
+	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -40,15 +48,73 @@ func uploadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	n, err := img.Copy(r.Context(), id, r.Body)
+	err = ensureDir(dbImage.ID)
+	if err != nil {
+		slog.ErrorContext(r.Context(), "cannot create dir for ISO", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	n, isoSha256, err := img.Copy(r.Context(), isoPath(dbImage.ID), r.Body)
 	if err != nil {
 		slog.ErrorContext(r.Context(), "cannot copy image", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	slog.DebugContext(r.Context(), "image written", "size", n)
+	slog.DebugContext(r.Context(), "image written", "size", n, "sha256sum", isoSha256)
+
+	dbImage.IsoSha256 = isoSha256
+	err = dao.Update(r.Context(), dbImage)
+	if err != nil {
+		slog.ErrorContext(r.Context(), "could not update ISO sha256", "err", err)
+	}
 
 	go extractImage(dbImage)
+}
+
+func ensureDir(imageId int64) error {
+	result := filepath.Join(config.Images.Directory, strconv.FormatInt(imageId, 10))
+	err := os.MkdirAll(result, 0744)
+
+	if err != nil {
+		return fmt.Errorf("cannot write image: %w", err)
+	}
+
+	return nil
+}
+
+func dirPath(imageId int64) string {
+	return filepath.Join(config.Images.Directory, strconv.FormatInt(imageId, 10))
+}
+
+func isoPath(imageId int64) string {
+	return filepath.Join(config.Images.Directory, strconv.FormatInt(imageId, 10), "image.iso")
+}
+
+func sha256sum(file string) (string, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return "", fmt.Errorf("cannot open %s: %w", file, err)
+	}
+	defer f.Close()
+
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		log.Fatal(err)
+	}
+
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
+func fileExists(name string) (bool, error) {
+	_, err := os.Stat(name)
+	if err == nil {
+		return true, nil
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	return false, err
 }
 
 func extractImage(dbImage *model.Image) {
@@ -56,17 +122,45 @@ func extractImage(dbImage *model.Image) {
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
 	defer cancel()
 
-	result, err := img.Extract(ctx, dbImage.ID)
+	err := ensureDir(dbImage.ID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error during extraction", "err", err)
 		return
 	}
 
-	dbImage.LiveimgSha256 = result.LiveimgSha256
-	dao := db.GetImageDao(ctx)
-	err = dao.Update(ctx, dbImage)
+	err = img.ExtractToDir(ctx, isoPath(dbImage.ID), dirPath(dbImage.ID))
 	if err != nil {
-		slog.ErrorContext(ctx, "could not update image sha256", "err", err)
+		slog.ErrorContext(ctx, "error during extraction", "err", err)
+		return
+	}
+
+	err = os.Symlink("./EFI/BOOT/BOOTX64.EFI", filepath.Join(dirPath(dbImage.ID), "shim.efi"))
+	if err != nil {
+		slog.ErrorContext(ctx, "cannot create symlink", "err", err)
+		return
+	}
+	err = os.Symlink("./EFI/BOOT/grubx64.efi", filepath.Join(dirPath(dbImage.ID), "grubx64.efi"))
+	if err != nil {
+		slog.ErrorContext(ctx, "cannot create symlink", "err", err)
+		return
+	}
+
+	imgPath := filepath.Join(dirPath(dbImage.ID), "liveimg.tar.gz")
+	slog.DebugContext(ctx, "checking for liveimg.tar.gz", "path", imgPath)
+	if ok, err := fileExists(imgPath); ok && (err == nil) {
+		sum, err := sha256sum(imgPath)
+		if err != nil {
+			slog.ErrorContext(ctx, "error calculate SHA256 sum", "err", err)
+			return
+		}
+		slog.DebugContext(ctx, "sha256 of the liveimg.tar.gz", "sha256sum", sum)
+
+		dbImage.LiveimgSha256 = sum
+		dao := db.GetImageDao(ctx)
+		err = dao.Update(ctx, dbImage)
+		if err != nil {
+			slog.ErrorContext(ctx, "could not update image sha256", "err", err)
+		}
 	}
 }
 

@@ -29,5 +29,5 @@ func Initialize(level slog.Level) {
 	logger := slog.New(NewContextHandler(th))
 	slog.SetDefault(logger)
 
-	log.SetOutput(SlogWriter{logger, slog.LevelInfo, context.Background()})
+	log.SetOutput(SlogDualWriter{logger, slog.LevelInfo, context.Background()})
 }
