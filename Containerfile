@@ -9,3 +9,4 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 COPY --from=build /build/forester-controller /forester-controller
 USER 1001
 CMD ["/forester-controller"]
+CMD microdnf install xorriso pykickstart
