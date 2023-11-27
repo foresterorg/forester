@@ -4,6 +4,7 @@ import (
 	"errors"
 	"forester/internal/config"
 	"forester/internal/db"
+	"forester/internal/model"
 	"forester/internal/tmpl"
 	"net"
 	"net/http"
@@ -63,8 +64,6 @@ func HandleBootstrapConfig(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-var ErrSystemNotInstallable = errors.New("system is not installable, acquire it again or change APP_INSTALL_DURATION")
-
 func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
 	mac, err := net.ParseMAC(chi.URLParam(r, "MAC"))
 	if err != nil {
@@ -72,10 +71,12 @@ func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var imageId int64
+	var imageId, systemId int64
+	inst := &model.Installation{}
 
 	sDao := db.GetSystemDao(r.Context())
 	system, err := sDao.FindByMac(r.Context(), mac)
+
 	if errors.Is(err, pgx.ErrNoRows) {
 		slog.InfoContext(r.Context(), "unknown system - booting discovery", "mac", mac.String())
 		imageId = config.Images.BootId
@@ -84,17 +85,27 @@ func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
 		renderGrubError(err, w, r)
 		return
 	} else {
-		if !system.Installable() || system.ImageID == nil {
-			slog.InfoContext(r.Context(), "known system - booting discovery", "mac", mac.String())
-			imageId = config.Images.BootId
+		systemId = system.ID
+		iDao := db.GetInstallationDao(r.Context())
+		insts, err := iDao.FindValidByState(r.Context(), systemId, model.FinishedInstallState)
+		if err != nil {
+			slog.ErrorContext(r.Context(), "cannot find installations for system", "mac", mac.String(), "err", err)
+			renderGrubError(err, w, r)
+			return
+		}
+
+		if len(insts) > 0 {
+			slog.InfoContext(r.Context(), "known system - booting installer", "mac", mac.String(), "pending_installs", len(insts), "install_id", inst.ID, "install_uuid", inst.UUID)
+			inst = insts[0]
+			imageId = inst.ImageID
 		} else {
-			imageId = *system.ImageID
+			slog.InfoContext(r.Context(), "known system but not installable - booting discovery", "mac", mac.String())
+			imageId = config.Images.BootId
 		}
 	}
 
-	slog.InfoContext(r.Context(), "known system - booting installer", "mac", mac.String())
 	w.WriteHeader(http.StatusOK)
-	err = tmpl.RenderGrubKernel(r.Context(), w, tmpl.GrubKernelParams{ImageID: imageId, SystemID: system.ID, InstallUUID: system.InstallUUID.String()})
+	err = tmpl.RenderGrubKernel(r.Context(), w, tmpl.GrubKernelParams{ImageID: imageId, SystemID: systemId, InstallUUID: inst.UUID.String()})
 	if err != nil {
 		renderGrubError(err, w, r)
 		return

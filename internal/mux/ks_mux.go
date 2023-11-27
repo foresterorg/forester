@@ -3,13 +3,13 @@ package mux
 import (
 	"context"
 	"errors"
-	"fmt"
 	"forester/internal/db"
 	"forester/internal/model"
 	"forester/internal/tmpl"
 	"io"
 	"net"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -28,78 +28,95 @@ func MountKickstart(r *chi.Mux) {
 var ErrMACHeaderInvalid = errors.New("invalid format of RHN MAC header")
 
 func RenderKickstartForSystem(ctx context.Context, system *model.System, w io.Writer) error {
-	if system != nil && system.Installable() {
-		la := tmpl.RebootLastAction
-		aDao := db.GetApplianceDao(ctx)
-		sDao := db.GetSnippetDao(ctx)
-
-		appliance, err := aDao.FindByID(ctx, *system.ApplianceID)
-		if errors.Is(err, pgx.ErrNoRows) {
-			slog.DebugContext(ctx, "installing a system without appliance")
-		} else if err != nil {
-			slog.ErrorContext(ctx, "error while fetching appliance for system", "id", system.ID)
+	if system == nil {
+		slog.DebugContext(ctx, "no system found, missing Anaconda MAC header")
+		err := tmpl.RenderKickstartDiscover(ctx, w)
+		if err != nil {
 			return err
 		}
+		return err
+	}
 
-		// libvirt cannot be restarted due to boot order hook
-		if appliance != nil && appliance.Kind == model.LibvirtKind {
-			la = tmpl.ShutdownLastAction
+	inDao := db.GetInstallationDao(ctx)
+	insts, err := inDao.FindValidByState(ctx, system.ID, model.FinishedInstallState)
+	var inst *model.Installation
+	if err != nil {
+		slog.ErrorContext(ctx, "error during finding installations for a system", "id", system.ID, "err", err)
+		err := tmpl.RenderKickstartDiscover(ctx, w)
+		if err != nil {
+			return err
 		}
+		return err
+	}
 
-		// load associated image
-		var liveimgSha256 string
-		if system.ImageID != nil {
-			iDao := db.GetImageDao(ctx)
-			img, err := iDao.FindByID(ctx, *system.ImageID)
-			if err != nil {
-				slog.ErrorContext(ctx, "error loading image for system", "id", system.ID, "image_id", system.ImageID)
-				return err
-			}
-			liveimgSha256 = img.LiveimgSha256
-		}
-
-		// load params and snippets
-		params := tmpl.KickstartParams{
-			SystemID:       system.ID,
-			ImageID:        *system.ImageID,
-			SystemName:     system.Name,
-			SystemHostname: ToHostname(system.Name),
-			InstallUUID:    system.InstallUUID.String(),
-			LastAction:     la,
-			Snippets:       make(map[string][]string),
-			CustomSnippet:  system.CustomSnippet,
-			LiveimgSha256:  liveimgSha256,
-		}
-
-		for _, kind := range model.AllSnippetKinds {
-			snippets, err := sDao.FindByKind(ctx, system.ID, kind)
-			if err != nil {
-				slog.ErrorContext(ctx, "error loading snippet", "id", system.ID, "kind", kind)
-				return err
-			}
-			params.Snippets[kind.String()] = snippets
-		}
-
-		err = tmpl.RenderKickstartInstall(ctx, w, params)
-	} else if system != nil && !system.Installable() {
+	if len(insts) == 0 {
 		slog.WarnContext(ctx, "system found but not installable",
 			"id", system.ID,
 			"name", system.Name,
-			"acquired_at", system.AcquiredAt.String(),
-			"image_id", system.ImageID)
+			"acquired_at", system.AcquiredAt.String())
 		err := tmpl.RenderKickstartDiscover(ctx, w)
 		if err != nil {
 			return err
 		}
-	} else {
-		err := tmpl.RenderKickstartDiscover(ctx, w)
-		if err != nil {
-			return err
-		}
+		return err
 	}
+	inst = insts[0]
+
+	la := tmpl.RebootLastAction
+	aDao := db.GetApplianceDao(ctx)
+	sDao := db.GetSnippetDao(ctx)
+
+	appliance, err := aDao.FindByID(ctx, *system.ApplianceID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		slog.DebugContext(ctx, "installing a system without appliance")
+	} else if err != nil {
+		slog.ErrorContext(ctx, "error while fetching appliance for system", "id", system.ID)
+		return err
+	}
+
+	// libvirt cannot be restarted due to boot order hook
+	if appliance != nil && appliance.Kind == model.LibvirtKind {
+		la = tmpl.ShutdownLastAction
+	}
+
+	// load associated image
+	var liveimgSha256 string
+	iDao := db.GetImageDao(ctx)
+	img, err := iDao.FindByID(ctx, inst.ImageID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error loading image for system", "id", system.ID, "image_id", inst.ImageID)
+		return err
+	}
+	liveimgSha256 = img.LiveimgSha256
+
+	// load params and snippets
+	params := tmpl.KickstartParams{
+		SystemID:       system.ID,
+		ImageID:        inst.ImageID,
+		SystemName:     system.Name,
+		SystemHostname: ToHostname(system.Name),
+		InstallUUID:    inst.UUID.String(),
+		LastAction:     la,
+		Snippets:       make(map[string][]string),
+		CustomSnippet:  system.CustomSnippet,
+		LiveimgSha256:  liveimgSha256,
+	}
+
+	for _, kind := range model.AllSnippetKinds {
+		snippets, err := sDao.FindByKind(ctx, system.ID, kind)
+		if err != nil {
+			slog.ErrorContext(ctx, "error loading snippet", "id", system.ID, "kind", kind)
+			return err
+		}
+		params.Snippets[kind.String()] = snippets
+	}
+
+	err = tmpl.RenderKickstartInstall(ctx, w, params)
 
 	return nil
 }
+
+var headerRegexp = regexp.MustCompile("(?i)^X-RHN-Provisioning-MAC-")
 
 func HandleKickstart(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
@@ -107,8 +124,13 @@ func HandleKickstart(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	sDao := db.GetSystemDao(r.Context())
-	for i := 0; i < 64; i++ {
-		if macString := r.Header.Get(fmt.Sprintf("X-RHN-Provisioning-MAC-%d", i)); macString != "" {
+	for k, v := range r.Header {
+		if !headerRegexp.MatchString(k) {
+			slog.DebugContext(r.Context(), "skipping header", "name", k, "value", v)
+			continue
+		}
+		for _, macString := range v {
+			slog.DebugContext(r.Context(), "processing header", "name", k, "value", v)
 			headerLine := strings.SplitN(macString, " ", 2)
 			if len(headerLine) != 2 {
 				renderKsError(ErrMACHeaderInvalid, w, r)
@@ -132,9 +154,8 @@ func HandleKickstart(w http.ResponseWriter, r *http.Request) {
 			} else {
 				break
 			}
-		} else {
-			break
 		}
+
 	}
 
 	err = RenderKickstartForSystem(r.Context(), system, w)

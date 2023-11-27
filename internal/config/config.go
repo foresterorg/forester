@@ -15,10 +15,9 @@ import (
 
 var config struct {
 	App struct {
-		Port            int           `env:"PORT" env-default:"8000" env-description:"HTTP port of the API service"`
-		SyslogPort      int           `env:"SYSLOG_PORT" env-default:"8514" env-description:"syslog TCP and UDP port"`
-		Hostname        string        `env:"HOSTNAME" env-default:"" env-description:"hostname of the service"`
-		InstallDuration time.Duration `env:"INSTALL_DURATION" env-default:"1h" env-description:"duration for which the service initiates provisioning after acquire"`
+		Port       int    `env:"PORT" env-default:"8000" env-description:"HTTP port of the API service"`
+		SyslogPort int    `env:"SYSLOG_PORT" env-default:"8514" env-description:"syslog TCP and UDP port"`
+		Hostname   string `env:"HOSTNAME" env-default:"" env-description:"hostname of the service"`
 	} `env-prefix:"APP_"`
 	Database struct {
 		Host        string        `env:"HOST" env-default:"localhost" env-description:"main database hostname"`

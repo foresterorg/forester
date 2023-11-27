@@ -1,8 +1,6 @@
 package model
 
 import (
-	"forester/internal/config"
-	"github.com/google/uuid"
 	"net"
 	"strings"
 	"time"
@@ -37,14 +35,8 @@ type System struct {
 	// for a system that way not acquired yet.
 	AcquiredAt time.Time `db:"acquired_at"`
 
-	// Image ID or nil when no image was acquired yet.
-	ImageID *int64 `db:"image_id"`
-
 	// Comment, can be blank.
 	Comment string `db:"comment"`
-
-	// Installation UUID, changes on every re-installation.
-	InstallUUID uuid.UUID `db:"install_uuid"`
 
 	// CustomSnippet, can be blank.
 	CustomSnippet string `db:"custom_snippet"`
@@ -65,10 +57,6 @@ func (f *Facts) FactsMap() map[string]string {
 		result[f.Key] = f.Value
 	}
 	return result
-}
-
-func (s System) Installable() bool {
-	return s.Acquired && s.ImageID != nil && time.Now().Sub(s.AcquiredAt) < config.Application.InstallDuration
 }
 
 func (s System) UniqueHwAddrs() []net.HardwareAddr {

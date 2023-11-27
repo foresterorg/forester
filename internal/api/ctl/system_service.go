@@ -101,16 +101,14 @@ func (i SystemServiceImpl) Find(ctx context.Context, pattern string) (*System, e
 	}
 
 	payload := &System{
-		ID:          result.System.ID,
-		Name:        result.System.Name,
-		HwAddrs:     hwa,
-		Facts:       result.System.Facts.FactsMap(),
-		Acquired:    result.System.Acquired,
-		AcquiredAt:  result.System.AcquiredAt,
-		ImageID:     result.System.ImageID,
-		Comment:     result.System.Comment,
-		UID:         result.System.UID,
-		InstallUUID: result.System.InstallUUID.String(),
+		ID:         result.System.ID,
+		Name:       result.System.Name,
+		HwAddrs:    hwa,
+		Facts:      result.System.Facts.FactsMap(),
+		Acquired:   result.System.Acquired,
+		AcquiredAt: result.System.AcquiredAt,
+		Comment:    result.System.Comment,
+		UID:        result.System.UID,
 	}
 
 	payload.Appliance = &Appliance{
@@ -156,7 +154,6 @@ func (i SystemServiceImpl) List(ctx context.Context, limit int64, offset int64) 
 			Facts:      item.Facts.FactsMap(),
 			Acquired:   item.Acquired,
 			AcquiredAt: item.AcquiredAt,
-			ImageID:    item.ImageID,
 			Comment:    item.Comment,
 		}
 	}
@@ -164,7 +161,7 @@ func (i SystemServiceImpl) List(ctx context.Context, limit int64, offset int64) 
 	return result, nil
 }
 
-func (i SystemServiceImpl) Acquire(ctx context.Context, systemPattern, imagePattern, comment string, snippets []string, customSnippet string, force bool) error {
+func (i SystemServiceImpl) Acquire(ctx context.Context, systemPattern string, imagePattern string, force bool, snippets []string, customSnippet string, ksOverride string, comment string) error {
 	daoSystem := db.GetSystemDao(ctx)
 	daoImage := db.GetImageDao(ctx)
 	daoSnip := db.GetSnippetDao(ctx)
@@ -188,11 +185,12 @@ func (i SystemServiceImpl) Acquire(ctx context.Context, systemPattern, imagePatt
 		snippetIDs[i] = s.ID
 	}
 
-	err = daoSystem.Acquire(ctx, system.ID, image.ID, comment, snippetIDs, customSnippet, force)
+	err = daoSystem.Acquire(ctx, system.ID, image.ID, force, snippetIDs, customSnippet, ksOverride, comment)
 	if err != nil {
 		return fmt.Errorf("cannot acquire: %w", err)
 	}
 
+	// TODO this should be done in the background via notification
 	err = i.BootNetwork(ctx, systemPattern)
 	if err != nil {
 		return fmt.Errorf("cannot reset after acquire: %w", err)

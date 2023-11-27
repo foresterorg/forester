@@ -28,14 +28,20 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 
 **TODO**
 
-* Implement installation "queue" as a table (install uuid, exclusive, system id, creation time, state: queued, shim, grub, kickstart, done)
-* Move image from system to installation table (maybe others)
-* Set the global bootstrap shim image id from latest queue installation and drop global configuration
-* Implement a scheduler for installation (when queue changes, a notification fires up on insert/update, calls go, it picks up the work)
-* Queue processor never schedules more than one exclusive installation and checks in regular interval for new work (in case something get stucked)
-* Support for loading shim via MAC address through Redfish boot URL param (/bmac/AA:BB:CC:DD:EE:FF/shim.efi)
-* Importing shim signatures in dicovery mode: https://lukas.zapletalovi.com/posts/2021/rhelcentos-8-shim-kernel-signatures/
-* Detect installation IP address (shim + %pre curl) and secure the default sshpw password with "ssh" CLI fully working
+* New param install duration API/CLI
+* Refactor discovery to use a regular host 00:00:00:00:00:00 (DiscoveryPre default snippet with an include)
+* Drop global BOOT_IMAGE_ID configuration
 * Ability to pass whole kickstart via --ks option suppressing any templating
-* Implement pykickstart checking of kickstart content (generated template and ks)
+* Support for loading shim via MAC address through Redfish boot URL param (/bmac/AA:BB:CC:DD:EE:FF/shim.efi)
+* Incorporate https://github.com/stmcginnis/gofish/pull/271 (v0.15.0)
+* Create events table and store installation milestones (boot, ks, finish) and rendered templates in the database
+* Installations API/CLI
+* Detect installation IP address (shim + %pre curl + event table) and secure the default sshpw password with "ssh" CLI fully working
+* Squash migrations and refactor table names to singular
+* Implement a scheduler for power operations (when queue changes, a notification fires up on insert/update, calls go, it picks up the work)
+* When image id is the same, use it. When there are different images add a warning message with sleep 1 minute.
+* Scheduler will never start more than one system with different image id and checks in regular interval for new work
 * Investigate how much work is BIOS support (via dnsmasq)
+* Implement pykickstart checking of kickstart content (generated template and ks)
+* Importing shim signatures in discovery mode: https://lukas.zapletalovi.com/posts/2021/rhelcentos-8-shim-kernel-signatures/
+* Ability to create/edit/show system comment

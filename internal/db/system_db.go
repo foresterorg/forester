@@ -69,22 +69,27 @@ func (dao systemDao) List(ctx context.Context, limit, offset int64) ([]*model.Sy
 	return result, nil
 }
 
-func (dao systemDao) Acquire(ctx context.Context, systemId, imageId int64, comment string, snippets []int64, customSnippet string, force bool) error {
+func (dao systemDao) Acquire(ctx context.Context, systemId, imageId int64, force bool, snippets []int64, snippetText, ksOverride, comment string) error {
 	txErr := WithTransaction(ctx, func(tx pgx.Tx) error {
+		insertQuery := `INSERT INTO installations (system_id, image_id, snippet_text, kickstart_override, comment) VALUES
+			($1, $2, $3, $4, $5) RETURNING id`
+		var instID int64
+
+		err := Pool.QueryRow(ctx, insertQuery, systemId, imageId, snippetText, ksOverride, comment).Scan(&instID)
+		if err != nil {
+			return fmt.Errorf("installation insert error: %w", err)
+		}
+
 		updateQuery := `UPDATE systems SET
 		acquired = true,
-		acquired_at = current_timestamp,
-		image_id = $2,
-		comment = $3,
-		install_uuid = gen_random_uuid(),
-		custom_snippet = $4
+		acquired_at = current_timestamp
 		WHERE id = $1`
 
 		if !force {
 			updateQuery += " AND acquired = false"
 		}
 
-		tag, err := tx.Exec(ctx, updateQuery, systemId, imageId, comment, customSnippet)
+		tag, err := tx.Exec(ctx, updateQuery, systemId)
 		if err != nil {
 			return fmt.Errorf("update error: %w", err)
 		}
@@ -93,8 +98,8 @@ func (dao systemDao) Acquire(ctx context.Context, systemId, imageId int64, comme
 			return fmt.Errorf("cannot find unacquired system with ID=%d: %w", systemId, ErrAffectedMismatch)
 		}
 
-		deleteQuery := `DELETE FROM systems_snippets WHERE system_id = $1`
-		tag, err = tx.Exec(ctx, deleteQuery, systemId)
+		deleteQuery := `DELETE FROM installations_snippets WHERE installation_id = $1`
+		tag, err = tx.Exec(ctx, deleteQuery, instID)
 		if err != nil {
 			return fmt.Errorf("delete snippets error: %w", err)
 		}
@@ -102,7 +107,7 @@ func (dao systemDao) Acquire(ctx context.Context, systemId, imageId int64, comme
 
 		batch := &pgx.Batch{}
 		for _, s := range snippets {
-			batch.Queue("INSERT INTO systems_snippets VALUES ($1, $2)", systemId, s)
+			batch.Queue("INSERT INTO installations_snippets VALUES ($1, $2)", instID, s)
 		}
 		br := tx.SendBatch(ctx, batch)
 		defer br.Close()
@@ -143,7 +148,6 @@ func (dao systemDao) Rename(ctx context.Context, systemId int64, newName string)
 func (dao systemDao) Release(ctx context.Context, systemId int64) error {
 	query := `UPDATE systems SET
 		acquired = false,
-		image_id = NULL,
 		comment = ''
 		WHERE id = $1 AND acquired = true`
 
@@ -174,9 +178,7 @@ func (dao systemDao) FindRelated(ctx context.Context, pattern string) (*model.Sy
 		s.facts AS "s.facts",
 		s.acquired AS "s.acquired",
 		s.acquired_at AS "s.acquired_at",
-		s.image_id AS "s.image_id",
 		s.comment AS "s.comment",
-		s.install_uuid AS "s.install_uuid",
 		COALESCE(a.name, '') AS "a.name",
 		COALESCE(a.kind, 0) AS "a.kind",
 		COALESCE(a.uri, '') AS "a.uri"
@@ -220,9 +222,7 @@ func (dao systemDao) FindByMacRelated(ctx context.Context, mac net.HardwareAddr)
 		s.facts AS "s.facts",
 		s.acquired AS "s.acquired",
 		s.acquired_at AS "s.acquired_at",
-		s.image_id AS "s.image_id",
 		s.comment AS "s.comment",
-		s.install_uuid AS "s.install_uuid",
 		COALESCE(a.name, '') AS "a.name",
 		COALESCE(a.kind, 0) AS "a.kind",
 		COALESCE(a.uri, '') AS "a.uri"

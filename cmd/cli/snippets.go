@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"forester/cmd/cli/edit"
 	"forester/internal/api/ctl"
+	"io"
 	"net/http"
+	"os"
 )
 
 type snippetCreateCmd struct {
-	Name string `arg:"-n,required" help:"unique snippet name"`
-	Kind string `arg:"-k,required" help:"snippet type ('disk' or 'post')"`
+	Name  string `arg:"-n,required" help:"unique snippet name"`
+	Kind  string `arg:"-k,required" help:"snippet type ('disk' or 'post')"`
+	Stdin bool   `arg:"-i" help:"snippet contents from stdin"`
 }
 
 type snippetEditCmd struct {
@@ -52,13 +55,23 @@ func snippetCreate(ctx context.Context, cmdArgs *snippetCreateCmd) error {
 	client := ctl.NewSnippetServiceClient(args.URL, http.DefaultClient)
 	kind := ctl.SnippetKindToInt(cmdArgs.Kind)
 
-	session := edit.Session{Input: snippetTemplate}
-	err := session.Edit()
-	if err != nil {
-		return fmt.Errorf("snippet edit error: %w", err)
+	var contents string
+	if cmdArgs.Stdin {
+		stdin, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			return fmt.Errorf("cannot read snippet contents from stdin: %w", err)
+		}
+		contents = string(stdin)
+	} else {
+		session := edit.Session{Input: snippetTemplate}
+		err := session.Edit()
+		if err != nil {
+			return fmt.Errorf("snippet edit error: %w", err)
+		}
+		contents = session.Output
 	}
 
-	err = client.Create(ctx, cmdArgs.Name, kind, session.Output)
+	err := client.Create(ctx, cmdArgs.Name, kind, contents)
 	if err != nil {
 		return fmt.Errorf("cannot create snippet: %w", err)
 	}

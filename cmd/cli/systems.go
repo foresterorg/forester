@@ -49,12 +49,13 @@ type systemRenameCmd struct {
 }
 
 type systemAcquireCmd struct {
-	Pattern       string   `arg:"positional,required" placeholder:"MAC_OR_NAME"`
-	Image         string   `arg:"-i,required"`
-	Snippets      []string `arg:"-s"`
-	CustomSnippet string   `arg:"-x"`
-	Comment       string   `arg:"-c"`
-	Force         bool     `arg:"-f"`
+	Pattern     string   `arg:"positional,required" placeholder:"MAC_OR_NAME"`
+	Image       string   `arg:"-i,required"`
+	Force       bool     `arg:"-f"`
+	Snippets    []string `arg:"-s"`
+	TextSnippet string   `arg:"-x"`
+	Kickstart   string   `arg:"-k" placeholder:"KS_OVERRIDE_CONTENTS"`
+	Comment     string   `arg:"-c"`
 }
 
 type systemReleaseCmd struct {
@@ -112,10 +113,8 @@ func systemShow(ctx context.Context, cmdArgs *systemShowCmd) error {
 	fmt.Fprintf(w, "%s\t%d\n", "ID", result.ID)
 	fmt.Fprintf(w, "%s\t%s\n", "Name", result.Name)
 	fmt.Fprintf(w, "%s\t%t\n", "Acquired", result.Acquired)
-	fmt.Fprintf(w, "%s\t%s\n", "Install UUID", result.InstallUUID)
-	if result.Acquired && result.ImageID != nil {
+	if result.Acquired {
 		fmt.Fprintf(w, "%s\t%s\n", "Acquired at", result.AcquiredAt.Format(time.ANSIC))
-		fmt.Fprintf(w, "%s\t%d\n", "Image ID", *result.ImageID)
 	}
 	for _, mac := range result.HwAddrs {
 		fmt.Fprintf(w, "%s\t%s\n", "MAC", mac)
@@ -243,7 +242,7 @@ func systemSsh(ctx context.Context, cmdArgs *systemSshCmd) error {
 	if err != nil {
 		return fmt.Errorf("cannot find system: %w", err)
 	}
-	fmt.Printf("ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no forester-%d@IP\nPASSWORD: %s\n", sys.ID, sys.InstallUUID)
+	fmt.Printf("ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no forester-%d@IP\nPASSWORD: %s\n", sys.ID, "INSTALLATION UUID")
 
 	return nil
 }
@@ -260,7 +259,7 @@ func systemRename(ctx context.Context, cmdArgs *systemRenameCmd) error {
 
 func systemAcquire(ctx context.Context, cmdArgs *systemAcquireCmd) error {
 	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
-	err := client.Acquire(ctx, cmdArgs.Pattern, cmdArgs.Image, cmdArgs.Comment, cmdArgs.Snippets, cmdArgs.CustomSnippet, cmdArgs.Force)
+	err := client.Acquire(ctx, cmdArgs.Pattern, cmdArgs.Image, cmdArgs.Force, cmdArgs.Snippets, cmdArgs.TextSnippet, cmdArgs.Kickstart, cmdArgs.Comment)
 	if err != nil {
 		return fmt.Errorf("cannot acquire system: %w", err)
 	}

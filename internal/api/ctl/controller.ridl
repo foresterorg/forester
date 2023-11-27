@@ -41,12 +41,10 @@ struct System
   - Facts: map<string,string>
   - Acquired: bool
   - AcquiredAt: timestamp
-  - ImageID?: int64
   - Comment: string
   - ApplianceID?: int64
   - Appliance?: Appliance
   - UID?: string
-  - InstallUUID: string
 
 struct LogEntry
   - Path: string
@@ -58,7 +56,7 @@ service SystemService
   - Register(system: NewSystem)
   - Find(pattern: string) => (system: System)
   - Rename(pattern: string, newName: string)
-  - Acquire(systemPattern: string, imagePattern: string, comment: string, snippets: []string, customSnippet: string, force: bool)
+  - Acquire(systemPattern: string, imagePattern: string, force: bool, snippets: []string, customSnippet: string, ksOverride: string, comment: string)
   - Release(systemPattern: string)
   - List(limit: int64, offset: int64) => (systems: []System)
   - BootNetwork(systemPattern: string)
