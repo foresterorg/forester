@@ -29,8 +29,6 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 **TODO**
 
 * New param install duration API/CLI
-* Refactor discovery to use a regular host 00:00:00:00:00:00 (DiscoveryPre default snippet with an include)
-* Drop global BOOT_IMAGE_ID configuration
 * Ability to pass whole kickstart via --ks option suppressing any templating
 * Support for loading shim via MAC address through Redfish boot URL param (/bmac/AA:BB:CC:DD:EE:FF/shim.efi)
 * Incorporate https://github.com/stmcginnis/gofish/pull/271 (v0.15.0)

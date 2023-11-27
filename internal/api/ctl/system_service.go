@@ -13,6 +13,7 @@ import (
 	"net"
 	"sort"
 	"strings"
+	"time"
 )
 
 var _ SystemService = SystemServiceImpl{}
@@ -161,7 +162,7 @@ func (i SystemServiceImpl) List(ctx context.Context, limit int64, offset int64) 
 	return result, nil
 }
 
-func (i SystemServiceImpl) Acquire(ctx context.Context, systemPattern string, imagePattern string, force bool, snippets []string, customSnippet string, ksOverride string, comment string) error {
+func (i SystemServiceImpl) Acquire(ctx context.Context, systemPattern string, imagePattern string, force bool, snippets []string, customSnippet string, ksOverride string, comment string, validUntil time.Time) error {
 	daoSystem := db.GetSystemDao(ctx)
 	daoImage := db.GetImageDao(ctx)
 	daoSnip := db.GetSnippetDao(ctx)
@@ -185,7 +186,7 @@ func (i SystemServiceImpl) Acquire(ctx context.Context, systemPattern string, im
 		snippetIDs[i] = s.ID
 	}
 
-	err = daoSystem.Acquire(ctx, system.ID, image.ID, force, snippetIDs, customSnippet, ksOverride, comment)
+	err = daoSystem.Acquire(ctx, system.ID, image.ID, force, snippetIDs, customSnippet, ksOverride, comment, validUntil)
 	if err != nil {
 		return fmt.Errorf("cannot acquire: %w", err)
 	}

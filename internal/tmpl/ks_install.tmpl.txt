@@ -1,3 +1,8 @@
+# FORESTER PROJECT version {{ .Version }}
+
+{{ range .Snippets.pre -}}
+{{ . }}
+{{ end -}}
 # network
 {{ range .Snippets.network -}}
 {{ . }}

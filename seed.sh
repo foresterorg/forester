@@ -10,11 +10,24 @@ URL=${URL:-http://localhost:8000}
 ./forester-cli --url "$URL" appliance create -n libvirt-system -k libvirt -u unix:///var/run/libvirt/libvirt-sock
 ./forester-cli --url "$URL" appliance create -n libvirt-session -k libvirt -u qemu:///session
 
+./forester-cli --url "$URL" system register -n discovery -m 00:00:00:00:00:00 -f discovery=yes -a noop -u discovery
 ./forester-cli --url "$URL" system register -n dummy1 -m aa:bb:cc:dd:ee:f1 -f dummy=yes -a noop -u uid1
 ./forester-cli --url "$URL" system register -n dummy2 -m aa:bb:cc:dd:ee:f2 -f dummy=yes -a noop -u uid2
 
 ./forester-cli --url "$URL" image upload -n dummy-netboot fixtures/iso/fixture-netboot.iso
 ./forester-cli --url "$URL" image upload -n dummy-liveimg fixtures/iso/fixture-liveimg.iso
+
+cat <<EOS | ./forester-cli --url "$URL" snippet create -i -n DiscoveryPre -k pre
+# Use this snippet to acquire host with hardware address 00:00:00:00:00:00
+# in order to discover boot unknown systems. Do not remove the following line:
+{{ template "ks_discover.tmpl.py" . }}
+
+# You may add additional %pre sections in order to perform additional commands
+# during discovery. Example:
+#%pre
+#wipefs -a /dev/sd*
+#%end
+EOS
 
 cat <<EOS | ./forester-cli --url "$URL" snippet create -i -n FedoraRPM39 -k source
 url --mirrorlist="https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-39&arch=x86_64"
@@ -50,6 +63,9 @@ cat <<EOS | ./forester-cli --url "$URL" snippet create -i -n HelloPost -k post
 echo "Hello Anaconda"; logger "Hello Forester"
 %end
 EOS
+
+./forester-cli --url "$URL" system acquire 00:00:00:00:00:00 -i dummy-netboot -s DiscoveryPre -d "99999h" -f
+curl "$URL/ks"
 
 ./forester-cli --url "$URL" system acquire aa:bb:cc:dd:ee:f1 -i dummy-liveimg -s HelloPost -f
 

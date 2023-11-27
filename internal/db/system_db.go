@@ -9,6 +9,7 @@ import (
 	"golang.org/x/exp/slog"
 	"net"
 	"strconv"
+	"time"
 )
 
 func init() {
@@ -69,13 +70,13 @@ func (dao systemDao) List(ctx context.Context, limit, offset int64) ([]*model.Sy
 	return result, nil
 }
 
-func (dao systemDao) Acquire(ctx context.Context, systemId, imageId int64, force bool, snippets []int64, snippetText, ksOverride, comment string) error {
+func (dao systemDao) Acquire(ctx context.Context, systemId, imageId int64, force bool, snippets []int64, snippetText, ksOverride, comment string, validUntil time.Time) error {
 	txErr := WithTransaction(ctx, func(tx pgx.Tx) error {
-		insertQuery := `INSERT INTO installations (system_id, image_id, snippet_text, kickstart_override, comment) VALUES
-			($1, $2, $3, $4, $5) RETURNING id`
+		insertQuery := `INSERT INTO installations (system_id, image_id, snippet_text, kickstart_override, comment, valid_until) VALUES
+			($1, $2, $3, $4, $5, $6) RETURNING id`
 		var instID int64
 
-		err := Pool.QueryRow(ctx, insertQuery, systemId, imageId, snippetText, ksOverride, comment).Scan(&instID)
+		err := Pool.QueryRow(ctx, insertQuery, systemId, imageId, snippetText, ksOverride, comment, validUntil).Scan(&instID)
 		if err != nil {
 			return fmt.Errorf("installation insert error: %w", err)
 		}

@@ -3,18 +3,18 @@ package mux
 import (
 	"context"
 	"errors"
+	"fmt"
 	"forester/internal/db"
 	"forester/internal/model"
 	"forester/internal/tmpl"
+	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
+	"golang.org/x/exp/slog"
 	"io"
 	"net"
 	"net/http"
 	"regexp"
 	"strings"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5"
-	"golang.org/x/exp/slog"
 )
 import "github.com/go-chi/render"
 
@@ -27,14 +27,64 @@ func MountKickstart(r *chi.Mux) {
 
 var ErrMACHeaderInvalid = errors.New("invalid format of RHN MAC header")
 
+func findDiscoveryInstall(ctx context.Context) (*model.System, *model.Installation) {
+	sDao := db.GetSystemDao(ctx)
+	mac, _ := net.ParseMAC("00:00:00:00:00:00")
+	s, err := sDao.FindByMac(ctx, mac)
+	if err != nil {
+		slog.WarnContext(ctx, "system with MAC 00:00:00:00:00:00 not found, using default")
+		s = &model.System{}
+	}
+
+	iDao := db.GetInstallationDao(ctx)
+	i, err := iDao.FindValidByState(ctx, s.ID, model.AnyInstallState)
+	if err != nil || len(i) < 1 {
+		slog.WarnContext(ctx, "system with MAC 00:00:00:00:00:00 has no active installation, using defaults")
+		i = []*model.Installation{
+			{},
+		}
+	}
+	slog.DebugContext(ctx, "found discovery installation(s)", "count", len(i), "first_uuid", i[0].UUID, "image_id", i[0].ImageID)
+
+	return s, i[0]
+}
+
+func buildDiscoveryKickstartParams(ctx context.Context) (*tmpl.KickstartParams, error) {
+	s, i := findDiscoveryInstall(ctx)
+
+	result := tmpl.KickstartParams{
+		ImageID:        0,
+		SystemID:       s.ID,
+		SystemName:     s.Name,
+		SystemHostname: ToHostname(s.Name),
+		InstallUUID:    i.UUID.String(),
+		LastAction:     tmpl.ShutdownLastAction,
+		Snippets:       make(map[string][]string),
+	}
+
+	nDao := db.GetSnippetDao(ctx)
+	snippets, err := nDao.FindByKind(ctx, s.ID, model.PreSnippetKind)
+	if err != nil {
+		slog.ErrorContext(ctx, "error loading snippet", "id", s.ID, "kind", model.PreSnippetKind)
+		return nil, err
+	}
+	result.Snippets[model.PreSnippetKind.String()] = snippets
+
+	return &result, nil
+}
+
+func renderDiscover(ctx context.Context, w io.Writer) error {
+	params, err := buildDiscoveryKickstartParams(ctx)
+	if err != nil {
+		return fmt.Errorf("error building discovery params: %w", err)
+	}
+	return tmpl.RenderKickstartDiscover(ctx, w, *params)
+}
+
 func RenderKickstartForSystem(ctx context.Context, system *model.System, w io.Writer) error {
 	if system == nil {
 		slog.DebugContext(ctx, "no system found, missing Anaconda MAC header")
-		err := tmpl.RenderKickstartDiscover(ctx, w)
-		if err != nil {
-			return err
-		}
-		return err
+		return renderDiscover(ctx, w)
 	}
 
 	inDao := db.GetInstallationDao(ctx)
@@ -42,11 +92,7 @@ func RenderKickstartForSystem(ctx context.Context, system *model.System, w io.Wr
 	var inst *model.Installation
 	if err != nil {
 		slog.ErrorContext(ctx, "error during finding installations for a system", "id", system.ID, "err", err)
-		err := tmpl.RenderKickstartDiscover(ctx, w)
-		if err != nil {
-			return err
-		}
-		return err
+		return renderDiscover(ctx, w)
 	}
 
 	if len(insts) == 0 {
@@ -54,11 +100,7 @@ func RenderKickstartForSystem(ctx context.Context, system *model.System, w io.Wr
 			"id", system.ID,
 			"name", system.Name,
 			"acquired_at", system.AcquiredAt.String())
-		err := tmpl.RenderKickstartDiscover(ctx, w)
-		if err != nil {
-			return err
-		}
-		return err
+		return renderDiscover(ctx, w)
 	}
 	inst = insts[0]
 

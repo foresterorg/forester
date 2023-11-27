@@ -1,4 +1,6 @@
-# FORESTER PROJECT version {{ .Version }}
+{{ range .Snippets.pre -}}
+{{ . }}
+{{ end -}}
 
 %pre --interpreter=/bin/python3 --erroronfail --log=/mnt/sysimage/root/ks-pre.log
 {{ template "ks_pre.tmpl.py" . }}

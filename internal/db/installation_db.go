@@ -33,12 +33,3 @@ func (dao instDao) FindValidByState(ctx context.Context, systemId int64, state m
 
 	return result, nil
 }
-
-func (dao instDao) HasValidByState(ctx context.Context, systemId int64, state model.InstallState) (bool, error) {
-	i, err := dao.FindValidByState(ctx, systemId, state)
-	if err != nil {
-		return false, fmt.Errorf("has error: %w", err)
-	}
-
-	return len(i) > 0, nil
-}

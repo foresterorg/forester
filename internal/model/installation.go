@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/google/uuid"
+	"math"
 	"time"
 )
 
@@ -46,6 +47,7 @@ const (
 	BootingInstallState    InstallState = 300
 	InstallingInstallState InstallState = 400
 	FinishedInstallState   InstallState = 500
+	AnyInstallState        InstallState = math.MaxInt16
 )
 
 func ParseInstallState(i int16) InstallState {
@@ -79,6 +81,8 @@ func (is InstallState) String() string {
 		return "installing"
 	case FinishedInstallState:
 		return "finished"
+	case AnyInstallState:
+		return "any"
 	}
 	return ""
 }

@@ -36,7 +36,7 @@ func commonParams() *CommonParams {
 }
 
 func Render(ctx context.Context, w io.Writer, name string, params any) error {
-	slog.DebugContext(ctx, "rendering emplate", "name", name, "params", params)
+	slog.DebugContext(ctx, "rendering template", "name", name, "params", params)
 	err := templates.ExecuteTemplate(w, name, params)
 	if err != nil {
 		return fmt.Errorf("error executing template: %w", err)
@@ -63,8 +63,8 @@ func RenderGrubError(ctx context.Context, w io.Writer, params GrubErrorParams) e
 	return Render(ctx, w, "grub_error.tmpl.txt", params)
 }
 
-func RenderKickstartDiscover(ctx context.Context, w io.Writer) error {
-	params := commonParams()
+func RenderKickstartDiscover(ctx context.Context, w io.Writer, params KickstartParams) error {
+	params.CommonParams = commonParams()
 
 	return Render(ctx, w, "ks_discover.tmpl.txt", params)
 }

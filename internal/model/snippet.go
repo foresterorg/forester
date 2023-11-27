@@ -17,15 +17,16 @@ type Snippet struct {
 type SnippetKind int16
 
 const (
-	ReservedSnippetKind = iota
-	DiskSnippetKind     = iota
-	PostSnippetKind     = iota
-	RootPwSnippetKind   = iota
-	SecuritySnippetKind = iota
-	LocaleSnippetKind   = iota
-	NetworkSnippetKind  = iota
-	SourceSnippetKind   = iota
-	DebugSnippetKind    = iota
+	ReservedSnippetKind SnippetKind = iota
+	DiskSnippetKind     SnippetKind = iota
+	PostSnippetKind     SnippetKind = iota
+	RootPwSnippetKind   SnippetKind = iota
+	SecuritySnippetKind SnippetKind = iota
+	LocaleSnippetKind   SnippetKind = iota
+	NetworkSnippetKind  SnippetKind = iota
+	SourceSnippetKind   SnippetKind = iota
+	DebugSnippetKind    SnippetKind = iota
+	PreSnippetKind      SnippetKind = iota
 )
 
 var AllSnippetKinds = []SnippetKind{
@@ -37,6 +38,7 @@ var AllSnippetKinds = []SnippetKind{
 	NetworkSnippetKind,
 	SourceSnippetKind,
 	DebugSnippetKind,
+	PreSnippetKind,
 }
 
 func ParseSnippetKind(i int16) SnippetKind {
@@ -59,6 +61,8 @@ func ParseSnippetKind(i int16) SnippetKind {
 		return SourceSnippetKind
 	case 8:
 		return DebugSnippetKind
+	case 9:
+		return PreSnippetKind
 	default:
 		return -1
 	}
@@ -80,6 +84,8 @@ func (sk SnippetKind) String() string {
 		return "network"
 	case SourceSnippetKind:
 		return "source"
+	case PreSnippetKind:
+		return "pre"
 	}
 	return ""
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"forester/internal/model"
 	"net"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -38,7 +39,7 @@ type SystemDao interface {
 	RegisterExisting(ctx context.Context, id int64, sys *model.System) error
 	List(ctx context.Context, limit, offset int64) ([]*model.System, error)
 	Rename(ctx context.Context, systemId int64, newName string) error
-	Acquire(ctx context.Context, systemId, imageId int64, force bool, snippets []int64, snippetText, ksOverride, comment string) error
+	Acquire(ctx context.Context, systemId, imageId int64, force bool, snippets []int64, snippetText, ksOverride, comment string, validUntil time.Time) error
 	Release(ctx context.Context, systemId int64) error
 	Find(ctx context.Context, pattern string) (*model.System, error)
 	FindByID(ctx context.Context, id int64) (*model.System, error)
@@ -52,7 +53,6 @@ var GetInstallationDao func(ctx context.Context) InstallationDao
 
 type InstallationDao interface {
 	FindValidByState(ctx context.Context, systemId int64, state model.InstallState) ([]*model.Installation, error)
-	HasValidByState(ctx context.Context, systemId int64, state model.InstallState) (bool, error)
 }
 
 var GetApplianceDao func(ctx context.Context) ApplianceDao

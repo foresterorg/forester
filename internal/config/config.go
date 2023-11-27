@@ -38,7 +38,6 @@ var config struct {
 	} `env-prefix:"LOGGING_"`
 	Images struct {
 		Directory string `env:"DIR" env-default:"images" env-description:"absolute path to directory with images"`
-		BootId    int64  `env:"BOOT_ID" env-default:"1" env-description:"boot shim/grub from image DB ID"`
 	} `env-prefix:"IMAGES_"`
 }
 
@@ -92,7 +91,6 @@ func Initialize(configFiles ...string) error {
 	// print key configuration values
 	slog.Debug("image configuration",
 		"path", config.Images.Directory,
-		"boot_id", config.Images.BootId,
 	)
 	slog.Debug("syslog configuration",
 		"enabled", config.Logging.Syslog,
@@ -125,8 +123,8 @@ func ParsedLoggingLevel() slog.Level {
 	return slog.LevelDebug
 }
 
-func BootPath() string {
-	return path.Join(config.Images.Directory, strconv.FormatInt(config.Images.BootId, 10))
+func BootPath(imageID int64) string {
+	return path.Join(config.Images.Directory, strconv.FormatInt(imageID, 10))
 }
 
 func BaseURL() string {

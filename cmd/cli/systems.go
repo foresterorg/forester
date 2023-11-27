@@ -56,6 +56,7 @@ type systemAcquireCmd struct {
 	TextSnippet string   `arg:"-x"`
 	Kickstart   string   `arg:"-k" placeholder:"KS_OVERRIDE_CONTENTS"`
 	Comment     string   `arg:"-c"`
+	Duration    string   `arg:"-d" default:"3h"`
 }
 
 type systemReleaseCmd struct {
@@ -258,8 +259,13 @@ func systemRename(ctx context.Context, cmdArgs *systemRenameCmd) error {
 }
 
 func systemAcquire(ctx context.Context, cmdArgs *systemAcquireCmd) error {
+	dur, err := time.ParseDuration(cmdArgs.Duration)
+	if err != nil {
+		return fmt.Errorf("cannot parse duration: %w", err)
+	}
+
 	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
-	err := client.Acquire(ctx, cmdArgs.Pattern, cmdArgs.Image, cmdArgs.Force, cmdArgs.Snippets, cmdArgs.TextSnippet, cmdArgs.Kickstart, cmdArgs.Comment)
+	err = client.Acquire(ctx, cmdArgs.Pattern, cmdArgs.Image, cmdArgs.Force, cmdArgs.Snippets, cmdArgs.TextSnippet, cmdArgs.Kickstart, cmdArgs.Comment, time.Now().Add(dur))
 	if err != nil {
 		return fmt.Errorf("cannot acquire system: %w", err)
 	}
