@@ -49,16 +49,6 @@ var (
 	Images      = &config.Images
 )
 
-var Hostname string
-
-func init() {
-	var err error
-	Hostname, err = os.Hostname()
-	if err != nil {
-		panic(err)
-	}
-}
-
 // Initialize loads configuration from provided .env files, the first existing file wins.
 func Initialize(configFiles ...string) error {
 	var loaded bool
@@ -89,10 +79,16 @@ func Initialize(configFiles ...string) error {
 	}
 
 	// print key configuration values
-	slog.Debug("image configuration",
-		"path", config.Images.Directory,
+	slog.Debug("app configuration",
+		"hostname", config.App.Hostname,
+		"port", config.App.Port,
+		"syslog_port", config.App.SyslogPort,
 	)
-	slog.Debug("syslog configuration",
+	slog.Debug("images configuration",
+		"dir", config.Images.Directory,
+	)
+	slog.Debug("logging configuration",
+		"level", config.Logging.Level,
 		"enabled", config.Logging.Syslog,
 		"directory", config.Logging.SyslogDir,
 	)
@@ -128,9 +124,18 @@ func BootPath(imageID int64) string {
 }
 
 func BaseURL() string {
-	return fmt.Sprintf("http://%s:%d", Hostname, config.App.Port)
+	return fmt.Sprintf("http://%s:%d", BaseHost(), config.App.Port)
 }
 
 func BaseHost() string {
-	return Hostname
+	if Application.Hostname != "" {
+		return Application.Hostname
+	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		panic(err)
+	}
+
+	return hostname
 }

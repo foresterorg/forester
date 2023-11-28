@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"forester/internal/config"
 	"forester/internal/version"
-	"golang.org/x/exp/slog"
 	"io"
 	"strconv"
 	"text/template"
+
+	"golang.org/x/exp/slog"
 )
-import _ "embed"
 
 //go:embed *.tmpl.*
 var templatesFS embed.FS
@@ -28,7 +28,7 @@ func init() {
 
 func commonParams() *CommonParams {
 	return &CommonParams{
-		BaseHost:   config.Hostname,
+		BaseHost:   config.BaseHost(),
 		BaseURL:    config.BaseURL(),
 		Version:    version.BuildTag,
 		SyslogPort: strconv.Itoa(config.Application.SyslogPort),
@@ -47,7 +47,6 @@ func Render(ctx context.Context, w io.Writer, name string, params any) error {
 
 func RenderGrubBootstrap(ctx context.Context, w io.Writer) error {
 	params := commonParams()
-
 	return Render(ctx, w, "grub_bootstrap.tmpl.txt", params)
 }
 

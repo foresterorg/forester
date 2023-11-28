@@ -28,8 +28,6 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 
 **TODO**
 
-* New param install duration API/CLI
-* Ability to pass whole kickstart via --ks option suppressing any templating
 * Create events table and store installation milestones (boot, ks, finish) and rendered templates in the database
 * Installations API/CLI
 * Detect installation IP address (shim + %pre curl + event table) and secure the default sshpw password with "ssh" CLI fully working
