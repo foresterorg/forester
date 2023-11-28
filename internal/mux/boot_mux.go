@@ -7,12 +7,13 @@ import (
 	"forester/internal/db"
 	"forester/internal/model"
 	"forester/internal/tmpl"
+	"net"
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
-	"net"
-	"net/http"
 )
 
 func MountBoot(r *chi.Mux) {
@@ -85,7 +86,7 @@ func serveBootPath(w http.ResponseWriter, r *http.Request) {
 	if s.ID == 0 {
 		slog.WarnContext(r.Context(), "cannot find system or discovery system, bootstrap will fail")
 	}
-	slog.InfoContext(r.Context(), "serving root", "directory", root, "system_id", s.ID, "install_uuid", i.UUID)
+	slog.InfoContext(r.Context(), "serving root", "directory", root, "system_id", s.ID, "install_uuid", i.UUID, "path", r.URL.Path)
 	fs := http.StripPrefix("/boot", http.FileServer(http.Dir(root)))
 	fs.ServeHTTP(w, r)
 }

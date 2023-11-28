@@ -77,6 +77,10 @@ func Initialize(configFiles ...string) error {
 	if err != nil {
 		return fmt.Errorf("image directory config error: %w", err)
 	}
+	config.Logging.SyslogDir, err = filepath.Abs(config.Logging.SyslogDir)
+	if err != nil {
+		return fmt.Errorf("syslog directory config error: %w", err)
+	}
 
 	// print key configuration values
 	slog.Debug("app configuration",

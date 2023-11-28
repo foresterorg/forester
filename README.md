@@ -38,4 +38,6 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 * Investigate how much work is BIOS support (via dnsmasq)
 * Implement pykickstart checking of kickstart content (generated template and ks)
 * Importing shim signatures in discovery mode: https://lukas.zapletalovi.com/posts/2021/rhelcentos-8-shim-kernel-signatures/
-* Ability to create/edit/show system comment
+* Ability to create/edit/show system comment¨
+* Make SlogDualWriter optional (this is only useful for debugging)
+* Figure out if HTTPBootURL will work or HttpBootUrl is needed: https://github.com/stmcginnis/gofish/pull/271
