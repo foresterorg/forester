@@ -1,4 +1,4 @@
 echo "FORESTER PROJECT version {{ .Version }}"
 
-echo "Trying mac/$net_default_mac"
-configfile "mac/$net_default_mac"
+echo "Trying grub.cfg/$net_default_mac"
+configfile "grub.cfg/$net_default_mac"

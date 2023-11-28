@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net"
 	"sort"
+	"strings"
 )
 
 type HwAddrSlice []net.HardwareAddr
@@ -44,4 +45,14 @@ func (s HwAddrSlice) Unique() HwAddrSlice {
 		result = append(result, s[i])
 	}
 	return result
+}
+
+// All returns all addresses separated by separator.
+func (s HwAddrSlice) All(separator string) string {
+	all := s.Unique()
+	str := make([]string, 0, len(all))
+	for i := range all {
+		str[i] = all[i].String()
+	}
+	return strings.Join(str, separator)
 }

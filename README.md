@@ -30,8 +30,6 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 
 * New param install duration API/CLI
 * Ability to pass whole kickstart via --ks option suppressing any templating
-* Support for loading shim via MAC address through Redfish boot URL param (/bmac/AA:BB:CC:DD:EE:FF/shim.efi)
-* Incorporate https://github.com/stmcginnis/gofish/pull/271 (v0.15.0)
 * Create events table and store installation milestones (boot, ks, finish) and rendered templates in the database
 * Installations API/CLI
 * Detect installation IP address (shim + %pre curl + event table) and secure the default sshpw password with "ssh" CLI fully working

@@ -106,22 +106,24 @@ func (dao systemDao) Acquire(ctx context.Context, systemId, imageId int64, force
 		}
 		slog.DebugContext(ctx, "deleted existing snippets", "affected", tag.RowsAffected())
 
-		batch := &pgx.Batch{}
-		for _, s := range snippets {
-			batch.Queue("INSERT INTO installations_snippets VALUES ($1, $2)", instID, s)
-		}
-		br := tx.SendBatch(ctx, batch)
-		defer br.Close()
-		tag, err = br.Exec()
+		if len(snippets) > 0 {
+			batch := &pgx.Batch{}
+			for _, s := range snippets {
+				batch.Queue("INSERT INTO installations_snippets VALUES ($1, $2)", instID, s)
+			}
+			br := tx.SendBatch(ctx, batch)
+			defer br.Close()
+			tag, err = br.Exec()
 
-		if err != nil {
-			return fmt.Errorf("batch insert error: %w", err)
-		}
+			if err != nil {
+				return fmt.Errorf("batch insert error: %w", err)
+			}
 
-		if tag.RowsAffected() != 1 {
-			return fmt.Errorf("batch insert row mismatch, expected %d got %d", len(snippets), tag.RowsAffected())
+			if tag.RowsAffected() != 1 {
+				return fmt.Errorf("batch insert row mismatch, expected %d got %d", len(snippets), tag.RowsAffected())
+			}
+			slog.DebugContext(ctx, "saved snippets", "affected", tag.RowsAffected())
 		}
-		slog.DebugContext(ctx, "saved snippets", "affected", tag.RowsAffected())
 
 		return nil
 	})

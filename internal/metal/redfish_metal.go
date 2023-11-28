@@ -3,15 +3,15 @@ package metal
 import (
 	"context"
 	"fmt"
+	"forester/internal/config"
 	"forester/internal/logging"
 	"forester/internal/model"
-	"math"
-	"regexp"
-	"strconv"
-
 	"github.com/stmcginnis/gofish"
 	"github.com/stmcginnis/gofish/redfish"
 	"golang.org/x/exp/slog"
+	"math"
+	"regexp"
+	"strconv"
 )
 
 type RedfishMetal struct {
@@ -105,9 +105,9 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppli
 		return nil
 	}
 
-	config := configFromApp(ctx, &system.Appliance)
+	cfg := configFromApp(ctx, &system.Appliance)
 
-	c, err := gofish.Connect(config)
+	c, err := gofish.Connect(cfg)
 	if err != nil {
 		return fmt.Errorf("redfish error: %w", err)
 	}
@@ -118,18 +118,17 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppli
 		return fmt.Errorf("redfish error: %w", err)
 	}
 
-	// Not supported by iDRAC yet
-	/*
-		bootOverride := redfish.Boot{
-			BootSourceOverrideTarget:  redfish.UefiHTTPBootSourceOverrideTarget,
-			BootSourceOverrideEnabled: redfish.OnceBootSourceOverrideEnabled,
-			HttpBootURI:               "https://boot.ipxe.org/ipxe.efi",
-		}
-	*/
+	uri := fmt.Sprintf("%s/boot/shim.efi", config.BaseURL())
+	if len(system.HwAddrs) > 0 {
+		uri = fmt.Sprintf("%s/boot/%s/shim.efi", config.BaseURL(), system.HwAddrs[0].String())
+	} else {
+		slog.WarnContext(ctx, "no mac address found for system", "system_id", system.System.ID)
+	}
 
 	bootOverride := redfish.Boot{
 		BootSourceOverrideTarget:  redfish.UefiHTTPBootSourceOverrideTarget,
 		BootSourceOverrideEnabled: redfish.OnceBootSourceOverrideEnabled,
+		HTTPBootURI:               uri,
 	}
 
 	for _, rSystem := range rSystems {

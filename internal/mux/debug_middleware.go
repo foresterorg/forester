@@ -10,6 +10,15 @@ import (
 
 func DebugMiddleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
+		var headers []slog.Attr
+		for k, v := range r.Header {
+			pair := slog.String(k, strings.Join(v, " "))
+			headers = append(headers, pair)
+		}
+		if len(headers) > 0 {
+			slog.DebugContext(r.Context(), "request headers", "headers", slog.GroupValue(headers...))
+		}
+
 		sb := strings.Builder{}
 		wrw := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 		wrw.Tee(&sb)

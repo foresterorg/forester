@@ -32,16 +32,21 @@ func findDiscoveryInstall(ctx context.Context) (*model.System, *model.Installati
 	mac, _ := net.ParseMAC("00:00:00:00:00:00")
 	s, err := sDao.FindByMac(ctx, mac)
 	if err != nil {
-		slog.WarnContext(ctx, "system with MAC 00:00:00:00:00:00 not found, using default")
+		slog.DebugContext(ctx, "system with MAC 00:00:00:00:00:00 not found")
 		s = &model.System{}
 	}
 
 	iDao := db.GetInstallationDao(ctx)
 	i, err := iDao.FindValidByState(ctx, s.ID, model.AnyInstallState)
 	if err != nil || len(i) < 1 {
-		slog.WarnContext(ctx, "system with MAC 00:00:00:00:00:00 has no active installation, using defaults")
-		i = []*model.Installation{
-			{},
+		slog.WarnContext(ctx, "no active installation for 00:00:00:00:00:00")
+		// try to find any installation
+		i, err = iDao.FindAnyByState(ctx, model.BootingInstallState)
+		if err != nil {
+			slog.DebugContext(ctx, "no active installations found, discovery not possible")
+			i = []*model.Installation{
+				{},
+			}
 		}
 	}
 	slog.DebugContext(ctx, "found discovery installation(s)", "count", len(i), "first_uuid", i[0].UUID, "image_id", i[0].ImageID)

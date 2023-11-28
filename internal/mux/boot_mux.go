@@ -7,14 +7,12 @@ import (
 	"forester/internal/db"
 	"forester/internal/model"
 	"forester/internal/tmpl"
-	"net"
-	"net/http"
-	"strings"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
+	"net"
+	"net/http"
 )
 
 func MountBoot(r *chi.Mux) {
@@ -28,35 +26,67 @@ func MountBoot(r *chi.Mux) {
 	}
 
 	for _, path := range paths {
+		// anonymous bootstrap paths
 		r.Head(path, serveBootPath)
 		r.Get(path, serveBootPath)
+
+		// managed bootstrap paths
+		r.Head("/{MAC}"+path, serveBootPath)
+		r.Get("/{MAC}"+path, serveBootPath)
 	}
 
 	r.Group(func(r chi.Router) {
 		r.Use(render.SetContentType(render.ContentTypePlainText))
 		r.Use(DebugMiddleware)
 
+		// anonymous grub config
 		r.Head("/grub.cfg", HandleBootstrapConfig)
 		r.Get("/grub.cfg", HandleBootstrapConfig)
-		r.Head("/mac/{MAC}", HandleMacConfig)
-		r.Get("/mac/{MAC}", HandleMacConfig)
+		// managed grub config
+		r.Head("/grub.cfg/{MAC}", HandleMacConfig)
+		r.Get("/grub.cfg/{MAC}", HandleMacConfig)
+		// redhat patched grub config
+		r.Head("/grub.cfg-{MAC}", HandleMacConfig)
+		r.Get("/grub.cfg-{MAC}", HandleMacConfig)
 	})
 }
 
 func serveBootPath(w http.ResponseWriter, r *http.Request) {
-	var headers []slog.Attr
-	for k, v := range r.Header {
-		pair := slog.String(k, strings.Join(v, " "))
-		headers = append(headers, pair)
+	var s *model.System
+	var i *model.Installation
+
+	mac, err := net.ParseMAC(chi.URLParam(r, "MAC"))
+	if err != nil {
+		s, i = findDiscoveryInstall(r.Context())
+	} else {
+		sDao := db.GetSystemDao(r.Context())
+		s, err = sDao.FindByMac(r.Context(), mac)
+		if err != nil {
+			slog.WarnContext(r.Context(), "cannot find host by mac", "mac", mac, "parsed_mac", mac.String())
+			s, i = findDiscoveryInstall(r.Context())
+		} else {
+			iDao := db.GetInstallationDao(r.Context())
+			is, err := iDao.FindValidByState(r.Context(), s.ID, model.AnyInstallState)
+			if err != nil || len(is) < 1 {
+				slog.WarnContext(r.Context(), "system has no active installation", "mac", mac.String())
+				s, i = findDiscoveryInstall(r.Context())
+			} else {
+				if len(is) > 1 {
+					slog.WarnContext(r.Context(), "more than one installations for host", "mac", mac.String())
+				} else {
+					slog.WarnContext(r.Context(), "found installation for system", "mac", mac.String(), "system_id", s.ID)
+				}
+				i = is[0]
+			}
+		}
 	}
-	if len(headers) > 0 {
-		slog.DebugContext(r.Context(), "HTTP headers", "headers", slog.GroupValue(headers...))
-	}
-	s, i := findDiscoveryInstall(r.Context())
+
+	root := config.BootPath(i.ImageID)
 	if s.ID == 0 {
-		slog.WarnContext(r.Context(), "host with 00:00:00:00:00:00 address not found, bootstrap will fail")
+		slog.WarnContext(r.Context(), "cannot find system or discovery system, bootstrap will fail")
 	}
-	fs := http.StripPrefix("/boot", http.FileServer(http.Dir(config.BootPath(i.ImageID))))
+	slog.InfoContext(r.Context(), "serving root", "directory", root, "system_id", s.ID, "install_uuid", i.UUID)
+	fs := http.StripPrefix("/boot", http.FileServer(http.Dir(root)))
 	fs.ServeHTTP(w, r)
 }
 
