@@ -6,7 +6,7 @@
 /.vscode/
 /.fleet/
 /.envrc
-__debug_bin
+__debug*
 tags
 TAGS
 
