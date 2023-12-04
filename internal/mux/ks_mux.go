@@ -159,6 +159,10 @@ func RenderKickstartForSystem(ctx context.Context, system *model.System, w io.Wr
 	}
 
 	err = tmpl.RenderKickstartInstall(ctx, w, params)
+	if err != nil {
+		slog.ErrorContext(ctx, "error rendering ks snippet", "id", system.ID)
+		return err
+	}
 
 	return nil
 }

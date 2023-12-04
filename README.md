@@ -28,8 +28,11 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 
 **TODO**
 
+* Grub fails to boot again, try to sign iPXE: https://access.redhat.com/documentation/de-de/red_hat_enterprise_linux/8/html/managing_monitoring_and_updating_the_kernel/signing-a-kernel-and-modules-for-secure-boot_managing-monitoring-and-updating-the-kernel
+* Create symlinks in image dir: `ln -s boot/grub2/i386-pc/ x86_64-efie`
 * Create events table and store installation milestones (boot, ks, finish) and rendered templates in the database
 * Installations API/CLI
+* Change log level to debug for "finished request" log for range requests (blocks are 4096, 8192, 32768, 65536 or): `msg="finished request" method=GET path=/img/1/image.iso duration_ms=0s status=206 bytes=131072 trace_id=pBI45d1z`
 * Detect installation IP address (shim + %pre curl + event table) and secure the default sshpw password with "ssh" CLI fully working
 * Squash migrations and refactor table names to singular
 * Implement a scheduler for power operations (when queue changes, a notification fires up on insert/update, calls go, it picks up the work)

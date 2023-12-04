@@ -25,11 +25,14 @@ func TraceIdMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("X-Trace-Id", tid)
 
 		ctx = logging.WithTraceId(ctx, tid)
-		slog.InfoContext(ctx, "started request",
-			"method", r.Method,
-			"path", r.RequestURI,
-			"content_length", r.ContentLength,
-		)
+		if r.ContentLength > 0 {
+			slog.InfoContext(ctx, "started request",
+				"method", r.Method,
+				"path", r.RequestURI,
+				"content_length", r.ContentLength,
+			)
+		}
+
 		t1 := time.Now()
 		next.ServeHTTP(wrw, r.WithContext(ctx))
 		slog.InfoContext(ctx, "finished request",

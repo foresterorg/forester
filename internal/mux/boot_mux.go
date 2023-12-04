@@ -3,6 +3,7 @@ package mux
 import (
 	"context"
 	"errors"
+	"fmt"
 	"forester/internal/config"
 	"forester/internal/db"
 	"forester/internal/model"
@@ -24,6 +25,7 @@ func MountBoot(r *chi.Mux) {
 		"/.discinfo",
 		"/liveimg.tar.gz",
 		"/images/*",
+		"/x86_64-efi/*",
 	}
 
 	for _, path := range paths {
@@ -43,12 +45,15 @@ func MountBoot(r *chi.Mux) {
 		// anonymous grub config
 		r.Head("/grub.cfg", HandleBootstrapConfig)
 		r.Get("/grub.cfg", HandleBootstrapConfig)
-		// managed grub config
+		// sourced grub config
 		r.Head("/grub.cfg/{MAC}", HandleMacConfig)
 		r.Get("/grub.cfg/{MAC}", HandleMacConfig)
 		// redhat patched grub config
 		r.Head("/grub.cfg-{MAC}", HandleMacConfig)
 		r.Get("/grub.cfg-{MAC}", HandleMacConfig)
+		// managed grub config
+		r.Head("/{MAC}/grub.cfg", HandleMacConfig)
+		r.Get("/{MAC}/grub.cfg", HandleMacConfig)
 	})
 }
 
@@ -56,7 +61,8 @@ func serveBootPath(w http.ResponseWriter, r *http.Request) {
 	var s *model.System
 	var i *model.Installation
 
-	mac, err := net.ParseMAC(chi.URLParam(r, "MAC"))
+	origMAC := chi.URLParam(r, "MAC")
+	mac, err := net.ParseMAC(origMAC)
 	if err != nil {
 		s, i = findDiscoveryInstall(r.Context())
 	} else {
@@ -86,8 +92,13 @@ func serveBootPath(w http.ResponseWriter, r *http.Request) {
 	if s.ID == 0 {
 		slog.WarnContext(r.Context(), "cannot find system or discovery system, bootstrap will fail")
 	}
-	slog.InfoContext(r.Context(), "serving root", "directory", root, "system_id", s.ID, "install_uuid", i.UUID, "path", r.URL.Path)
-	fs := http.StripPrefix("/boot", http.FileServer(http.Dir(root)))
+
+	prefix := "/boot"
+	if origMAC != "" {
+		prefix = fmt.Sprintf("/boot/%s", origMAC)
+	}
+	slog.InfoContext(r.Context(), "serving root", "directory", root, "system_id", s.ID, "install_uuid", i.UUID, "path", r.URL.Path, "prefix", prefix)
+	fs := http.StripPrefix(prefix, http.FileServer(http.Dir(root)))
 	fs.ServeHTTP(w, r)
 }
 
