@@ -8,6 +8,7 @@ import (
 	"forester/internal/db"
 	"forester/internal/model"
 	"forester/internal/tmpl"
+	"mime"
 	"net"
 	"net/http"
 
@@ -26,6 +27,7 @@ func MountBoot(r *chi.Mux) {
 		"/liveimg.tar.gz",
 		"/images/*",
 		"/x86_64-efi/*",
+		"/boot.iso",
 	}
 
 	for _, path := range paths {
@@ -55,6 +57,10 @@ func MountBoot(r *chi.Mux) {
 		r.Head("/{MAC}/grub.cfg", HandleMacConfig)
 		r.Get("/{MAC}/grub.cfg", HandleMacConfig)
 	})
+
+	mime.AddExtensionType(".iso", "application/vnd.efi.iso")
+	mime.AddExtensionType(".img", "application/vnd.efi.img")
+	mime.AddExtensionType(".efi", "application/efi")
 }
 
 func serveBootPath(w http.ResponseWriter, r *http.Request) {
