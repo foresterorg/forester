@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"golang.org/x/exp/slog"
 )
@@ -18,7 +19,7 @@ type SlogDualWriter struct {
 }
 
 func (slw SlogDualWriter) Write(p []byte) (n int, err error) {
-	slw.Logger.Log(slw.Context, slw.Level, string(p))
+	slw.Logger.Log(slw.Context, slw.Level, strings.TrimSpace(string(p)))
 	fmt.Fprintln(os.Stderr, string(p))
 
 	return len(p), nil
@@ -32,8 +33,7 @@ type SlogWriter struct {
 }
 
 func (slw SlogWriter) Write(p []byte) (n int, err error) {
-	slw.Logger.Log(slw.Context, slw.Level, string(p))
-	fmt.Fprintln(os.Stderr, string(p))
+	slw.Logger.Log(slw.Context, slw.Level, strings.TrimSpace(string(p)))
 
 	return len(p), nil
 }

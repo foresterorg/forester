@@ -9,6 +9,7 @@ import (
 	"forester/internal/config"
 	"forester/internal/db"
 	"forester/internal/img"
+	"forester/internal/logging"
 	"forester/internal/model"
 	"io"
 	"log"
@@ -121,6 +122,8 @@ func extractImage(dbImage *model.Image) {
 	deadline := time.Now().Add(30 * time.Minute)
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
 	defer cancel()
+	ctx = logging.WithJobId(ctx, logging.NewJobId())
+	imagePath := dirPath(dbImage.ID)
 
 	err := ensureDir(dbImage.ID)
 	if err != nil {
@@ -128,24 +131,32 @@ func extractImage(dbImage *model.Image) {
 		return
 	}
 
-	err = img.ExtractToDir(ctx, isoPath(dbImage.ID), dirPath(dbImage.ID))
+	slog.DebugContext(ctx, "extracting ISO image", "img", imagePath)
+	err = img.ExtractToDir(ctx, isoPath(dbImage.ID), imagePath)
 	if err != nil {
 		slog.ErrorContext(ctx, "error during extraction", "err", err)
 		return
 	}
 
-	err = os.Symlink("./EFI/BOOT/BOOTX64.EFI", filepath.Join(dirPath(dbImage.ID), "shim.efi"))
+	slog.DebugContext(ctx, "generating boot.iso image", "img", imagePath)
+	err = img.GenerateBootISO(ctx, dbImage.ID, imagePath)
+	if err != nil {
+		slog.ErrorContext(ctx, "error during boot.iso generation", "err", err)
+		return
+	}
+
+	err = os.Symlink("./EFI/BOOT/BOOTX64.EFI", filepath.Join(imagePath, "shim.efi"))
 	if err != nil {
 		slog.ErrorContext(ctx, "cannot create symlink", "err", err)
 		return
 	}
-	err = os.Symlink("./EFI/BOOT/grubx64.efi", filepath.Join(dirPath(dbImage.ID), "grubx64.efi"))
+	err = os.Symlink("./EFI/BOOT/grubx64.efi", filepath.Join(imagePath, "grubx64.efi"))
 	if err != nil {
 		slog.ErrorContext(ctx, "cannot create symlink", "err", err)
 		return
 	}
 
-	imgPath := filepath.Join(dirPath(dbImage.ID), "liveimg.tar.gz")
+	imgPath := filepath.Join(imagePath, "liveimg.tar.gz")
 	slog.DebugContext(ctx, "checking for liveimg.tar.gz", "path", imgPath)
 	if ok, err := fileExists(imgPath); ok && (err == nil) {
 		sum, err := sha256sum(imgPath)

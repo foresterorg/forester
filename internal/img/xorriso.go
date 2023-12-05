@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"forester/internal/logging"
-	"golang.org/x/exp/slog"
 	"os/exec"
 	"path"
 	"sync"
+
+	"golang.org/x/exp/slog"
 )
 
 var wg sync.WaitGroup
@@ -15,7 +16,6 @@ var wg sync.WaitGroup
 func ExtractToDir(ctx context.Context, isoFile, outputDir string) error {
 	wg.Add(1)
 	defer wg.Done()
-	ctx = logging.WithJobId(ctx, logging.NewJobId())
 
 	cmd := exec.CommandContext(ctx,
 		"/usr/bin/xorriso",
