@@ -17,7 +17,7 @@ var config struct {
 	App struct {
 		Port       int    `env:"PORT" env-default:"8000" env-description:"HTTP port of the API service"`
 		SyslogPort int    `env:"SYSLOG_PORT" env-default:"8514" env-description:"syslog TCP and UDP port"`
-		Hostname   string `env:"HOSTNAME" env-default:"" env-description:"hostname of the service"`
+		Hostname   string `env:"HOSTNAME" env-default:"" env-description:"hostname of the service exposed through templates"`
 	} `env-prefix:"APP_"`
 	Database struct {
 		Host        string        `env:"HOST" env-default:"localhost" env-description:"main database hostname"`
@@ -31,6 +31,9 @@ var config struct {
 		MaxLifetime time.Duration `env:"MAX_LIFETIME" env-default:"2h" env-description:"connection pool total lifetime (time interval syntax)"`
 		LogLevel    string        `env:"LOG_LEVEL" env-default:"trace" env-description:"logging level of database logs"`
 	} `env-prefix:"DATABASE_"`
+	Tftp struct {
+		Port int `env:"PORT" env-default:"6969" env-description:"TFTP UDP port (69 requires root)"`
+	} `env-prefix:"APP_"`
 	Logging struct {
 		Level     string `env:"LEVEL" env-default:"debug" env-description:"logger level (debug, info, warn, error)"`
 		Syslog    bool   `env:"SYSLOG" env-default:"false" env-description:"write Anaconda syslog data into application log"`
@@ -45,6 +48,7 @@ var config struct {
 var (
 	Application = &config.App
 	Database    = &config.Database
+	Tftp        = &config.Tftp
 	Logging     = &config.Logging
 	Images      = &config.Images
 )

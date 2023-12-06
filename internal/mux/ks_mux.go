@@ -27,35 +27,12 @@ func MountKickstart(r *chi.Mux) {
 
 var ErrMACHeaderInvalid = errors.New("invalid format of RHN MAC header")
 
-func findDiscoveryInstall(ctx context.Context) (*model.System, *model.Installation) {
-	sDao := db.GetSystemDao(ctx)
-	mac, _ := net.ParseMAC("00:00:00:00:00:00")
-	s, err := sDao.FindByMac(ctx, mac)
-	if err != nil {
-		slog.DebugContext(ctx, "system with MAC 00:00:00:00:00:00 not found")
-		s = &model.System{}
-	}
-
-	iDao := db.GetInstallationDao(ctx)
-	i, err := iDao.FindValidByState(ctx, s.ID, model.AnyInstallState)
-	if err != nil || len(i) < 1 {
-		slog.WarnContext(ctx, "no active installation for 00:00:00:00:00:00")
-		// try to find any installation
-		i, err = iDao.FindAnyByState(ctx, model.BootingInstallState)
-		if err != nil {
-			slog.DebugContext(ctx, "no active installations found, discovery not possible")
-			i = []*model.Installation{
-				{},
-			}
-		}
-	}
-	slog.DebugContext(ctx, "found discovery installation(s)", "count", len(i), "first_uuid", i[0].UUID, "image_id", i[0].ImageID)
-
-	return s, i[0]
-}
-
 func buildDiscoveryKickstartParams(ctx context.Context) (*tmpl.KickstartParams, error) {
-	s, i := findDiscoveryInstall(ctx)
+	iDao := db.GetInstallationDao(ctx)
+	i, s, err := iDao.FindInstallationForMAC(ctx, db.NullMAC)
+	if err != nil {
+		return nil, fmt.Errorf("no discovery system: %w", err)
+	}
 
 	result := tmpl.KickstartParams{
 		ImageID:        0,
@@ -93,7 +70,7 @@ func RenderKickstartForSystem(ctx context.Context, system *model.System, w io.Wr
 	}
 
 	inDao := db.GetInstallationDao(ctx)
-	insts, err := inDao.FindValidByState(ctx, system.ID, model.FinishedInstallState)
+	insts, err := inDao.FindValidByState(ctx, system.ID, model.InstallingInstallState)
 	var inst *model.Installation
 	if err != nil {
 		slog.ErrorContext(ctx, "error during finding installations for a system", "id", system.ID, "err", err)

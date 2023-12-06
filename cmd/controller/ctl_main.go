@@ -11,12 +11,14 @@ import (
 	"forester/internal/logging"
 	"forester/internal/logstore"
 	"forester/internal/mux"
-	"github.com/go-chi/chi/v5"
-	"golang.org/x/exp/slog"
+	"forester/internal/tftp"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/go-chi/chi/v5"
+	"golang.org/x/exp/slog"
 )
 
 func main() {
@@ -34,9 +36,17 @@ func main() {
 	}
 
 	syslog, err := logstore.Start(ctx)
-	defer syslog.Stop()
+	defer syslog.Shutdown()
 	if err != nil {
-		panic(err)
+		slog.ErrorContext(ctx, "error when starting syslog server", "err", err)
+		os.Exit(1)
+	}
+
+	tftp, err := tftp.Start(ctx)
+	defer tftp.Shutdown()
+	if err != nil {
+		slog.ErrorContext(ctx, "error when starting TFTP service", "err", err)
+		os.Exit(1)
 	}
 
 	err = db.Initialize(ctx, "public")
@@ -91,6 +101,7 @@ func main() {
 	if err := rootServer.ListenAndServe(); err != nil {
 		if !errors.Is(err, http.ErrServerClosed) {
 			slog.ErrorContext(ctx, "listen error", "err", err)
+			os.Exit(1)
 		}
 	}
 

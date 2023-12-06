@@ -54,6 +54,7 @@ var GetInstallationDao func(ctx context.Context) InstallationDao
 type InstallationDao interface {
 	FindValidByState(ctx context.Context, systemId int64, state model.InstallState) ([]*model.Installation, error)
 	FindAnyByState(ctx context.Context, state model.InstallState) ([]*model.Installation, error)
+	FindInstallationForMAC(ctx context.Context, givenMAC net.HardwareAddr) (*model.Installation, *model.System, error)
 }
 
 var GetApplianceDao func(ctx context.Context) ApplianceDao

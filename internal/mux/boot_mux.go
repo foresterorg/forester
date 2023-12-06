@@ -2,19 +2,18 @@ package mux
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"forester/internal/config"
 	"forester/internal/db"
 	"forester/internal/model"
 	"forester/internal/tmpl"
+	"io"
 	"mime"
 	"net"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
-	"github.com/jackc/pgx/v5"
 	"golang.org/x/exp/slog"
 )
 
@@ -24,6 +23,7 @@ func MountBoot(r *chi.Mux) {
 		"/grubx64.efi",
 		"//grubx64.efi", // some grub versions request double slash
 		"/.discinfo",
+		"/LICENSE",
 		"/liveimg.tar.gz",
 		"/images/*",
 		"/x86_64-efi/*",
@@ -64,41 +64,22 @@ func MountBoot(r *chi.Mux) {
 }
 
 func serveBootPath(w http.ResponseWriter, r *http.Request) {
+	var err error
 	var s *model.System
 	var i *model.Installation
 
 	origMAC := chi.URLParam(r, "MAC")
-	mac, err := net.ParseMAC(origMAC)
+	mac, _ := net.ParseMAC(origMAC)
+
+	iDao := db.GetInstallationDao(r.Context())
+	i, s, err = iDao.FindInstallationForMAC(r.Context(), mac)
 	if err != nil {
-		s, i = findDiscoveryInstall(r.Context())
-	} else {
-		sDao := db.GetSystemDao(r.Context())
-		s, err = sDao.FindByMac(r.Context(), mac)
-		if err != nil {
-			slog.WarnContext(r.Context(), "cannot find host by mac", "mac", mac, "parsed_mac", mac.String())
-			s, i = findDiscoveryInstall(r.Context())
-		} else {
-			iDao := db.GetInstallationDao(r.Context())
-			is, err := iDao.FindValidByState(r.Context(), s.ID, model.AnyInstallState)
-			if err != nil || len(is) < 1 {
-				slog.WarnContext(r.Context(), "system has no active installation", "mac", mac.String())
-				s, i = findDiscoveryInstall(r.Context())
-			} else {
-				if len(is) > 1 {
-					slog.WarnContext(r.Context(), "more than one installations for host", "mac", mac.String())
-				} else {
-					slog.WarnContext(r.Context(), "found installation for system", "mac", mac.String(), "system_id", s.ID)
-				}
-				i = is[0]
-			}
-		}
+		slog.WarnContext(r.Context(), "not found", "mac", mac.String(), "err", err)
+		http.NotFound(w, r)
+		return
 	}
 
 	root := config.BootPath(i.ImageID)
-	if s.ID == 0 {
-		slog.WarnContext(r.Context(), "cannot find system or discovery system, bootstrap will fail")
-	}
-
 	prefix := "/boot"
 	if origMAC != "" {
 		prefix = fmt.Sprintf("/boot/%s", origMAC)
@@ -117,62 +98,40 @@ func HandleBootstrapConfig(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func buildDiscoveryGrubParams(ctx context.Context) tmpl.GrubKernelParams {
-	s, i := findDiscoveryInstall(ctx)
+func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
+	origMAC := chi.URLParam(r, "MAC")
+	mac, _ := net.ParseMAC(origMAC)
 
-	result := tmpl.GrubKernelParams{
-		ImageID:     i.ImageID,
-		SystemID:    s.ID,
-		InstallUUID: i.UUID.String(),
+	err := WriteMacConfig(r.Context(), w, mac)
+	if err != nil {
+		renderGrubError(err, w, r)
+		return
 	}
-	return result
 }
 
-func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
-	mac, err := net.ParseMAC(chi.URLParam(r, "MAC"))
+func WriteMacConfig(ctx context.Context, w io.Writer, mac net.HardwareAddr) error {
+	var err error
+	var s *model.System
+	var i *model.Installation
+
+	iDao := db.GetInstallationDao(ctx)
+	i, s, err = iDao.FindInstallationForMAC(ctx, mac)
 	if err != nil {
-		renderGrubError(err, w, r)
-		return
+		return err
 	}
 
-	params := tmpl.GrubKernelParams{}
-
-	sDao := db.GetSystemDao(r.Context())
-	system, err := sDao.FindByMac(r.Context(), mac)
-
-	if errors.Is(err, pgx.ErrNoRows) {
-		slog.InfoContext(r.Context(), "unknown system - booting discovery", "mac", mac.String())
-		params = buildDiscoveryGrubParams(r.Context())
-	} else if err != nil {
-		slog.ErrorContext(r.Context(), "error while finding system", "mac", mac.String(), "err", err)
-		renderGrubError(err, w, r)
-		return
-	} else {
-		params.SystemID = system.ID
-		iDao := db.GetInstallationDao(r.Context())
-		insts, err := iDao.FindValidByState(r.Context(), params.SystemID, model.FinishedInstallState)
-		if err != nil {
-			slog.ErrorContext(r.Context(), "cannot find installations for system", "mac", mac.String(), "err", err)
-			renderGrubError(err, w, r)
-			return
-		}
-
-		if len(insts) > 0 {
-			slog.InfoContext(r.Context(), "known system - booting installer", "mac", mac.String(), "pending_installs", len(insts), "image_id", params.ImageID, "install_uuid", params.InstallUUID)
-			params.ImageID = insts[0].ImageID
-			params.InstallUUID = insts[0].UUID.String()
-		} else {
-			slog.InfoContext(r.Context(), "known system but not installable - booting discovery", "mac", mac.String())
-			params = buildDiscoveryGrubParams(r.Context())
-		}
+	params := tmpl.GrubKernelParams{
+		SystemID:    s.ID,
+		ImageID:     i.ImageID,
+		InstallUUID: i.UUID.String(),
 	}
 
-	w.WriteHeader(http.StatusOK)
-	err = tmpl.RenderGrubKernel(r.Context(), w, params)
+	err = tmpl.RenderGrubKernel(ctx, w, params)
 	if err != nil {
-		renderGrubError(err, w, r)
-		return
+		return err
 	}
+
+	return nil
 }
 
 func renderGrubError(gerr error, w http.ResponseWriter, r *http.Request) {

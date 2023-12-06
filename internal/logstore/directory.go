@@ -58,7 +58,7 @@ func Start(ctx context.Context) (*Directory, error) {
 	return &dir, nil
 }
 
-func (d *Directory) Stop() {
+func (d *Directory) Shutdown() {
 	slog.Debug("stopping syslog listeners")
 	err := d.srv.Kill()
 	if err != nil {
