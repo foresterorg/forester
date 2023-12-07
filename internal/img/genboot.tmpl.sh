@@ -96,4 +96,6 @@ xorrisofs -o $DSTDIR/boot.iso \
   images/efiboot.img=$TAUX/efiboot.img \
   isolinux.bin=/usr/share/syslinux/isolinux.bin
 
+grub2-mkimage -O i386-pc-pxe -o $DSTDIR/grubx64.0 -p / tftp pxe normal ls echo minicmd halt reboot http linux
+
 exit 0

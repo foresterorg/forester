@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"forester/internal/model"
 	"net"
+	"time"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/hashicorp/golang-lru/v2/expirable"
 	"golang.org/x/exp/slog"
 )
 
@@ -58,13 +60,24 @@ func (dao instDao) FindAnyByState(ctx context.Context, state model.InstallState)
 var ErrUnknownSystem = errors.New("unknown system")
 var NullMAC net.HardwareAddr
 
+var installationCache *expirable.LRU[string, installationCacheEntry]
+
+type installationCacheEntry struct {
+	inst *model.Installation
+	sys  *model.System
+}
+
 func init() {
 	NullMAC, _ = net.ParseMAC("00:00:00:00:00:00")
+	installationCache = expirable.NewLRU[string, installationCacheEntry](512, nil, 30*time.Second)
 }
 
 func (dao instDao) FindInstallationForMAC(ctx context.Context, givenMAC net.HardwareAddr) (*model.Installation, *model.System, error) {
+	// lookup in cache
+	if value, ok := installationCache.Get(givenMAC.String()); ok {
+		return value.inst, value.sys, nil
+	}
 
-	// TODO add caching with 30 seconds expiration here
 	sDao := GetSystemDao(ctx)
 	iDao := GetInstallationDao(ctx)
 
@@ -106,7 +119,9 @@ func (dao instDao) FindInstallationForMAC(ctx context.Context, givenMAC net.Hard
 			} else {
 				slog.InfoContext(ctx, "found installation for system", "mac", mac.String(), "system_id", s.ID)
 			}
+			// found it
 			i = is[0]
+			installationCache.Add(givenMAC.String(), installationCacheEntry{inst: i, sys: s})
 			return i, s, nil
 		}
 	}

@@ -12,11 +12,27 @@ type GrubErrorParams struct {
 	Error error
 }
 
+type GrubLinuxCmd string
+
+const (
+	GrubLinuxCmdBIOS GrubLinuxCmd = "linux $net_pxe_mac/"
+	GrubLinuxCmdEFI GrubLinuxCmd = "linuxefi "
+)
+
+type GrubInitrdCmd string
+
+const (
+	GrubInitrdCmdBIOS GrubInitrdCmd = "initrd $net_pxe_mac/"
+	GrubInitrdCmdEFI GrubInitrdCmd = "initrdefi "
+)
+
 type GrubKernelParams struct {
 	*CommonParams
 	ImageID     int64
 	SystemID    int64
 	InstallUUID string
+	LinuxCmd    GrubLinuxCmd
+	InitrdCmd   GrubInitrdCmd
 }
 
 type LastAction int

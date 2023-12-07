@@ -35,6 +35,7 @@ require (
 	github.com/alexflint/go-scalar v1.2.0 // indirect
 	github.com/c4milo/gotoolkit v0.0.0-20190525173301-67483a18c17a // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/hooklift/assert v0.1.0 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/imdario/mergo v1.0.0 // indirect

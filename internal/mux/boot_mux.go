@@ -102,14 +102,14 @@ func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
 	origMAC := chi.URLParam(r, "MAC")
 	mac, _ := net.ParseMAC(origMAC)
 
-	err := WriteMacConfig(r.Context(), w, mac)
+	err := WriteMacConfig(r.Context(), w, mac, tmpl.GrubLinuxCmdEFI, tmpl.GrubInitrdCmdEFI)
 	if err != nil {
 		renderGrubError(err, w, r)
 		return
 	}
 }
 
-func WriteMacConfig(ctx context.Context, w io.Writer, mac net.HardwareAddr) error {
+func WriteMacConfig(ctx context.Context, w io.Writer, mac net.HardwareAddr, linux tmpl.GrubLinuxCmd, initrd tmpl.GrubInitrdCmd) error {
 	var err error
 	var s *model.System
 	var i *model.Installation
@@ -124,6 +124,8 @@ func WriteMacConfig(ctx context.Context, w io.Writer, mac net.HardwareAddr) erro
 		SystemID:    s.ID,
 		ImageID:     i.ImageID,
 		InstallUUID: i.UUID.String(),
+		LinuxCmd:    linux,
+		InitrdCmd:   initrd,
 	}
 
 	err = tmpl.RenderGrubKernel(ctx, w, params)

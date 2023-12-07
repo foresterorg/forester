@@ -9,6 +9,7 @@ import (
 	"forester/internal/db"
 	"forester/internal/model"
 	"forester/internal/mux"
+	"forester/internal/tmpl"
 	"io"
 	"net"
 	"os"
@@ -57,9 +58,11 @@ func readHandler(requestPath string, rf io.ReaderFrom) error {
 		return ErrOutsideRoot
 	}
 
-	if path[1] == "grub.cfg" {
+	if strings.HasPrefix(path[1], "grub.cfg") {
 		b := &bytes.Buffer{}
-		mux.WriteMacConfig(ctx, b, mac)
+		mux.WriteMacConfig(ctx, b, mac, tmpl.GrubLinuxCmdBIOS, tmpl.GrubInitrdCmdBIOS)
+		// set file size explicitly because buffer does not implement Seek method
+		rf.(tftp.OutgoingTransfer).SetSize(int64(b.Len()))
 		rf.ReadFrom(b)
 	} else {
 		file, err := os.Open(filename)
@@ -86,11 +89,24 @@ func writeHandler(filename string, wt io.WriterTo) error {
 type logHook struct{}
 
 func (h *logHook) OnSuccess(s tftp.TransferStats) {
-	slog.Info("tftp transfer complete", "file", s.Filename, "remote", s.RemoteAddr, "duration", s.Duration)
+	slog.Info("tftp transfer complete",
+		"file", s.Filename,
+		"remote", s.RemoteAddr,
+		"duration", s.Duration,
+		"dack", s.DatagramsAcked,
+		"dsnt", s.DatagramsSent,
+	)
 }
 
 func (h *logHook) OnFailure(s tftp.TransferStats, err error) {
-	slog.Info("tftp transfer complete", "err", err, "file", s.Filename, "remote", s.RemoteAddr, "duration", s.Duration)
+	slog.Info("tftp transfer complete",
+		"err", err,
+		"file", s.Filename,
+		"remote", s.RemoteAddr,
+		"duration", s.Duration,
+		"dack", s.DatagramsAcked,
+		"dsnt", s.DatagramsSent,
+	)
 }
 
 func Start(ctx context.Context) (*Server, error) {
