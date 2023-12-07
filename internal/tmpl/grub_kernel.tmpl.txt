@@ -1,6 +1,8 @@
 echo "FORESTER PROJECT version {{ .Version }}"
-echo "Booting Anaconda..."
-
-{{ .LinuxCmd }}images/pxeboot/vmlinuz inst.stage2={{ .BaseURL }}/img/{{ .ImageID }} ip=dhcp inst.text inst.sshd inst.ks.sendmac inst.ks={{ .BaseURL }}/ks inst.syslog={{ .BaseHost }}:{{ .SyslogPort }} systemd.hostname=f-{{ .SystemID }}-{{ .InstallUUID }}
-{{ .InitrdCmd }}images/pxeboot/initrd.img
+echo Prefix: $prefix
+echo "Loading kernel..."
+{{ .LinuxCmd }}/$net_default_mac/images/pxeboot/vmlinuz inst.stage2={{ .BaseURL }}/img/{{ .ImageID }} ip=dhcp inst.text inst.sshd inst.ks.sendmac inst.ks={{ .BaseURL }}/ks inst.syslog={{ .BaseHost }}:{{ .SyslogPort }} systemd.hostname=f-{{ .SystemID }}-{{ .InstallUUID }}
+echo "Loading initrd..."
+{{ .InitrdCmd }}/$net_default_mac/images/pxeboot/initrd.img
+echo "Booting..."
 boot

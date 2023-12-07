@@ -2,7 +2,6 @@ package mux
 
 import (
 	"context"
-	"fmt"
 	"forester/internal/config"
 	"forester/internal/db"
 	"forester/internal/model"
@@ -11,6 +10,7 @@ import (
 	"mime"
 	"net"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -26,36 +26,20 @@ func MountBoot(r *chi.Mux) {
 		"/LICENSE",
 		"/liveimg.tar.gz",
 		"/images/*",
-		"/x86_64-efi/*",
 		"/boot.iso",
 	}
 
 	for _, path := range paths {
-		// anonymous bootstrap paths
-		r.Head(path, serveBootPath)
-		r.Get(path, serveBootPath)
-
-		// managed bootstrap paths
-		r.Head("/{MAC}"+path, serveBootPath)
-		r.Get("/{MAC}"+path, serveBootPath)
+		r.Head("/{PLATFORM}/{MAC}"+path, serveBootPath)
+		r.Get("/{PLATFORM}/{MAC}"+path, serveBootPath)
 	}
 
 	r.Group(func(r chi.Router) {
 		r.Use(render.SetContentType(render.ContentTypePlainText))
 		r.Use(DebugMiddleware)
 
-		// anonymous grub config
-		r.Head("/grub.cfg", HandleBootstrapConfig)
-		r.Get("/grub.cfg", HandleBootstrapConfig)
-		// sourced grub config
-		r.Head("/grub.cfg/{MAC}", HandleMacConfig)
-		r.Get("/grub.cfg/{MAC}", HandleMacConfig)
-		// redhat patched grub config
-		r.Head("/grub.cfg-{MAC}", HandleMacConfig)
-		r.Get("/grub.cfg-{MAC}", HandleMacConfig)
-		// managed grub config
-		r.Head("/{MAC}/grub.cfg", HandleMacConfig)
-		r.Get("/{MAC}/grub.cfg", HandleMacConfig)
+		r.Head("/{PLATFORM}/{MAC}/grub.cfg", HandleMacConfig)
+		r.Get("/{PLATFORM}/{MAC}/grub.cfg", HandleMacConfig)
 	})
 
 	mime.AddExtensionType(".iso", "application/vnd.efi.iso")
@@ -68,6 +52,7 @@ func serveBootPath(w http.ResponseWriter, r *http.Request) {
 	var s *model.System
 	var i *model.Installation
 
+	platform := chi.URLParam(r, "PLATFORM")
 	origMAC := chi.URLParam(r, "MAC")
 	mac, _ := net.ParseMAC(origMAC)
 
@@ -80,9 +65,9 @@ func serveBootPath(w http.ResponseWriter, r *http.Request) {
 	}
 
 	root := config.BootPath(i.ImageID)
-	prefix := "/boot"
+	prefix := "/boot/" + platform
 	if origMAC != "" {
-		prefix = fmt.Sprintf("/boot/%s", origMAC)
+		prefix = r.URL.Path
 	}
 	slog.InfoContext(r.Context(), "serving root", "directory", root, "system_id", s.ID, "install_uuid", i.UUID, "path", r.URL.Path, "prefix", prefix)
 	fs := http.StripPrefix(prefix, http.FileServer(http.Dir(root)))
@@ -99,10 +84,21 @@ func HandleBootstrapConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
+	platform := strings.ToLower(chi.URLParam(r, "PLATFORM"))
 	origMAC := chi.URLParam(r, "MAC")
 	mac, _ := net.ParseMAC(origMAC)
 
-	err := WriteMacConfig(r.Context(), w, mac, tmpl.GrubLinuxCmdEFI, tmpl.GrubInitrdCmdEFI)
+	var linux tmpl.GrubLinuxCmd
+	var initrd tmpl.GrubInitrdCmd
+	if platform == "bios" {
+		linux = tmpl.GrubLinuxCmdBIOS
+		initrd = tmpl.GrubInitrdCmdBIOS
+	} else {
+		linux = tmpl.GrubLinuxCmdEFIX64
+		initrd = tmpl.GrubInitrdCmdEFIX64
+	}
+
+	err := WriteMacConfig(r.Context(), w, mac, linux, initrd)
 	if err != nil {
 		renderGrubError(err, w, r)
 		return

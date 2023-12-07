@@ -28,15 +28,24 @@ var ErrOutsideRoot = errors.New("access outside of the root directory")
 var ErrMalformedPath = errors.New("malformed path")
 
 func readHandler(requestPath string, rf io.ReaderFrom) error {
+	slog.Debug("serving", "path", requestPath)
+	requestPath = strings.TrimPrefix(requestPath, "/")
 	ctx := context.Background()
 	var err error
 	var i *model.Installation
 
-	path := strings.SplitN(requestPath, "/", 2)
-	mac, err := net.ParseMAC(path[0])
-	if err != nil {
-		return fmt.Errorf("unable to parse mac for path %s: %w", requestPath, err)
+	path := strings.SplitN(requestPath, "/", 3)
+	if len(path) != 3 || path[0] == "" {
+		return fmt.Errorf("%w: %+v", ErrMalformedPath, path)
 	}
+
+	mac, err := net.ParseMAC(path[1])
+	if err != nil {
+		return fmt.Errorf("unable to parse mac %s for path %s: %w", path[1], requestPath, err)
+	}
+
+	platform := strings.ToLower(path[0])
+	finalPath := path[2]
 
 	iDao := db.GetInstallationDao(ctx)
 	i, _, err = iDao.FindInstallationForMAC(ctx, mac)
@@ -44,12 +53,8 @@ func readHandler(requestPath string, rf io.ReaderFrom) error {
 		return fmt.Errorf("installation not found for mac %s: %w", mac.String(), err)
 	}
 
-	if len(path) != 2 {
-		return fmt.Errorf("%w: %s", ErrMalformedPath, requestPath)
-	}
-
 	root := config.BootPath(i.ImageID)
-	filename, err := filepath.Abs(filepath.Join(root, path[1]))
+	filename, err := filepath.Abs(filepath.Join(root, finalPath))
 	if err != nil {
 		return fmt.Errorf("filepath error %s: %w", requestPath, err)
 	}
@@ -58,13 +63,18 @@ func readHandler(requestPath string, rf io.ReaderFrom) error {
 		return ErrOutsideRoot
 	}
 
-	if strings.HasPrefix(path[1], "grub.cfg") {
+	if strings.HasPrefix(finalPath, "grub.cfg") {
 		b := &bytes.Buffer{}
-		mux.WriteMacConfig(ctx, b, mac, tmpl.GrubLinuxCmdBIOS, tmpl.GrubInitrdCmdBIOS)
+		if platform == "bios" {
+			mux.WriteMacConfig(ctx, b, mac, tmpl.GrubLinuxCmdBIOS, tmpl.GrubInitrdCmdBIOS)
+		} else {
+			mux.WriteMacConfig(ctx, b, mac, tmpl.GrubLinuxCmdEFIX64, tmpl.GrubInitrdCmdEFIX64)
+		}
 		// set file size explicitly because buffer does not implement Seek method
 		rf.(tftp.OutgoingTransfer).SetSize(int64(b.Len()))
 		rf.ReadFrom(b)
 	} else {
+		slog.Debug("serving file", "file", filename, "mac", mac.String(), "platform", platform)
 		file, err := os.Open(filename)
 		if err != nil {
 			return fmt.Errorf("cannot open %s: %w", requestPath, err)

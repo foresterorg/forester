@@ -15,15 +15,15 @@ type GrubErrorParams struct {
 type GrubLinuxCmd string
 
 const (
-	GrubLinuxCmdBIOS GrubLinuxCmd = "linux $net_pxe_mac/"
-	GrubLinuxCmdEFI GrubLinuxCmd = "linuxefi "
+	GrubLinuxCmdBIOS   GrubLinuxCmd = "linux /bios"
+	GrubLinuxCmdEFIX64 GrubLinuxCmd = "linuxefi /efix64"
 )
 
 type GrubInitrdCmd string
 
 const (
-	GrubInitrdCmdBIOS GrubInitrdCmd = "initrd $net_pxe_mac/"
-	GrubInitrdCmdEFI GrubInitrdCmd = "initrdefi "
+	GrubInitrdCmdBIOS   GrubInitrdCmd = "initrd bios"
+	GrubInitrdCmdEFIX64 GrubInitrdCmd = "initrdefi /efix64"
 )
 
 type GrubKernelParams struct {
