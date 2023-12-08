@@ -147,12 +147,12 @@ func extractImage(dbImage *model.Image) {
 
 	err = os.Symlink("./EFI/BOOT/BOOTX64.EFI", filepath.Join(imagePath, "shim.efi"))
 	if err != nil {
-		slog.ErrorContext(ctx, "cannot create symlink", "err", err)
+		slog.ErrorContext(ctx, "cannot create shim.efi symlink", "err", err)
 		return
 	}
 	err = os.Symlink("./EFI/BOOT/grubx64.efi", filepath.Join(imagePath, "grubx64.efi"))
 	if err != nil {
-		slog.ErrorContext(ctx, "cannot create symlink", "err", err)
+		slog.ErrorContext(ctx, "cannot create grubx64.efi symlink", "err", err)
 		return
 	}
 

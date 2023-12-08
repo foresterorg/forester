@@ -10,6 +10,7 @@ import (
 	"mime"
 	"net"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -65,11 +66,17 @@ func serveBootPath(w http.ResponseWriter, r *http.Request) {
 	}
 
 	root := config.BootPath(i.ImageID)
-	prefix := "/boot/" + platform
-	if origMAC != "" {
-		prefix = r.URL.Path
-	}
-	slog.InfoContext(r.Context(), "serving root", "directory", root, "system_id", s.ID, "install_uuid", i.UUID, "path", r.URL.Path, "prefix", prefix)
+
+	prefix := "/" + strings.Join(slices.DeleteFunc([]string{"boot", platform, origMAC}, func(e string) bool {
+		return e == ""
+	}), "/")
+	slog.InfoContext(r.Context(), "serving root",
+		"directory", root,
+		"system_id", s.ID,
+		"install_uuid", i.UUID,
+		"path", r.URL.Path,
+		"prefix", prefix,
+	)
 	fs := http.StripPrefix(prefix, http.FileServer(http.Dir(root)))
 	fs.ServeHTTP(w, r)
 }

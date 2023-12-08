@@ -28,8 +28,12 @@ var ErrOutsideRoot = errors.New("access outside of the root directory")
 var ErrMalformedPath = errors.New("malformed path")
 
 func readHandler(requestPath string, rf io.ReaderFrom) error {
-	slog.Debug("serving", "path", requestPath)
 	requestPath = strings.TrimPrefix(requestPath, "/")
+	if !strings.HasPrefix(requestPath, "boot/") {
+		return fmt.Errorf("%w: path must start with /boot/", ErrMalformedPath)
+	}
+	requestPath = strings.TrimPrefix(requestPath, "boot/")
+
 	ctx := context.Background()
 	var err error
 	var i *model.Installation
@@ -74,7 +78,7 @@ func readHandler(requestPath string, rf io.ReaderFrom) error {
 		rf.(tftp.OutgoingTransfer).SetSize(int64(b.Len()))
 		rf.ReadFrom(b)
 	} else {
-		slog.Debug("serving file", "file", filename, "mac", mac.String(), "platform", platform)
+		//slog.Debug("serving file", "file", filename, "mac", mac.String(), "platform", platform)
 		file, err := os.Open(filename)
 		if err != nil {
 			return fmt.Errorf("cannot open %s: %w", requestPath, err)

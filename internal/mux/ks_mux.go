@@ -7,16 +7,17 @@ import (
 	"forester/internal/db"
 	"forester/internal/model"
 	"forester/internal/tmpl"
-	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5"
-	"golang.org/x/exp/slog"
 	"io"
 	"net"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
+	"github.com/jackc/pgx/v5"
+	"golang.org/x/exp/slog"
 )
-import "github.com/go-chi/render"
 
 func MountKickstart(r *chi.Mux) {
 	r.Use(render.SetContentType(render.ContentTypePlainText))
@@ -154,11 +155,11 @@ func HandleKickstart(w http.ResponseWriter, r *http.Request) {
 	sDao := db.GetSystemDao(r.Context())
 	for k, v := range r.Header {
 		if !headerRegexp.MatchString(k) {
-			slog.DebugContext(r.Context(), "skipping header", "name", k, "value", v)
+			//slog.DebugContext(r.Context(), "skipping header", "name", k, "value", v)
 			continue
 		}
 		for _, macString := range v {
-			slog.DebugContext(r.Context(), "processing header", "name", k, "value", v)
+			//slog.DebugContext(r.Context(), "processing header", "name", k, "value", v)
 			headerLine := strings.SplitN(macString, " ", 2)
 			if len(headerLine) != 2 {
 				renderKsError(ErrMACHeaderInvalid, w, r)
