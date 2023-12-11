@@ -42,16 +42,19 @@ func buildDiscoveryKickstartParams(ctx context.Context) (*tmpl.KickstartParams, 
 		SystemHostname: ToHostname(s.Name),
 		InstallUUID:    i.UUID.String(),
 		LastAction:     tmpl.ShutdownLastAction,
-		Snippets:       make(map[string][]string),
+		Snippets:       tmpl.MakeCustomSnippets(),
 	}
 
 	nDao := db.GetSnippetDao(ctx)
-	snippets, err := nDao.FindByKind(ctx, s.ID, model.PreSnippetKind)
+	snippets, err := nDao.FindByInstallation(ctx, i.ID)
 	if err != nil {
-		slog.ErrorContext(ctx, "error loading snippet", "id", s.ID, "kind", model.PreSnippetKind)
+		slog.ErrorContext(ctx, "error loading snippets", "inst_id", i.ID)
 		return nil, err
 	}
-	result.Snippets[model.PreSnippetKind.String()] = snippets
+
+	for _, s := range snippets {
+		result.Snippets[s.Kind.String()] = append(result.Snippets[s.Kind.String()], s.Body)
+	}
 
 	return &result, nil
 }
@@ -122,19 +125,19 @@ func RenderKickstartForSystem(ctx context.Context, system *model.System, w io.Wr
 		SystemHostname: ToHostname(system.Name),
 		InstallUUID:    inst.UUID.String(),
 		LastAction:     la,
-		Snippets:       make(map[string][]string),
+		Snippets:       tmpl.MakeCustomSnippets(),
 		CustomSnippet:  system.CustomSnippet,
 		LiveimgSha256:  liveimgSha256,
 	}
 
-	// TODO: change this to FindByInstallation (returns all kinds)
-	for _, kind := range model.AllSnippetKinds {
-		snippets, err := sDao.FindByKind(ctx, system.ID, kind)
-		if err != nil {
-			slog.ErrorContext(ctx, "error loading snippet", "id", system.ID, "kind", kind)
-			return err
-		}
-		params.Snippets[kind.String()] = snippets
+	snippets, err := sDao.FindByInstallation(ctx, inst.ID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error loading snippets", "inst_id", inst.ID)
+		return err
+	}
+
+	for _, s := range snippets {
+		params.Snippets[s.Kind.String()] = append(params.Snippets[s.Kind.String()], s.Body)
 	}
 
 	err = tmpl.RenderKickstartInstall(ctx, w, params)

@@ -1,5 +1,7 @@
 package tmpl
 
+import "forester/internal/model"
+
 type CommonParams struct {
 	BaseHost   string
 	BaseURL    string
@@ -74,4 +76,13 @@ type KickstartParams struct {
 type KickstartErrorParams struct {
 	*CommonParams
 	Message string
+}
+
+func MakeCustomSnippets() map[string][]string {
+	m := make(map[string][]string)
+	for _, kind := range model.AllSnippetKinds {
+		m[kind.String()] = make([]string, 0)
+	}
+
+	return m
 }

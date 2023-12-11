@@ -73,7 +73,7 @@ type SnippetDao interface {
 	Create(ctx context.Context, a *model.Snippet) error
 	Find(ctx context.Context, name string) (*model.Snippet, error)
 	FindByID(ctx context.Context, id int64) (*model.Snippet, error)
-	FindByKind(ctx context.Context, systemID int64, kind model.SnippetKind) ([]string, error)
+	FindByInstallation(ctx context.Context, instID int64) ([]model.Snippet, error)
 	List(ctx context.Context, limit, offset int64) ([]*model.Snippet, error)
 	EditByName(ctx context.Context, name, body string) error
 	DeleteByName(ctx context.Context, name string) error

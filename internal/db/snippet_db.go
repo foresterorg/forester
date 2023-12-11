@@ -53,14 +53,14 @@ func (dao snippetDao) FindByID(ctx context.Context, id int64) (*model.Snippet, e
 	return result, nil
 }
 
-func (dao snippetDao) FindByKind(ctx context.Context, systemID int64, kind model.SnippetKind) ([]string, error) {
-	query := `SELECT snippets.body FROM installations_snippets, snippets, installations
+func (dao snippetDao) FindByInstallation(ctx context.Context, instID int64) ([]model.Snippet, error) {
+	query := `SELECT snippets.* FROM installations_snippets, snippets, installations
 	WHERE installations_snippets.snippet_id = snippets.id AND
 	installations_snippets.installation_id = installations.id AND
-    installations.system_id = $1 AND snippets.kind = $2`
+    installations.id = $1`
 
-	var result []string
-	rows, err := Pool.Query(ctx, query, systemID, kind)
+	var result []model.Snippet
+	rows, err := Pool.Query(ctx, query, instID)
 	if err != nil {
 		return nil, fmt.Errorf("select error: %w", err)
 	}
