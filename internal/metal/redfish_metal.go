@@ -8,7 +8,9 @@ import (
 	"forester/internal/model"
 	"math"
 	"regexp"
+	"slices"
 	"strconv"
+	"time"
 
 	"github.com/stmcginnis/gofish"
 	"github.com/stmcginnis/gofish/redfish"
@@ -142,19 +144,31 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppli
 		}
 
 		if rSystem.UUID == *system.UID {
-			slog.DebugContext(ctx, "found redfish system", "id", rSystem.ID, "uuid", rSystem.UUID, "uid", *system.UID)
+			slog.DebugContext(ctx, "found redfish system", "id", rSystem.ID, "uuid", rSystem.UUID, "uid", *system.UID, "reset_types", rSystem.SupportedResetTypes)
+
 			err := rSystem.SetBoot(bootOverride)
 			if err != nil {
 				return fmt.Errorf("redfish error: %w", err)
 			}
-			if rSystem.PowerState == redfish.OnPowerState {
+
+			if slices.Contains(rSystem.SupportedResetTypes, redfish.ForceRestartResetType) {
+				err = rSystem.Reset(redfish.ForceRestartResetType)
+			} else if slices.Contains(rSystem.SupportedResetTypes, redfish.PowerCycleResetType) {
 				err = rSystem.Reset(redfish.PowerCycleResetType)
-			} else {
+			} else if slices.Contains(rSystem.SupportedResetTypes, redfish.ForceOffResetType) {
+				if rSystem.PowerState == redfish.OnPowerState {
+					err = rSystem.Reset(redfish.ForceOffResetType)
+					if err != nil {
+						return fmt.Errorf("redfish powercycle error: %w", err)
+					}
+				}
+				time.Sleep(time.Second * 3)
 				err = rSystem.Reset(redfish.OnResetType)
 			}
 			if err != nil {
-				return fmt.Errorf("redfish error: %w", err)
+				return fmt.Errorf("redfish powercycle error: %w", err)
 			}
+
 		} else {
 			slog.DebugContext(ctx, "checking redfish system", "id", rSystem.ID, "uuid", rSystem.UUID, "uid", *system.UID)
 		}
