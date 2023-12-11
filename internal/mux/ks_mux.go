@@ -127,6 +127,7 @@ func RenderKickstartForSystem(ctx context.Context, system *model.System, w io.Wr
 		LiveimgSha256:  liveimgSha256,
 	}
 
+	// TODO: change this to FindByInstallation (returns all kinds)
 	for _, kind := range model.AllSnippetKinds {
 		snippets, err := sDao.FindByKind(ctx, system.ID, kind)
 		if err != nil {
