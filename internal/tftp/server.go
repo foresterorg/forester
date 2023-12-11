@@ -42,14 +42,20 @@ func readHandler(requestPath string, rf io.ReaderFrom) error {
 	if len(path) != 3 || path[0] == "" {
 		return fmt.Errorf("%w: %+v", ErrMalformedPath, path)
 	}
+	platform := strings.ToLower(path[0])
+	strMAC := path[1]
+	finalPath := path[2]
 
-	mac, err := net.ParseMAC(path[1])
+	mac, err := net.ParseMAC(strMAC)
 	if err != nil {
-		return fmt.Errorf("unable to parse mac %s for path %s: %w", path[1], requestPath, err)
+		return fmt.Errorf("unable to parse mac %s for path %s: %w", strMAC, requestPath, err)
 	}
 
-	platform := strings.ToLower(path[0])
-	finalPath := path[2]
+	// handle grub.cfg-01-02-03-04-05-06
+	if strings.HasPrefix(requestPath, "grub.cfg-") {
+		mac, err = net.ParseMAC(strings.TrimPrefix(requestPath, "grub.cfg-"))
+		return fmt.Errorf("unable to parse 2nd mac for path %s: %w", requestPath, err)
+	}
 
 	iDao := db.GetInstallationDao(ctx)
 	i, _, err = iDao.FindInstallationForMAC(ctx, mac)

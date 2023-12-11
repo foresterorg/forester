@@ -6,12 +6,13 @@ import (
 	"forester/internal/config"
 	"forester/internal/logging"
 	"forester/internal/model"
-	"github.com/stmcginnis/gofish"
-	"github.com/stmcginnis/gofish/redfish"
-	"golang.org/x/exp/slog"
 	"math"
 	"regexp"
 	"strconv"
+
+	"github.com/stmcginnis/gofish"
+	"github.com/stmcginnis/gofish/redfish"
+	"golang.org/x/exp/slog"
 )
 
 type RedfishMetal struct {
@@ -126,12 +127,20 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppli
 	}
 
 	bootOverride := redfish.Boot{
-		BootSourceOverrideTarget:  redfish.UefiHTTPBootSourceOverrideTarget,
 		BootSourceOverrideEnabled: redfish.OnceBootSourceOverrideEnabled,
-		HTTPBootURI:               uri,
 	}
 
 	for _, rSystem := range rSystems {
+		if rSystem.Boot.BootSourceOverrideMode == redfish.UEFIBootSourceOverrideMode {
+			// EFI boot
+			bootOverride.BootSourceOverrideTarget = redfish.UefiHTTPBootSourceOverrideTarget
+			// TODO: only set when in rSystem.Boot.AllowableValues (not yet implemented in the library)
+			bootOverride.HTTPBootURI = uri
+		} else {
+			// BIOS boot
+			bootOverride.BootSourceOverrideTarget = redfish.PxeBootSourceOverrideTarget
+		}
+
 		if rSystem.UUID == *system.UID {
 			slog.DebugContext(ctx, "found redfish system", "id", rSystem.ID, "uuid", rSystem.UUID, "uid", *system.UID)
 			err := rSystem.SetBoot(bootOverride)
