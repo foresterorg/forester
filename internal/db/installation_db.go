@@ -24,7 +24,7 @@ func getInstallationDao(ctx context.Context) InstallationDao {
 }
 
 func (dao instDao) FindValidByState(ctx context.Context, systemId int64, state model.InstallState) ([]*model.Installation, error) {
-	query := `SELECT * FROM installations WHERE system_id = $1 AND valid_until > current_timestamp AND state <= $2 ORDER BY valid_until DESC`
+	query := `SELECT * FROM installations WHERE system_id = $1 AND valid_until > current_timestamp AND state <= $2 ORDER BY id DESC`
 
 	var result []*model.Installation
 	rows, err := Pool.Query(ctx, query, systemId, state)
