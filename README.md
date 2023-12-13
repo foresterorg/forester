@@ -28,8 +28,8 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 
 **TODO**
 
+* DHCP conf generators
 * Bootstrapping unknown hosts does not work
-* Restarting BIOS hosts via Redfish gives "value UefiHttp for the property BootSourceOverrideTarget is not in the list of acceptable values"
 * Update documentation on the recent changes
 * Create events table and store installation milestones (boot, ks, finish) and rendered templates in the database
 * Change log level to debug for "finished request" log for range requests (blocks are 4096, 8192, 32768, 65536 or): `msg="finished request" method=GET path=/img/1/image.iso duration_ms=0s status=206 bytes=131072 trace_id=pBI45d1z`
@@ -38,6 +38,7 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 * Implement a scheduler for power operations (when queue changes, a notification fires up on insert/update, calls go, it picks up the work)
 * When image id is the same, use it. When there are different images add a warning message with sleep 1 minute.
 * Scheduler will never start more than one system with different image id and checks in regular interval for new work
+* Improve hardcoded power cycle delay
 * Investigate how much work is BIOS support (via dnsmasq)
 * Implement pykickstart checking of kickstart content (generated template and ks)
 * Importing shim signatures in discovery mode: https://lukas.zapletalovi.com/posts/2021/rhelcentos-8-shim-kernel-signatures/

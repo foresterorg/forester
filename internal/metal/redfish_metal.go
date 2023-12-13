@@ -133,18 +133,23 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppli
 	}
 
 	for _, rSystem := range rSystems {
-		if rSystem.Boot.BootSourceOverrideMode == redfish.UEFIBootSourceOverrideMode {
-			// EFI boot
-			bootOverride.BootSourceOverrideTarget = redfish.UefiHTTPBootSourceOverrideTarget
-			// TODO: only set when in rSystem.Boot.AllowableValues (not yet implemented in the library)
-			bootOverride.HTTPBootURI = uri
-		} else {
-			// BIOS boot
-			bootOverride.BootSourceOverrideTarget = redfish.PxeBootSourceOverrideTarget
-		}
-
 		if rSystem.UUID == *system.UID {
-			slog.DebugContext(ctx, "found redfish system", "id", rSystem.ID, "uuid", rSystem.UUID, "uid", *system.UID, "reset_types", rSystem.SupportedResetTypes)
+			slog.DebugContext(ctx, "found redfish system",
+				"id", rSystem.ID,
+				"uuid", rSystem.UUID,
+				"uid", *system.UID,
+				"reset_types", rSystem.SupportedResetTypes,
+				"boot_override", rSystem.Boot.BootSourceOverrideMode,
+			)
+			if rSystem.Boot.BootSourceOverrideMode == redfish.UEFIBootSourceOverrideMode {
+				// EFI boot
+				bootOverride.BootSourceOverrideTarget = redfish.UefiHTTPBootSourceOverrideTarget
+				// TODO: only set when in rSystem.Boot.AllowableValues (not yet implemented in the library)
+				bootOverride.HTTPBootURI = uri
+			} else {
+				// Legacy (aka BIOS) boot
+				bootOverride.BootSourceOverrideTarget = redfish.PxeBootSourceOverrideTarget
+			}
 
 			err := rSystem.SetBoot(bootOverride)
 			if err != nil {
@@ -155,13 +160,15 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppli
 				err = rSystem.Reset(redfish.ForceRestartResetType)
 			} else if slices.Contains(rSystem.SupportedResetTypes, redfish.PowerCycleResetType) {
 				err = rSystem.Reset(redfish.PowerCycleResetType)
-			} else if slices.Contains(rSystem.SupportedResetTypes, redfish.ForceOffResetType) {
+			} else if slices.Contains(rSystem.SupportedResetTypes, redfish.ForceOffResetType) || len(rSystem.SupportedResetTypes) == 0 {
 				if rSystem.PowerState == redfish.OnPowerState {
 					err = rSystem.Reset(redfish.ForceOffResetType)
 					if err != nil {
 						return fmt.Errorf("redfish powercycle error: %w", err)
 					}
 				}
+
+				// Some very slow sytems might not even poweroff by this time
 				time.Sleep(time.Second * 5)
 				err = rSystem.Reset(redfish.OnResetType)
 			}
