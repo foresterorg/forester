@@ -65,6 +65,7 @@ func main() {
 	ksRouter := chi.NewRouter()
 	doneRouter := chi.NewRouter()
 	logsRouter := chi.NewRouter()
+	confRouter := chi.NewRouter()
 
 	rootRouter.Use(mux.TraceIdMiddleware)
 
@@ -73,11 +74,13 @@ func main() {
 	mux.MountKickstart(ksRouter)
 	mux.MountDone(doneRouter)
 	mux.MountLogs(logsRouter)
+	mux.MountConf(confRouter)
 	rootRouter.Mount("/boot", bootRouter)
 	rootRouter.Mount("/img", imgRouter)
 	rootRouter.Mount("/ks", ksRouter)
 	rootRouter.Mount("/done", doneRouter)
 	rootRouter.Mount("/logs", logsRouter)
+	rootRouter.Mount("/conf", confRouter)
 	ctl.MountServices(rootRouter)
 
 	rootServer := http.Server{
