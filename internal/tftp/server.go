@@ -35,6 +35,7 @@ func readHandler(requestPath string, rf io.ReaderFrom) error {
 	requestPath = strings.TrimPrefix(requestPath, "boot/")
 
 	ctx := context.Background()
+	var mac net.HardwareAddr
 	var err error
 	var i *model.Installation
 
@@ -46,15 +47,17 @@ func readHandler(requestPath string, rf io.ReaderFrom) error {
 	strMAC := path[1]
 	finalPath := path[2]
 
-	mac, err := net.ParseMAC(strMAC)
-	if err != nil {
-		return fmt.Errorf("unable to parse mac %s for path %s: %w", strMAC, requestPath, err)
-	}
-
-	// handle grub.cfg-01-02-03-04-05-06
-	if strings.HasPrefix(requestPath, "grub.cfg-") {
-		mac, err = net.ParseMAC(strings.TrimPrefix(requestPath, "grub.cfg-"))
-		return fmt.Errorf("unable to parse 2nd mac for path %s: %w", requestPath, err)
+	// Handle embedded BIOS prefix /grub.cfg-01-AA-BB-CC-DD-EE-FF)
+	if strings.HasPrefix(finalPath, "grub.cfg-01-") {
+		mac, err = net.ParseMAC(strings.TrimPrefix(finalPath, "grub.cfg-01-"))
+		if err != nil {
+			return fmt.Errorf("unable to parse mac for prefix path %s: %w", requestPath, err)
+		}
+	} else {
+		mac, err = net.ParseMAC(strMAC)
+		if err != nil {
+			return fmt.Errorf("unable to parse mac %s for path %s: %w", strMAC, requestPath, err)
+		}
 	}
 
 	iDao := db.GetInstallationDao(ctx)

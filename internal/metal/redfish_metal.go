@@ -148,7 +148,7 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppli
 
 			err := rSystem.SetBoot(bootOverride)
 			if err != nil {
-				return fmt.Errorf("redfish error: %w", err)		
+				return fmt.Errorf("redfish error: %w", err)
 			}
 
 			if slices.Contains(rSystem.SupportedResetTypes, redfish.ForceRestartResetType) {
@@ -162,7 +162,7 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppli
 						return fmt.Errorf("redfish powercycle error: %w", err)
 					}
 				}
-				time.Sleep(time.Second * 3)
+				time.Sleep(time.Second * 5)
 				err = rSystem.Reset(redfish.OnResetType)
 			}
 			if err != nil {

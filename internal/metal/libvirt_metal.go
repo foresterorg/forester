@@ -28,7 +28,7 @@ func updateDomainBootDeviceXML(ctx context.Context, xmlString, device string) (s
 		return "", fmt.Errorf("cannot unmarshal domain XML: %w", err)
 	}
 	// clear existing Boot elements which cannot be mixed with BootDevices
-	for i, _ := range domain.Devices.Disks {
+	for i := range domain.Devices.Disks {
 		domain.Devices.Disks[i].Boot = nil
 	}
 	domain.OS.BootDevices = []libvirtxml.DomainBootDevice{{Dev: device}}
