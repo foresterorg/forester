@@ -28,6 +28,7 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 
 **TODO**
 
+* Change Onboard ROM to Legacy on f08
 * Bootstrapping unknown hosts does not work
 * Update documentation on the recent changes
 * Create events table and store installation milestones (boot, ks, finish) and rendered templates in the database

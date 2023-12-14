@@ -147,7 +147,7 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppli
 				// TODO: only set when in rSystem.Boot.AllowableValues (not yet implemented in the library)
 				bootOverride.HTTPBootURI = uri
 			} else {
-				// Legacy (aka BIOS) boot
+				// Legacy (aka BIOS) boot - some systems will actually PXE boot in UEFI mode
 				bootOverride.BootSourceOverrideTarget = redfish.PxeBootSourceOverrideTarget
 			}
 
@@ -166,10 +166,11 @@ func (m RedfishMetal) BootNetwork(ctx context.Context, system *model.SystemAppli
 					if err != nil {
 						return fmt.Errorf("redfish powercycle error: %w", err)
 					}
+
+					// Some very slow sytems might not even poweroff by this time
+					time.Sleep(time.Second * 10)
 				}
 
-				// Some very slow sytems might not even poweroff by this time
-				time.Sleep(time.Second * 5)
 				err = rSystem.Reset(redfish.OnResetType)
 			}
 			if err != nil {
