@@ -2,10 +2,10 @@
 echo "FORESTER PROJECT version {{ .Version }}"
 
 echo "Loading kernel..."
-kernel /boot/ipxef/${net0/mac}/images/pxeboot/vmlinuz initrd=initrd.img inst.stage2={{ .BaseURL }}/img/{{ .ImageID }} ip=dhcp inst.text inst.sshd inst.ks.sendmac inst.ks={{ .BaseURL }}/ks inst.syslog={{ .BaseHost }}:{{ .SyslogPort }} systemd.hostname=f-{{ .SystemID }}-{{ .InstallUUID }}
+kernel {{ .BaseURL }}/boot/ipxef/${net0/mac}/images/pxeboot/vmlinuz initrd=initrd.img inst.stage2={{ .BaseURL }}/img/{{ .ImageID }} ip=dhcp inst.text inst.sshd inst.ks.sendmac inst.ks={{ .BaseURL }}/ks inst.syslog={{ .BaseHost }}:{{ .SyslogPort }} systemd.hostname=f-{{ .SystemID }}-{{ .InstallUUID }}
 
 echo "Loading initrd..."
-initrd /boot/ipxef/${net0/mac}/images/pxeboot/initrd.img
+initrd {{ .BaseURL }}/boot/ipxef/${net0/mac}/images/pxeboot/initrd.img
 
 echo "Booting..."
 boot

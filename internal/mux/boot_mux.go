@@ -10,6 +10,7 @@ import (
 	"mime"
 	"net"
 	"net/http"
+	"net/url"
 	"slices"
 	"strings"
 
@@ -69,7 +70,13 @@ func serveBootPath(w http.ResponseWriter, r *http.Request) {
 	var i *model.Installation
 
 	platform := chi.URLParam(r, "PLATFORM")
-	origMAC := chi.URLParam(r, "MAC")
+	// iPXE performs URL-encode on URL paths
+	origMAC, err := url.QueryUnescape(chi.URLParam(r, "MAC"))
+	if err != nil {
+		slog.WarnContext(r.Context(), "could not URL-decode MAC address", "mac", chi.URLParam(r, "MAC"), "err", err)
+		http.NotFound(w, r)
+		return
+	}
 	mac, _ := net.ParseMAC(origMAC)
 
 	iDao := db.GetInstallationDao(r.Context())
@@ -90,8 +97,13 @@ func serveBootPath(w http.ResponseWriter, r *http.Request) {
 		"system_id", s.ID,
 		"install_uuid", i.UUID,
 		"path", r.URL.Path,
+		"raw_path", r.URL.RawPath,
 		"prefix", prefix,
 	)
+	// Overwrite raw path. From StripPrefix doc: "if the prefix in the request contains escaped characters
+	// the reply is also an HTTP 404 not found error."
+	r.URL.RawPath = r.URL.Path
+	
 	fs := http.StripPrefix(prefix, http.FileServer(http.Dir(root)))
 	fs.ServeHTTP(w, r)
 }
@@ -107,7 +119,12 @@ func HandleBootstrapConfig(w http.ResponseWriter, r *http.Request) {
 
 func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
 	platform := strings.ToLower(chi.URLParam(r, "PLATFORM"))
-	origMAC := chi.URLParam(r, "MAC")
+	origMAC, err := url.QueryUnescape(chi.URLParam(r, "MAC"))
+	if err != nil {
+		slog.WarnContext(r.Context(), "could not URL-decode MAC address", "mac", chi.URLParam(r, "MAC"), "err", err)
+		http.NotFound(w, r)
+		return
+	}
 	mac, _ := net.ParseMAC(origMAC)
 
 	var linux tmpl.GrubLinuxCmd
@@ -120,7 +137,7 @@ func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
 		initrd = tmpl.GrubInitrdCmdEFIX64
 	}
 
-	err := WriteGrubConfig(r.Context(), w, mac, linux, initrd)
+	err = WriteGrubConfig(r.Context(), w, mac, linux, initrd)
 	if err != nil {
 		renderBootError(err, w, r, tmpl.GrubBootErrorType)
 		return
@@ -160,10 +177,15 @@ func serveIpxeEFI(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveIpxeScript(w http.ResponseWriter, r *http.Request) {
-	origMAC := chi.URLParam(r, "MAC")
+	origMAC, err := url.QueryUnescape(chi.URLParam(r, "MAC"))
+	if err != nil {
+		slog.WarnContext(r.Context(), "could not URL-decode MAC address", "mac", chi.URLParam(r, "MAC"), "err", err)
+		http.NotFound(w, r)
+		return
+	}
 	mac, _ := net.ParseMAC(origMAC)
 
-	err := WriteIpxeConfig(r.Context(), w, mac)
+	err = WriteIpxeConfig(r.Context(), w, mac)
 	if err != nil {
 		renderBootError(err, w, r, tmpl.IpxeBootErrorType)
 		return
