@@ -1,0 +1,17 @@
+#
+# Place this config in /etc/dnsmasq.d/forester.conf and restart dnsmasq.
+#
+
+dhcp-vendorclass=set:bios,PXEClient:Arch:00000
+dhcp-vendorclass=set:efi,PXEClient:Arch:00007
+dhcp-vendorclass=set:efix64,PXEClient:Arch:00009
+dhcp-vendorclass=set:efihttp,HTTPClient:Arch:00016
+dhcp-option-force=tag:efihttp,60,HTTPClient
+
+{{ range .Entries }}
+dhcp-host={{ .MAC }},set:{{ .Tag }}
+dhcp-boot=tag:bios,tag:{{ .Tag }},boot/bios/{{ .MAC }}/grubx64.0,,{{ $.BaseHost }}
+dhcp-boot=tag:efi,tag:{{ .Tag }},boot/efi/{{ .MAC }}/shim.efi,,{{ $.BaseHost }}
+dhcp-boot=tag:efi64,tag:{{ .Tag }},boot/efi64/{{ .MAC }}/shim.efi,,{{ $.BaseHost }}
+dhcp-boot=tag:efihttp,tag:{{ .Tag }},{{ $.BaseURL }}/boot/efi64/{{ .MAC }}/shim.efi
+{{ end }}

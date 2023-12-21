@@ -9,8 +9,16 @@ type CommonParams struct {
 	Version    string
 }
 
-type GrubErrorParams struct {
+type BootErrorType string
+
+const (
+	GrubBootErrorType BootErrorType = "grub"
+	IpxeBootErrorType BootErrorType = "ipxe"
+)
+
+type BootErrorParams struct {
 	*CommonParams
+	Type  BootErrorType
 	Error error
 }
 
@@ -28,7 +36,7 @@ const (
 	GrubInitrdCmdEFIX64 GrubInitrdCmd = "initrdefi /boot/efix64"
 )
 
-type GrubKernelParams struct {
+type BootKernelParams struct {
 	*CommonParams
 	ImageID     int64
 	SystemID    int64
@@ -85,4 +93,14 @@ func MakeCustomSnippets() map[string][]string {
 	}
 
 	return m
+}
+
+type DhcpEntry struct {
+	Tag string
+	MAC string
+}
+
+type DhcpParams struct {
+	*CommonParams
+	Entries []DhcpEntry
 }

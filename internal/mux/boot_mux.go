@@ -35,6 +35,11 @@ func MountBoot(r *chi.Mux) {
 		r.Get("/{PLATFORM}/{MAC}"+path, serveBootPath)
 	}
 
+	r.Head("/ipxe/*", serveIpxeEFI)
+	r.Get("/ipxe/*", serveIpxeEFI)
+	r.Head("/ipxes/{MAC}/*", serveIpxeScript)
+	r.Get("/ipxes/{MAC}/*", serveIpxeScript)
+
 	r.Group(func(r chi.Router) {
 		r.Use(render.SetContentType(render.ContentTypePlainText))
 		r.Use(DebugMiddleware)
@@ -46,6 +51,16 @@ func MountBoot(r *chi.Mux) {
 	mime.AddExtensionType(".iso", "application/vnd.efi.iso")
 	mime.AddExtensionType(".img", "application/vnd.efi.img")
 	mime.AddExtensionType(".efi", "application/efi")
+}
+
+func renderBootError(gerr error, w http.ResponseWriter, r *http.Request, t tmpl.BootErrorType) {
+	slog.ErrorContext(r.Context(), "boot error", "err", gerr)
+	w.WriteHeader(http.StatusOK)
+	err := tmpl.RenderBootError(r.Context(), w, tmpl.BootErrorParams{Type: t, Error: gerr})
+	if err != nil {
+		slog.ErrorContext(r.Context(), "cannot render boot error template", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 func serveBootPath(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +100,7 @@ func HandleBootstrapConfig(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	err := tmpl.RenderGrubBootstrap(r.Context(), w)
 	if err != nil {
-		renderGrubError(err, w, r)
+		renderBootError(err, w, r, tmpl.GrubBootErrorType)
 		return
 	}
 }
@@ -105,14 +120,14 @@ func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
 		initrd = tmpl.GrubInitrdCmdEFIX64
 	}
 
-	err := WriteMacConfig(r.Context(), w, mac, linux, initrd)
+	err := WriteGrubConfig(r.Context(), w, mac, linux, initrd)
 	if err != nil {
-		renderGrubError(err, w, r)
+		renderBootError(err, w, r, tmpl.GrubBootErrorType)
 		return
 	}
 }
 
-func WriteMacConfig(ctx context.Context, w io.Writer, mac net.HardwareAddr, linux tmpl.GrubLinuxCmd, initrd tmpl.GrubInitrdCmd) error {
+func WriteGrubConfig(ctx context.Context, w io.Writer, mac net.HardwareAddr, linux tmpl.GrubLinuxCmd, initrd tmpl.GrubInitrdCmd) error {
 	var err error
 	var s *model.System
 	var i *model.Installation
@@ -123,7 +138,7 @@ func WriteMacConfig(ctx context.Context, w io.Writer, mac net.HardwareAddr, linu
 		return err
 	}
 
-	params := tmpl.GrubKernelParams{
+	params := tmpl.BootKernelParams{
 		SystemID:    s.ID,
 		ImageID:     i.ImageID,
 		InstallUUID: i.UUID.String(),
@@ -139,12 +154,43 @@ func WriteMacConfig(ctx context.Context, w io.Writer, mac net.HardwareAddr, linu
 	return nil
 }
 
-func renderGrubError(gerr error, w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	slog.ErrorContext(r.Context(), "rendering error as grub message", "err", gerr)
-	err := tmpl.RenderGrubError(r.Context(), w, tmpl.GrubErrorParams{Error: gerr})
+func serveIpxeEFI(w http.ResponseWriter, r *http.Request) {
+	fs := http.StripPrefix("/boot/ipxe", http.FileServer(http.Dir("/usr/share/ipxe")))
+	fs.ServeHTTP(w, r)
+}
+
+func serveIpxeScript(w http.ResponseWriter, r *http.Request) {
+	origMAC := chi.URLParam(r, "MAC")
+	mac, _ := net.ParseMAC(origMAC)
+
+	err := WriteIpxeConfig(r.Context(), w, mac)
 	if err != nil {
-		slog.ErrorContext(r.Context(), "cannot render template", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		renderBootError(err, w, r, tmpl.IpxeBootErrorType)
+		return
 	}
+}
+
+func WriteIpxeConfig(ctx context.Context, w io.Writer, mac net.HardwareAddr) error {
+	var err error
+	var s *model.System
+	var i *model.Installation
+
+	iDao := db.GetInstallationDao(ctx)
+	i, s, err = iDao.FindInstallationForMAC(ctx, mac)
+	if err != nil {
+		return err
+	}
+
+	params := tmpl.BootKernelParams{
+		SystemID:    s.ID,
+		ImageID:     i.ImageID,
+		InstallUUID: i.UUID.String(),
+	}
+
+	err = tmpl.RenderIpxeKernel(ctx, w, params)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

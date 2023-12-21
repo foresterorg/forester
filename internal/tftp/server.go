@@ -27,12 +27,38 @@ type Server struct {
 var ErrOutsideRoot = errors.New("access outside of the root directory")
 var ErrMalformedPath = errors.New("malformed path")
 
+func serveFile(filename string, rf io.ReaderFrom) error {
+	//slog.Debug("serving file", "file", filename, "mac", mac.String(), "platform", platform)
+	file, err := os.Open(filename)
+	if err != nil {
+		return fmt.Errorf("cannot open %s: %w", filename, err)
+	}
+	defer file.Close()
+	_, err = rf.ReadFrom(file)
+	if err != nil {
+		return fmt.Errorf("cannot read from %s: %w", filename, err)
+	}
+
+	return nil
+}
+
 func readHandler(requestPath string, rf io.ReaderFrom) error {
 	requestPath = strings.TrimPrefix(requestPath, "/")
 	if !strings.HasPrefix(requestPath, "boot/") {
 		return fmt.Errorf("%w: path must start with /boot/", ErrMalformedPath)
 	}
 	requestPath = strings.TrimPrefix(requestPath, "boot/")
+
+	// ipxe special cases
+	if strings.HasPrefix(requestPath, "ipxe/") {
+		filename, err := filepath.Abs(filepath.Join("/usr/share/ipxe", strings.TrimPrefix(requestPath, "ipxe/")))
+		if err != nil {
+			return fmt.Errorf("filepath error %s: %w", requestPath, err)
+		}
+
+		serveFile(filename, rf)
+		return nil
+	}
 
 	ctx := context.Background()
 	var mac net.HardwareAddr
@@ -76,26 +102,24 @@ func readHandler(requestPath string, rf io.ReaderFrom) error {
 		return ErrOutsideRoot
 	}
 
-	if strings.HasPrefix(finalPath, "grub.cfg") {
+	if strings.HasPrefix(finalPath, "grub.cfg") || finalPath == "script.ipxe" {
 		b := &bytes.Buffer{}
 		if platform == "bios" {
-			mux.WriteMacConfig(ctx, b, mac, tmpl.GrubLinuxCmdBIOS, tmpl.GrubInitrdCmdBIOS)
+			mux.WriteGrubConfig(ctx, b, mac, tmpl.GrubLinuxCmdBIOS, tmpl.GrubInitrdCmdBIOS)
+		} else if platform == "efi" || platform == "efi64" {
+			mux.WriteGrubConfig(ctx, b, mac, tmpl.GrubLinuxCmdEFIX64, tmpl.GrubInitrdCmdEFIX64)
+		} else if platform == "ipxes" {
+			mux.WriteIpxeConfig(ctx, b, mac)
 		} else {
-			mux.WriteMacConfig(ctx, b, mac, tmpl.GrubLinuxCmdEFIX64, tmpl.GrubInitrdCmdEFIX64)
+			return errors.New("unknown platform")
 		}
 		// set file size explicitly because buffer does not implement Seek method
 		rf.(tftp.OutgoingTransfer).SetSize(int64(b.Len()))
 		rf.ReadFrom(b)
 	} else {
-		//slog.Debug("serving file", "file", filename, "mac", mac.String(), "platform", platform)
-		file, err := os.Open(filename)
+		err = serveFile(filename, rf)
 		if err != nil {
-			return fmt.Errorf("cannot open %s: %w", requestPath, err)
-		}
-		defer file.Close()
-		_, err = rf.ReadFrom(file)
-		if err != nil {
-			return fmt.Errorf("cannot read from %s: %w", requestPath, err)
+			return err
 		}
 	}
 

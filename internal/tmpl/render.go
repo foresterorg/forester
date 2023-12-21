@@ -1,6 +1,7 @@
 package tmpl
 
 import (
+	"bytes"
 	"context"
 	"embed"
 	"fmt"
@@ -36,11 +37,14 @@ func commonParams() *CommonParams {
 }
 
 func Render(ctx context.Context, w io.Writer, name string, params any) error {
+	var lb bytes.Buffer
+	mw := io.MultiWriter(w, &lb)
 	slog.DebugContext(ctx, "rendering template", "name", name, "params", params)
-	err := templates.ExecuteTemplate(w, name, params)
+	err := templates.ExecuteTemplate(mw, name, params)
 	if err != nil {
 		return fmt.Errorf("error executing template: %w", err)
 	}
+	slog.DebugContext(ctx, lb.String(), "template", true)
 
 	return nil
 }
@@ -50,13 +54,19 @@ func RenderGrubBootstrap(ctx context.Context, w io.Writer) error {
 	return Render(ctx, w, "grub_bootstrap.tmpl.txt", params)
 }
 
-func RenderGrubKernel(ctx context.Context, w io.Writer, params GrubKernelParams) error {
+func RenderGrubKernel(ctx context.Context, w io.Writer, params BootKernelParams) error {
 	params.CommonParams = commonParams()
 
 	return Render(ctx, w, "grub_kernel.tmpl.txt", params)
 }
 
-func RenderGrubError(ctx context.Context, w io.Writer, params GrubErrorParams) error {
+func RenderIpxeKernel(ctx context.Context, w io.Writer, params BootKernelParams) error {
+	params.CommonParams = commonParams()
+
+	return Render(ctx, w, "ipxe_kernel.tmpl.txt", params)
+}
+
+func RenderBootError(ctx context.Context, w io.Writer, params BootErrorParams) error {
 	params.CommonParams = commonParams()
 
 	return Render(ctx, w, "grub_error.tmpl.txt", params)
@@ -78,4 +88,10 @@ func RenderKickstartError(ctx context.Context, w io.Writer, params KickstartErro
 	params.CommonParams = commonParams()
 
 	return Render(ctx, w, "ks_error.tmpl.txt", params)
+}
+
+func RenderDhcpConf(ctx context.Context, w io.Writer, name, format string, params DhcpParams) error {
+	params.CommonParams = commonParams()
+
+	return Render(ctx, w, fmt.Sprintf("%s_%s.tmpl.txt", name, format), params)
 }

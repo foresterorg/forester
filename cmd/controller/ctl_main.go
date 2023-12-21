@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/exp/slog"
@@ -86,6 +87,7 @@ func main() {
 	rootServer := http.Server{
 		Addr:    fmt.Sprintf(":%d", config.Application.Port),
 		Handler: rootRouter,
+		IdleTimeout: 5 * time.Second, // https://access.redhat.com/solutions/6966921
 	}
 
 	waitForSignal := make(chan struct{})

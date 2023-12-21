@@ -1,0 +1,40 @@
+<!--
+Use "virsh net-edit default" to edit the network and copy and paste the
+XML code below into the root element. Ensure it has the proper namespace:
+
+<network xmlns:dnsmasq='http://libvirt.org/schemas/network/dnsmasq/1.0'>
+  ...
+  <dnsmasq:options>
+    <dnsmasq:option value='dhcp-vendorclass=set:bios,PXEClient:Arch:00000'/>
+    ...
+  </dnsmasq:options>
+</network>
+
+-->
+
+<dnsmasq:option value='dhcp-vendorclass=set:bios,PXEClient:Arch:00000'/>
+<dnsmasq:option value='dhcp-vendorclass=set:efi,PXEClient:Arch:00007'/>
+<dnsmasq:option value='dhcp-vendorclass=set:efix64,PXEClient:Arch:00009'/>
+<dnsmasq:option value='dhcp-vendorclass=set:efihttp,HTTPClient:Arch:00016'/>
+<dnsmasq:option value='dhcp-option-force=tag:efihttp,60,HTTPClient'/>
+
+<dnsmasq:option value='dhcp-match=set:ipxe-http,175,19'/>
+<dnsmasq:option value='dhcp-match=set:ipxe-https,175,20'/>
+<dnsmasq:option value='dhcp-match=set:ipxe-menu,175,39'/>
+<dnsmasq:option value='dhcp-match=set:ipxe-pxe,175,33'/>
+<dnsmasq:option value='dhcp-match=set:ipxe-bzimage,175,24'/>
+<dnsmasq:option value='dhcp-match=set:ipxe-iscsi,175,17'/>
+<dnsmasq:option value='dhcp-match=set:ipxe-efi,175,36'/>
+
+<dnsmasq:option value='tag-if=set:ipxe-ok,tag:ipxe-http,tag:ipxe-menu,tag:ipxe-iscsi,tag:ipxe-pxe,tag:ipxe-bzimage'/>
+<dnsmasq:option value='tag-if=set:ipxe-ok,tag:ipxe-http,tag:ipxe-menu,tag:ipxe-iscsi,tag:ipxe-efi'/>
+
+{{ range .Entries }}
+<dnsmasq:option value='dhcp-host={{ .MAC }},set:{{ .Tag }}'/>
+<dnsmasq:option value='dhcp-boot=tag:bios,tag:{{ .Tag }},boot/ipxe/undionly.kpxe,,{{ $.BaseHost }}'/>
+<dnsmasq:option value='dhcp-boot=tag:!ipxe-ok,tag:efi,tag:{{ .Tag }},boot/ipxe/ipxe-snponly-x86_64.efi,,{{ $.BaseHost }}'/>
+<dnsmasq:option value='dhcp-boot=tag:!ipxe-ok,tag:efi64,tag:{{ .Tag }},boot/ipxe/ipxe-snponly-x86_64.efi,,{{ $.BaseHost }}'/>
+<dnsmasq:option value='dhcp-boot=tag:!ipxe-ok,tag:efihttp,tag:{{ .Tag }},{{ $.BaseURL }}/boot/ipxe/ipxe-snponly-x86_64.efi'/>
+<dnsmasq:option value='dhcp-boot=tag:ipxe-ok,!tag:efihttp,tag:{{ .Tag }},boot/ipxes/{{ .MAC }}/script.ipxe,,{{ $.BaseHost }}'/>
+<dnsmasq:option value='dhcp-boot=tag:ipxe-ok,tag:efihttp,tag:{{ .Tag }},{{ $.BaseURL }}/boot/ipxes/{{ .MAC }}/script.ipxe'/>
+{{ end }}

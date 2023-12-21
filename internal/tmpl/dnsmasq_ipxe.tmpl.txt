@@ -1,0 +1,30 @@
+#
+# Place this config in /etc/dnsmasq.d/forester.conf and restart dnsmasq.
+#
+
+dhcp-vendorclass=set:bios,PXEClient:Arch:00000
+dhcp-vendorclass=set:efi,PXEClient:Arch:00007
+dhcp-vendorclass=set:efix64,PXEClient:Arch:00009
+dhcp-vendorclass=set:efihttp,HTTPClient:Arch:00016
+dhcp-option-force=tag:efihttp,60,HTTPClient
+
+dhcp-match=set:ipxe-http,175,19
+dhcp-match=set:ipxe-https,175,20
+dhcp-match=set:ipxe-menu,175,39
+dhcp-match=set:ipxe-pxe,175,33
+dhcp-match=set:ipxe-bzimage,175,24
+dhcp-match=set:ipxe-iscsi,175,17
+dhcp-match=set:ipxe-efi,175,36
+
+tag-if=set:ipxe-ok,tag:ipxe-http,tag:ipxe-menu,tag:ipxe-iscsi,tag:ipxe-pxe,tag:ipxe-bzimage
+tag-if=set:ipxe-ok,tag:ipxe-http,tag:ipxe-menu,tag:ipxe-iscsi,tag:ipxe-efi
+
+{{ range .Entries }}
+dhcp-host={{ .MAC }},set:{{ .Tag }}
+dhcp-boot=tag:bios,tag:{{ .Tag }},boot/ipxe/undionly.kpxe,,{{ $.BaseHost }}
+dhcp-boot=tag:!ipxe-ok,tag:efi,tag:{{ .Tag }},boot/ipxe/ipxe-snponly-x86_64.efi,,{{ $.BaseHost }}
+dhcp-boot=tag:!ipxe-ok,tag:efi64,tag:{{ .Tag }},boot/ipxe/ipxe-snponly-x86_64.efi,,{{ $.BaseHost }}
+dhcp-boot=tag:!ipxe-ok,tag:efihttp,tag:{{ .Tag }},{{ $.BaseURL }}/boot/ipxe/ipxe-snponly-x86_64.efi
+dhcp-boot=tag:ipxe-ok,!tag:efihttp,tag:{{ .Tag }},boot/ipxes/{{ .MAC }}/script.ipxe,,{{ $.BaseHost }}
+dhcp-boot=tag:ipxe-ok,tag:efihttp,tag:{{ .Tag }},{{ $.BaseURL }}/boot/ipxes/{{ .MAC }}/script.ipxe
+{{ end }}
