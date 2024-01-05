@@ -103,7 +103,7 @@ func LogsForSystem(ctx context.Context, systemID int64) (LogEntries, error) {
 		}
 		t, err := times.Stat(file)
 		if err != nil {
-			return nil, fmt.Errorf("error while reading atime log entry %s: %w", file, err)
+			return nil, fmt.Errorf("error while reading created time log entry %s: %w", file, err)
 		}
 		e := LogEntry{
 			Path:       stat.Name(),
