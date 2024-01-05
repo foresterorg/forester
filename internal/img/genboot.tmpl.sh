@@ -8,11 +8,7 @@ TAUX=$(mktemp -d /tmp/forester-taux-XXXXXXX)
 trap "rm -rf $TROOT $TAUX" EXIT
 rm -f $DSTDIR/boot.iso
 
-if [[ -d $SRCDIR/boot/grub2/i386-pc ]]; then
-  PCGRUBDIR=$SRCDIR/boot/grub2/i386-pc
-else
-  PCGRUBDIR=/usr/lib/grub/i386-pc
-fi
+PCGRUBDIR=/usr/lib/grub/i386-pc
 
 mkdir -p $TROOT/images/pxeboot $TROOT/boot/grub2/i386-pc $TROOT/EFI/BOOT
 cp $SRCDIR/images/pxeboot/* $TROOT/images/pxeboot
@@ -65,7 +61,7 @@ mcopy -i $TAUX/efiboot.img $SRCDIR/EFI/BOOT/grubx64.efi ::EFI/BOOT
 mcopy -i $TAUX/efiboot.img $SRCDIR/EFI/BOOT/fonts/unicode.pf2 ::EFI/BOOT/fonts
 mcopy -i $TAUX/efiboot.img $TROOT/EFI/BOOT/grub.cfg ::EFI/BOOT
 
-grub2-mkimage -O i386-pc-eltorito -d $PCGRUBDIR \
+grub2-mkimage -v -O i386-pc-eltorito -d /usr/lib/grub/i386-pc \
   -o $TROOT/images/eltorito.img \
   -p /boot/grub2 \
   iso9660 biosdisk
@@ -96,7 +92,7 @@ xorrisofs -o $DSTDIR/boot.iso \
   images/efiboot.img=$TAUX/efiboot.img \
   isolinux.bin=/usr/share/syslinux/isolinux.bin
 
-grub2-mkimage -O i386-pc-pxe -d $PCGRUBDIR \
+grub2-mkimage -v -O i386-pc-pxe -d /usr/lib/grub/i386-pc \
   -o $DSTDIR/grubx64.0 -p /boot/bios/00-00-00-00-00-00/ \
   tftp pxe normal ls echo minicmd halt reboot http linux
 
