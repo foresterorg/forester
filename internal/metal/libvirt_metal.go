@@ -31,13 +31,17 @@ func updateDomainBootDeviceXML(ctx context.Context, xmlString, device string) (s
 	for i := range domain.Devices.Disks {
 		domain.Devices.Disks[i].Boot = nil
 	}
+	for i := range domain.Devices.Interfaces {
+		domain.Devices.Interfaces[i].Boot = nil
+	}
+
 	domain.OS.BootDevices = []libvirtxml.DomainBootDevice{{Dev: device}}
 	bytes, err := xml.Marshal(domain)
 	if err != nil {
 		return "", fmt.Errorf("cannot marshal domain XML: %w", err)
 	}
 
-	//slog.DebugContext(ctx, "domain xml", "body", domain)
+	//slog.DebugContext(ctx, "domain xml", "body", domain, "bytes", bytes)
 	return string(bytes), nil
 }
 
