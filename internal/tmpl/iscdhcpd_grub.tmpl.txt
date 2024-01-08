@@ -1,0 +1,25 @@
+#
+# Place this config in /etc/dhcp/forester.conf, include it and restart the service:
+#
+# include "/etc/dhcp/forester.conf";
+#
+
+class "httpclients" {
+    match if substring (option vendor-class-identifier, 0, 10) = "HTTPClient";
+    option vendor-class-identifier "HTTPClient";
+}
+
+option arch code 93 = unsigned integer 16;
+
+{{ range .Entries }}
+host {{ .Tag }} {
+    hardware ethernet {{ .MAC }};
+    if substring (option vendor-class-identifier, 0, 10) = "HTTPClient" {
+        filename "{{ $.BaseURL }}/boot/efi64/{{ .MAC }}/shim.efi";
+    } elsif option arch = 00:00 {
+        filename "boot/bios/{{ .MAC }}/grubx64.0";
+    } else {
+        filename "boot/efi64/{{ .MAC }}/shim.efi";
+    }
+}
+{{ end }}

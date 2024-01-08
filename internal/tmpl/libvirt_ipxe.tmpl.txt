@@ -9,7 +9,6 @@ XML code below into the root element. Ensure it has the proper namespace:
     ...
   </dnsmasq:options>
 </network>
-
 -->
 
 <dnsmasq:option value='dhcp-vendorclass=set:bios,PXEClient:Arch:00000'/>
@@ -35,6 +34,6 @@ XML code below into the root element. Ensure it has the proper namespace:
 <dnsmasq:option value='dhcp-boot=tag:!ipxe-ok,tag:efi,tag:{{ .Tag }},boot/ipxe/ipxe-snponly-x86_64.efi,,{{ $.BaseHost }}'/>
 <dnsmasq:option value='dhcp-boot=tag:!ipxe-ok,tag:efi64,tag:{{ .Tag }},boot/ipxe/ipxe-snponly-x86_64.efi,,{{ $.BaseHost }}'/>
 <dnsmasq:option value='dhcp-boot=tag:!ipxe-ok,tag:efihttp,tag:{{ .Tag }},{{ $.BaseURL }}/boot/ipxe/ipxe-snponly-x86_64.efi'/>
-<dnsmasq:option value='dhcp-boot=tag:ipxe-ok,!tag:efihttp,tag:{{ .Tag }},boot/ipxes/{{ .MAC }}/script.ipxe,,{{ $.BaseHost }}'/>
+<dnsmasq:option value='dhcp-boot=tag:ipxe-ok,tag:!efihttp,tag:{{ .Tag }},boot/ipxes/{{ .MAC }}/script.ipxe,,{{ $.BaseHost }}'/>
 <dnsmasq:option value='dhcp-boot=tag:ipxe-ok,tag:efihttp,tag:{{ .Tag }},{{ $.BaseURL }}/boot/ipxes/{{ .MAC }}/script.ipxe'/>
 {{ end }}

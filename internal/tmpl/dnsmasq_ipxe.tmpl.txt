@@ -25,6 +25,6 @@ dhcp-boot=tag:bios,tag:{{ .Tag }},boot/ipxe/undionly.kpxe,,{{ $.BaseHost }}
 dhcp-boot=tag:!ipxe-ok,tag:efi,tag:{{ .Tag }},boot/ipxe/ipxe-snponly-x86_64.efi,,{{ $.BaseHost }}
 dhcp-boot=tag:!ipxe-ok,tag:efi64,tag:{{ .Tag }},boot/ipxe/ipxe-snponly-x86_64.efi,,{{ $.BaseHost }}
 dhcp-boot=tag:!ipxe-ok,tag:efihttp,tag:{{ .Tag }},{{ $.BaseURL }}/boot/ipxe/ipxe-snponly-x86_64.efi
-dhcp-boot=tag:ipxe-ok,!tag:efihttp,tag:{{ .Tag }},boot/ipxes/{{ .MAC }}/script.ipxe,,{{ $.BaseHost }}
+dhcp-boot=tag:ipxe-ok,tag:!efihttp,tag:{{ .Tag }},boot/ipxes/{{ .MAC }}/script.ipxe,,{{ $.BaseHost }}
 dhcp-boot=tag:ipxe-ok,tag:efihttp,tag:{{ .Tag }},{{ $.BaseURL }}/boot/ipxes/{{ .MAC }}/script.ipxe
 {{ end }}

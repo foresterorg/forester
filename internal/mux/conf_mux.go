@@ -11,10 +11,12 @@ import (
 )
 
 func MountConf(r *chi.Mux) {
-	r.Get("/dnsmasq/ipxe", serveConf("dnsmasq", "ipxe"))
-	r.Get("/dnsmasq/grub", serveConf("dnsmasq", "grub"))
-	r.Get("/libvirt/ipxe", serveConf("libvirt", "ipxe"))
+	r.Get("/iscdhcpd/grub", serveConf("iscdhcpd", "grub"))
 	r.Get("/iscdhcpd/ipxe", serveConf("iscdhcpd", "ipxe"))
+	r.Get("/dnsmasq/grub", serveConf("dnsmasq", "grub"))
+	r.Get("/dnsmasq/ipxe", serveConf("dnsmasq", "ipxe"))
+	r.Get("/libvirt/grub", serveConf("libvirt", "grub"))
+	r.Get("/libvirt/ipxe", serveConf("libvirt", "ipxe"))
 }
 
 func allZero(s []byte) bool {

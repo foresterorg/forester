@@ -1,0 +1,26 @@
+<!--
+Use "virsh net-edit default" to edit the network and copy and paste the
+XML code below into the root element. Ensure it has the proper namespace:
+
+<network xmlns:dnsmasq='http://libvirt.org/schemas/network/dnsmasq/1.0'>
+  ...
+  <dnsmasq:options>
+    <dnsmasq:option value='dhcp-vendorclass=set:bios,PXEClient:Arch:00000'/>
+    ...
+  </dnsmasq:options>
+</network>
+-->
+
+<dnsmasq:option value='dhcp-vendorclass=set:bios,PXEClient:Arch:00000'/>
+<dnsmasq:option value='dhcp-vendorclass=set:efi,PXEClient:Arch:00007'/>
+<dnsmasq:option value='dhcp-vendorclass=set:efix64,PXEClient:Arch:00009'/>
+<dnsmasq:option value='dhcp-vendorclass=set:efihttp,HTTPClient:Arch:00016'/>
+<dnsmasq:option value='dhcp-option-force=tag:efihttp,60,HTTPClient'/>
+
+{{ range .Entries }}
+<dnsmasq:option value='dhcp-host={{ .MAC }},set:{{ .Tag }}'/>
+<dnsmasq:option value='dhcp-boot=tag:bios,tag:{{ .Tag }},boot/bios/{{ .MAC }}/grubx64.0,,{{ $.BaseHost }}'/>
+<dnsmasq:option value='dhcp-boot=tag:efi,tag:{{ .Tag }},boot/efi/{{ .MAC }}/shim.efi,,{{ $.BaseHost }}'/>
+<dnsmasq:option value='dhcp-boot=tag:efi64,tag:{{ .Tag }},boot/efi64/{{ .MAC }}/shim.efi,,{{ $.BaseHost }}'/>
+<dnsmasq:option value='dhcp-boot=tag:efihttp,tag:{{ .Tag }},{{ $.BaseURL }}/boot/efi64/{{ .MAC }}/shim.efi'/>
+{{ end }}
