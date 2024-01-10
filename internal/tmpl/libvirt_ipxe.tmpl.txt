@@ -28,6 +28,13 @@ XML code below into the root element. Ensure it has the proper namespace:
 <dnsmasq:option value='tag-if=set:ipxe-ok,tag:ipxe-http,tag:ipxe-menu,tag:ipxe-iscsi,tag:ipxe-pxe,tag:ipxe-bzimage'/>
 <dnsmasq:option value='tag-if=set:ipxe-ok,tag:ipxe-http,tag:ipxe-menu,tag:ipxe-iscsi,tag:ipxe-efi'/>
 
+<dnsmasq:option value='dhcp-boot=tag:bios,bootstrap/ipxe/undionly.kpxe,,192.168.122.1'/>
+<dnsmasq:option value='dhcp-boot=tag:!ipxe-ok,tag:efi,bootstrap/ipxe/ipxe-snponly-x86_64.efi,,192.168.122.1'/>
+<dnsmasq:option value='dhcp-boot=tag:!ipxe-ok,tag:efi64,bootstrap/ipxe/ipxe-snponly-x86_64.efi,,192.168.122.1'/>
+<dnsmasq:option value='dhcp-boot=tag:!ipxe-ok,tag:efihttp,http://192.168.122.1:8000/bootstrap/ipxe/ipxe-snponly-x86_64.efi'/>
+<dnsmasq:option value='dhcp-boot=tag:ipxe-ok,tag:!efihttp,bootstrap/ipxe/chain.ipxe,,192.168.122.1'/>
+<dnsmasq:option value='dhcp-boot=tag:ipxe-ok,tag:efihttp,http://192.168.122.1:8000/bootstrap/ipxe/chain.ipxe'/>
+
 {{ range .Entries }}
 <dnsmasq:option value='dhcp-host={{ .MAC }},set:{{ .Tag }}'/>
 <dnsmasq:option value='dhcp-boot=tag:bios,tag:{{ .Tag }},boot/ipxe/undionly.kpxe,,{{ $.BaseHost }}'/>

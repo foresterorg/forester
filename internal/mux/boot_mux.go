@@ -108,15 +108,6 @@ func serveBootPath(w http.ResponseWriter, r *http.Request) {
 	fs.ServeHTTP(w, r)
 }
 
-func HandleBootstrapConfig(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	err := tmpl.RenderGrubBootstrap(r.Context(), w)
-	if err != nil {
-		renderBootError(err, w, r, tmpl.GrubBootErrorType)
-		return
-	}
-}
-
 func HandleMacConfig(w http.ResponseWriter, r *http.Request) {
 	platform := strings.ToLower(chi.URLParam(r, "PLATFORM"))
 	origMAC, err := url.QueryUnescape(chi.URLParam(r, "MAC"))

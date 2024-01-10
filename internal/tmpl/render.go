@@ -21,7 +21,9 @@ var templates *template.Template
 
 func init() {
 	var err error
-	templates, err = template.ParseFS(templatesFS, "*.tmpl.*")
+	templates, err = template.New("").Funcs(template.FuncMap{
+		"MakeSlice": MakeSlice,
+	}).ParseFS(templatesFS, "*.tmpl.*")
 	if err != nil {
 		panic(err)
 	}
@@ -49,9 +51,14 @@ func Render(ctx context.Context, w io.Writer, name string, params any) error {
 	return nil
 }
 
+func RenderIpxeBootstrap(ctx context.Context, w io.Writer) error {
+	params := commonParams()
+	return Render(ctx, w, "bootstrap_ipxe.tmpl.txt", params)
+}
+
 func RenderGrubBootstrap(ctx context.Context, w io.Writer) error {
 	params := commonParams()
-	return Render(ctx, w, "grub_bootstrap.tmpl.txt", params)
+	return Render(ctx, w, "bootstrap_grub.tmpl.txt", params)
 }
 
 func RenderGrubKernel(ctx context.Context, w io.Writer, params BootKernelParams) error {

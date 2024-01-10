@@ -19,6 +19,15 @@ dhcp-match=set:ipxe-efi,175,36
 tag-if=set:ipxe-ok,tag:ipxe-http,tag:ipxe-menu,tag:ipxe-iscsi,tag:ipxe-pxe,tag:ipxe-bzimage
 tag-if=set:ipxe-ok,tag:ipxe-http,tag:ipxe-menu,tag:ipxe-iscsi,tag:ipxe-efi
 
+# unmanaged hosts
+dhcp-boot=tag:bios,bootstrap/ipxe/undionly.kpxe,,192.168.122.1
+dhcp-boot=tag:!ipxe-ok,tag:efi,bootstrap/ipxe/ipxe-snponly-x86_64.efi,,192.168.122.1
+dhcp-boot=tag:!ipxe-ok,tag:efi64,bootstrap/ipxe/ipxe-snponly-x86_64.efi,,192.168.122.1
+dhcp-boot=tag:!ipxe-ok,tag:efihttp,http://192.168.122.1:8000/bootstrap/ipxe/ipxe-snponly-x86_64.efi
+dhcp-boot=tag:ipxe-ok,tag:!efihttp,bootstrap/ipxe/chain.ipxe,,192.168.122.1
+dhcp-boot=tag:ipxe-ok,tag:efihttp,http://192.168.122.1:8000/bootstrap/ipxe/chain.ipxe
+
+# managed hosts
 {{ range .Entries }}
 dhcp-host={{ .MAC }},set:{{ .Tag }}
 dhcp-boot=tag:bios,tag:{{ .Tag }},boot/ipxe/undionly.kpxe,,{{ $.BaseHost }}

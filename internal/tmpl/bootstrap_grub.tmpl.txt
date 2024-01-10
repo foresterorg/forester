@@ -1,3 +1,5 @@
+# Grub bootstrapping is currently unused - use iPXE instead
+
 echo "FORESTER PROJECT version {{ .Version }}"
 
 echo "Trying grub.cfg/$net_default_mac"

@@ -61,6 +61,7 @@ func main() {
 	}
 
 	rootRouter := chi.NewRouter()
+	bootstrapRouter := chi.NewRouter()
 	bootRouter := chi.NewRouter()
 	imgRouter := chi.NewRouter()
 	ksRouter := chi.NewRouter()
@@ -70,12 +71,14 @@ func main() {
 
 	rootRouter.Use(mux.TraceIdMiddleware)
 
+	mux.MountBootstrap(bootstrapRouter)
 	mux.MountBoot(bootRouter)
 	mux.MountImages(imgRouter)
 	mux.MountKickstart(ksRouter)
 	mux.MountDone(doneRouter)
 	mux.MountLogs(logsRouter)
 	mux.MountConf(confRouter)
+	rootRouter.Mount("/bootstrap", bootstrapRouter)
 	rootRouter.Mount("/boot", bootRouter)
 	rootRouter.Mount("/img", imgRouter)
 	rootRouter.Mount("/ks", ksRouter)

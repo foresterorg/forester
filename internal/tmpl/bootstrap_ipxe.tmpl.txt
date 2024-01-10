@@ -1,0 +1,7 @@
+#!ipxe
+echo FORESTER PROJECT version {{ .Version }}
+
+{{ range $i, $_ := MakeSlice 16 }}
+echo Trying ${net{{ $i }}/mac}
+isset ${net{{ $i }}/mac} && chain {{ $.BaseURL }}/boot/ipxes/${net{{ $i }}/mac}/
+{{end}}

@@ -43,7 +43,13 @@ func serveFile(filename string, rf io.ReaderFrom) error {
 }
 
 func readHandler(requestPath string, rf io.ReaderFrom) error {
+	ctx := context.Background()
 	requestPath = strings.TrimPrefix(requestPath, "/")
+
+	if strings.HasPrefix(requestPath, "bootstrap/") {
+		return bootstrapHandler(ctx, requestPath, rf)
+	}
+
 	if !strings.HasPrefix(requestPath, "boot/") {
 		return fmt.Errorf("%w: path must start with /boot/", ErrMalformedPath)
 	}
@@ -56,11 +62,13 @@ func readHandler(requestPath string, rf io.ReaderFrom) error {
 			return fmt.Errorf("filepath error %s: %w", requestPath, err)
 		}
 
-		serveFile(filename, rf)
+		err = serveFile(filename, rf)
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 
-	ctx := context.Background()
 	var mac net.HardwareAddr
 	var err error
 	var i *model.Installation
