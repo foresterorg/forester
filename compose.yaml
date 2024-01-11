@@ -31,5 +31,6 @@ services:
     image: quay.io/forester/controller:latest
     ports:
       - ${EXPOSED_APP_PORT:-8000}:${APP_PORT:-8000}
+      - ${EXPOSED_TFTP_PORT:-6969}:${TFTP_PORT:-6969}
     volumes:
       - ${DATA_DIR:-./data}/images:/images:Z
