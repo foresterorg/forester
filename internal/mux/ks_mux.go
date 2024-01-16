@@ -84,8 +84,7 @@ func RenderKickstartForSystem(ctx context.Context, system *model.System, w io.Wr
 	if len(insts) == 0 {
 		slog.WarnContext(ctx, "system found but not installable",
 			"id", system.ID,
-			"name", system.Name,
-			"acquired_at", system.AcquiredAt.String())
+			"name", system.Name)
 		return renderDiscover(ctx, w)
 	}
 	inst = insts[0]
@@ -103,7 +102,7 @@ func RenderKickstartForSystem(ctx context.Context, system *model.System, w io.Wr
 	}
 
 	// libvirt cannot be restarted due to boot order hook
-	if appliance != nil && appliance.Kind == model.LibvirtKind {
+	if appliance != nil && appliance.Kind == model.LibvirtApplianceKind {
 		la = tmpl.ShutdownLastAction
 	}
 

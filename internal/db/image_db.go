@@ -19,9 +19,9 @@ func getImageDao(ctx context.Context) ImageDao {
 }
 
 func (dao imageDao) Create(ctx context.Context, image *model.Image) error {
-	query := `INSERT INTO images (name, iso_sha256, liveimg_sha256) VALUES ($1, $2, $3) RETURNING id`
+	query := `INSERT INTO images (name, kind, iso_sha256, liveimg_sha256) VALUES ($1, $2, $3, $4) RETURNING id`
 
-	err := Pool.QueryRow(ctx, query, image.Name, image.IsoSha256, image.LiveimgSha256).Scan(&image.ID)
+	err := Pool.QueryRow(ctx, query, image.Name, image.Kind, image.IsoSha256, image.LiveimgSha256).Scan(&image.ID)
 	if err != nil {
 		return fmt.Errorf("db error: %w", err)
 	}

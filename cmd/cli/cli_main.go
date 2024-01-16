@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"forester/internal/config"
 	"forester/internal/logging"
-	arg "github.com/alexflint/go-arg"
-	"golang.org/x/exp/slog"
 	"io"
 	"net/http"
 	"os"
 	"text/tabwriter"
+
+	arg "github.com/alexflint/go-arg"
+	"golang.org/x/exp/slog"
 )
 
 var args struct {
@@ -71,10 +72,12 @@ func main() {
 			err = systemLogs(ctx, cmd)
 		} else if cmd := args.System.Ssh; cmd != nil {
 			err = systemSsh(ctx, cmd)
-		} else if cmd := args.System.Acquire; cmd != nil {
-			err = systemAcquire(ctx, cmd)
+		} else if cmd := args.System.Deploy; cmd != nil {
+			err = systemDeploy(ctx, cmd)
 		} else if cmd := args.System.Rename; cmd != nil {
 			err = systemRename(ctx, cmd)
+		} else if cmd := args.System.Acquire; cmd != nil {
+			err = systemAcquire(ctx, cmd)
 		} else if cmd := args.System.Release; cmd != nil {
 			err = systemRelease(ctx, cmd)
 		} else if cmd := args.System.BootNetwork; cmd != nil {

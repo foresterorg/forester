@@ -39,8 +39,7 @@ type SystemDao interface {
 	RegisterExisting(ctx context.Context, id int64, sys *model.System) error
 	List(ctx context.Context, limit, offset int64) ([]*model.System, error)
 	Rename(ctx context.Context, systemId int64, newName string) error
-	Acquire(ctx context.Context, systemId, imageId int64, force bool, snippets []int64, snippetText, ksOverride, comment string, validUntil time.Time) error
-	Release(ctx context.Context, systemId int64) error
+	Deploy(ctx context.Context, systemId, imageId int64, snippets []int64, snippetText, ksOverride, comment string, validUntil time.Time) error
 	Find(ctx context.Context, pattern string) (*model.System, error)
 	FindByID(ctx context.Context, id int64) (*model.System, error)
 	FindByMac(ctx context.Context, mac net.HardwareAddr) (*model.System, error)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"forester/internal/api/ctl"
 	"net/http"
@@ -48,10 +49,9 @@ type systemRenameCmd struct {
 	Name    string `arg:"-n,required" placeholder:"NEW_SYSTEM_NAME"`
 }
 
-type systemAcquireCmd struct {
+type systemDeployCmd struct {
 	Pattern     string   `arg:"positional,required" placeholder:"MAC_OR_NAME"`
 	Image       string   `arg:"-i,required"`
-	Force       bool     `arg:"-f"`
 	Snippets    []string `arg:"-s"`
 	TextSnippet string   `arg:"-x"`
 	Kickstart   string   `arg:"-k" placeholder:"KS_OVERRIDE_CONTENTS"`
@@ -71,13 +71,16 @@ type systemBootLocalCmd struct {
 	Pattern string `arg:"positional,required" placeholder:"MAC_OR_NAME"`
 }
 
+type emptyCmd struct{}
+
 type systemCmd struct {
 	Register    *systemRegisterCmd    `arg:"subcommand:register" help:"register system"`
 	List        *systemListCmd        `arg:"subcommand:list" help:"list systems"`
 	Show        *systemShowCmd        `arg:"subcommand:show" help:"show system"`
 	Rename      *systemRenameCmd      `arg:"subcommand:rename" help:"rename existing system"`
-	Acquire     *systemAcquireCmd     `arg:"subcommand:acquire" help:"acquire system"`
-	Release     *systemReleaseCmd     `arg:"subcommand:release" help:"release system"`
+	Deploy      *systemDeployCmd      `arg:"subcommand:deploy" help:"deploy an image to a system"`
+	Acquire     *emptyCmd             `arg:"subcommand:acquire" help:"acquire system (deprecated)"`
+	Release     *emptyCmd             `arg:"subcommand:release" help:"release system (deprecated)"`
 	Kickstart   *systemKickstartCmd   `arg:"subcommand:kickstart" help:"show system kickstart"`
 	Logs        *systemLogsCmd        `arg:"subcommand:logs" help:"show installation log history"`
 	Ssh         *systemSshCmd         `arg:"subcommand:ssh" help:"ssh to anaconda during installation"`
@@ -113,10 +116,6 @@ func systemShow(ctx context.Context, cmdArgs *systemShowCmd) error {
 	fmt.Fprintln(w, "Attribute\tValue")
 	fmt.Fprintf(w, "%s\t%d\n", "ID", result.ID)
 	fmt.Fprintf(w, "%s\t%s\n", "Name", result.Name)
-	fmt.Fprintf(w, "%s\t%t\n", "Acquired", result.Acquired)
-	if result.Acquired {
-		fmt.Fprintf(w, "%s\t%s\n", "Acquired at", result.AcquiredAt.Format(time.ANSIC))
-	}
 	for _, mac := range result.HwAddrs {
 		fmt.Fprintf(w, "%s\t%s\n", "MAC", mac)
 	}
@@ -163,7 +162,7 @@ func systemList(ctx context.Context, cmdArgs *systemListCmd) error {
 	}
 
 	w := newTabWriter()
-	fmt.Fprintln(w, "ID\tName\tHw Addresses\tAcquired\tFacts")
+	fmt.Fprintln(w, "ID\tName\tHw Addresses\tFacts")
 	for _, line := range result {
 		a := line.HwAddrs[0]
 		if len(line.HwAddrs) > 1 {
@@ -175,7 +174,7 @@ func systemList(ctx context.Context, cmdArgs *systemListCmd) error {
 				factCol = append(factCol, f)
 			}
 		}
-		fmt.Fprintf(w, "%d\t%s\t%s\t%t\t%s\n", line.ID, line.Name, a, line.Acquired, strings.Join(factCol, " "))
+		fmt.Fprintf(w, "%d\t%s\t%s\t%s\n", line.ID, line.Name, a, strings.Join(factCol, " "))
 	}
 	w.Flush()
 
@@ -258,26 +257,26 @@ func systemRename(ctx context.Context, cmdArgs *systemRenameCmd) error {
 	return nil
 }
 
-func systemAcquire(ctx context.Context, cmdArgs *systemAcquireCmd) error {
+var ErrAcquireReleaseDeprecated = errors.New("acquire/release was deprecated, use 'forester-cli deploy' instead")
+
+func systemAcquire(ctx context.Context, cmdArgs *emptyCmd) error {
+	return ErrAcquireReleaseDeprecated
+}
+
+func systemRelease(ctx context.Context, cmdArgs *emptyCmd) error {
+	return ErrAcquireReleaseDeprecated
+}
+
+func systemDeploy(ctx context.Context, cmdArgs *systemDeployCmd) error {
 	dur, err := time.ParseDuration(cmdArgs.Duration)
 	if err != nil {
 		return fmt.Errorf("cannot parse duration: %w", err)
 	}
 
 	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
-	err = client.Acquire(ctx, cmdArgs.Pattern, cmdArgs.Image, cmdArgs.Force, cmdArgs.Snippets, cmdArgs.TextSnippet, cmdArgs.Kickstart, cmdArgs.Comment, time.Now().Add(dur))
+	err = client.Deploy(ctx, cmdArgs.Pattern, cmdArgs.Image, cmdArgs.Snippets, cmdArgs.TextSnippet, cmdArgs.Kickstart, cmdArgs.Comment, time.Now().Add(dur))
 	if err != nil {
-		return fmt.Errorf("cannot acquire system: %w", err)
-	}
-
-	return nil
-}
-
-func systemRelease(ctx context.Context, cmdArgs *systemReleaseCmd) error {
-	client := ctl.NewSystemServiceClient(args.URL, http.DefaultClient)
-	err := client.Release(ctx, cmdArgs.Pattern)
-	if err != nil {
-		return fmt.Errorf("cannot release system: %w", err)
+		return fmt.Errorf("cannot deploy system: %w", err)
 	}
 
 	return nil

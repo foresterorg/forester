@@ -63,6 +63,7 @@ func (i ImageServiceImpl) List(ctx context.Context, limit int64, offset int64) (
 		result[i] = &Image{
 			ID:   img.ID,
 			Name: img.Name,
+			Kind: int16(img.Kind),
 		}
 	}
 	return result, nil

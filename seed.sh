@@ -18,7 +18,7 @@ URL=${URL:-http://localhost:8000}
 ./forester-cli --url "$URL" image upload -n dummy-liveimg fixtures/iso/fixture-liveimg.iso
 
 cat <<EOS | ./forester-cli --url "$URL" snippet create -i -n DiscoveryPre -k pre
-# Use this snippet to acquire host with hardware address 00:00:00:00:00:00
+# Use this snippet to deploy host with hardware address 00:00:00:00:00:00
 # in order to discover boot unknown systems. Do not remove the following line:
 {{ template "ks_discover.tmpl.py" . }}
 
@@ -64,16 +64,16 @@ echo "Hello Anaconda"; logger "Hello Forester"
 %end
 EOS
 
-./forester-cli --url "$URL" system acquire 00:00:00:00:00:00 -i dummy-netboot -s DiscoveryPre -d "99999h" -f
+./forester-cli --url "$URL" system deploy 00:00:00:00:00:00 -i dummy-netboot -s DiscoveryPre -d "99999h"
 curl "$URL/ks"
 
-./forester-cli --url "$URL" system acquire aa:bb:cc:dd:ee:f1 -i dummy-liveimg -s HelloPost -f
+./forester-cli --url "$URL" system deploy aa:bb:cc:dd:ee:f1 -i dummy-liveimg -s HelloPost
 
 curl -s "$URL/boot/shim.efi" >/dev/null
 curl -s "$URL/boot/grubx64.efi" >/dev/null
 curl "$URL/boot/mac/aa:bb:cc:dd:ee:f1"
 curl -H "X-RHN-Provisioning-MAC-1: eth0 aa:bb:cc:dd:ee:f1" "$URL/ks"
 
-./forester-cli --url "$URL" system acquire aa:bb:cc:dd:ee:f2 -i dummy-netboot -s FedoraRPM39 -s NoSecurity -f
+./forester-cli --url "$URL" system deploy aa:bb:cc:dd:ee:f2 -i dummy-netboot -s FedoraRPM39 -s NoSecurity
 ./forester-cli --url "$URL" system release aa:bb:cc:dd:ee:f2
 

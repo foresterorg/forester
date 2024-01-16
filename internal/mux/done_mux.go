@@ -46,7 +46,7 @@ func HandleDone(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// boot libvirt manually
-	if systemAppliance.Appliance.Kind == model.LibvirtKind {
+	if systemAppliance.Appliance.Kind == model.LibvirtApplianceKind {
 		m := metal.ForKind(systemAppliance.Appliance.Kind)
 		// cannot pass request context it will be cancelled
 		bctx := logging.WithTraceId(context.Background(), logging.TraceId(r.Context()))

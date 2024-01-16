@@ -25,11 +25,11 @@ var redfishManualMetal Metal = RedfishMetal{Manual: true}
 
 func ForKind(kind model.ApplianceKind) Metal {
 	switch kind {
-	case model.LibvirtKind:
+	case model.LibvirtApplianceKind:
 		return libvirtMetal
-	case model.RedfishKind:
+	case model.RedfishApplianceKind:
 		return redfishMetal
-	case model.RedfishManualKind:
+	case model.RedfishManualApplianceKind:
 		return redfishManualMetal
 	}
 	return noopMetal

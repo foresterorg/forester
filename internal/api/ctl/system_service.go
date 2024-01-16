@@ -9,11 +9,12 @@ import (
 	"forester/internal/metal"
 	"forester/internal/model"
 	"forester/internal/mux"
-	"golang.org/x/exp/slog"
 	"net"
 	"sort"
 	"strings"
 	"time"
+
+	"golang.org/x/exp/slog"
 )
 
 var _ SystemService = SystemServiceImpl{}
@@ -106,8 +107,6 @@ func (i SystemServiceImpl) Find(ctx context.Context, pattern string) (*System, e
 		Name:       result.System.Name,
 		HwAddrs:    hwa,
 		Facts:      result.System.Facts.FactsMap(),
-		Acquired:   result.System.Acquired,
-		AcquiredAt: result.System.AcquiredAt,
 		Comment:    result.System.Comment,
 		UID:        result.System.UID,
 	}
@@ -153,8 +152,6 @@ func (i SystemServiceImpl) List(ctx context.Context, limit int64, offset int64) 
 			Name:       item.Name,
 			HwAddrs:    item.HwAddrStrings(),
 			Facts:      item.Facts.FactsMap(),
-			Acquired:   item.Acquired,
-			AcquiredAt: item.AcquiredAt,
 			Comment:    item.Comment,
 		}
 	}
@@ -162,7 +159,7 @@ func (i SystemServiceImpl) List(ctx context.Context, limit int64, offset int64) 
 	return result, nil
 }
 
-func (i SystemServiceImpl) Acquire(ctx context.Context, systemPattern string, imagePattern string, force bool, snippets []string, customSnippet string, ksOverride string, comment string, validUntil time.Time) error {
+func (i SystemServiceImpl) Deploy(ctx context.Context, systemPattern string, imagePattern string, snippets []string, customSnippet string, ksOverride string, comment string, validUntil time.Time) error {
 	daoSystem := db.GetSystemDao(ctx)
 	daoImage := db.GetImageDao(ctx)
 	daoSnip := db.GetSnippetDao(ctx)
@@ -186,31 +183,15 @@ func (i SystemServiceImpl) Acquire(ctx context.Context, systemPattern string, im
 		snippetIDs[i] = s.ID
 	}
 
-	err = daoSystem.Acquire(ctx, system.ID, image.ID, force, snippetIDs, customSnippet, ksOverride, comment, validUntil)
+	err = daoSystem.Deploy(ctx, system.ID, image.ID, snippetIDs, customSnippet, ksOverride, comment, validUntil)
 	if err != nil {
-		return fmt.Errorf("cannot acquire: %w", err)
+		return fmt.Errorf("cannot deploy: %w", err)
 	}
 
 	// TODO this should be done in the background via notification
 	err = i.BootNetwork(ctx, systemPattern)
 	if err != nil {
-		return fmt.Errorf("cannot reset after acquire: %w", err)
-	}
-
-	return nil
-}
-
-func (i SystemServiceImpl) Release(ctx context.Context, systemPattern string) error {
-	dao := db.GetSystemDao(ctx)
-
-	system, err := dao.Find(ctx, systemPattern)
-	if err != nil {
-		return fmt.Errorf("cannot find: %w", err)
-	}
-
-	err = dao.Release(ctx, system.ID)
-	if err != nil {
-		return fmt.Errorf("cannot release: %w", err)
+		return fmt.Errorf("cannot reset after deploy: %w", err)
 	}
 
 	return nil

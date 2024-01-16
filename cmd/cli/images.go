@@ -111,9 +111,9 @@ func imageList(ctx context.Context, cmdArgs *imageListCmd) error {
 	}
 
 	w := newTabWriter()
-	fmt.Fprintln(w, "Image ID\tImage Name")
+	fmt.Fprintln(w, "Image ID\tImage Name\tKind")
 	for _, img := range images {
-		fmt.Fprintf(w, "%d\t%s\n", img.ID, img.Name)
+		fmt.Fprintf(w, "%d\t%s\t%s\n", img.ID, img.Name, ctl.ImageIntToKind(img.Kind))
 	}
 	w.Flush()
 

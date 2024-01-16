@@ -2,6 +2,7 @@ package ctl
 
 import (
 	"fmt"
+	"forester/internal/model"
 	"strings"
 )
 
@@ -11,16 +12,46 @@ func ensureLimitNonzero(i *int64) {
 	}
 }
 
+func ImageKindToInt(kind string) int16 {
+	switch strings.ToLower(kind) {
+	case "unknown":
+		return model.UnknownImageKind
+	case "image":
+		return model.ImageInstallerKind
+	case "container":
+		return model.ContainerInstallerKind
+	case "rpm":
+		return model.RPMInstallerKind
+	default:
+		panic(fmt.Sprintf("unknown kind: %s", kind))
+	}
+}
+
+func ImageIntToKind(kind int16) string {
+	switch kind {
+	case model.UnknownImageKind:
+		return "unknown"
+	case model.ImageInstallerKind:
+		return "image"
+	case model.ContainerInstallerKind:
+		return "container"
+	case model.RPMInstallerKind:
+		return "rpm"
+	default:
+		panic(fmt.Sprintf("unknown kind: %d", kind))
+	}
+}
+
 func ApplianceKindToInt(kind string) int16 {
 	switch strings.ToLower(kind) {
 	case "noop":
-		return 1
+		return model.NoopApplianceKind
 	case "libvirt":
-		return 2
+		return model.LibvirtApplianceKind
 	case "redfish":
-		return 3
+		return model.RedfishApplianceKind
 	case "redfish_manual":
-		return 4
+		return model.RedfishManualApplianceKind
 	default:
 		panic(fmt.Sprintf("unknown kind: %s", kind))
 	}
@@ -28,13 +59,13 @@ func ApplianceKindToInt(kind string) int16 {
 
 func ApplianceIntToKind(kind int16) string {
 	switch kind {
-	case 1:
+	case model.NoopApplianceKind:
 		return "noop"
-	case 2:
+	case model.LibvirtApplianceKind:
 		return "libvirt"
-	case 3:
+	case model.RedfishApplianceKind:
 		return "redfish"
-	case 4:
+	case model.RedfishManualApplianceKind:
 		return "redfish_manual"
 	default:
 		panic(fmt.Sprintf("unknown kind: %d", kind))

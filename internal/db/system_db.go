@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"forester/internal/model"
-	"github.com/georgysavva/scany/v2/pgxscan"
-	"github.com/jackc/pgx/v5"
-	"golang.org/x/exp/slog"
 	"net"
 	"strconv"
 	"time"
+
+	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/jackc/pgx/v5"
+	"golang.org/x/exp/slog"
 )
 
 func init() {
@@ -70,7 +71,7 @@ func (dao systemDao) List(ctx context.Context, limit, offset int64) ([]*model.Sy
 	return result, nil
 }
 
-func (dao systemDao) Acquire(ctx context.Context, systemId, imageId int64, force bool, snippets []int64, snippetText, ksOverride, comment string, validUntil time.Time) error {
+func (dao systemDao) Deploy(ctx context.Context, systemId, imageId int64, snippets []int64, snippetText, ksOverride, comment string, validUntil time.Time) error {
 	txErr := WithTransaction(ctx, func(tx pgx.Tx) error {
 		insertQuery := `INSERT INTO installations (system_id, image_id, snippet_text, kickstart_override, comment, valid_until) VALUES
 			($1, $2, $3, $4, $5, $6) RETURNING id`
@@ -81,26 +82,8 @@ func (dao systemDao) Acquire(ctx context.Context, systemId, imageId int64, force
 			return fmt.Errorf("installation insert error: %w", err)
 		}
 
-		updateQuery := `UPDATE systems SET
-		acquired = true,
-		acquired_at = current_timestamp
-		WHERE id = $1`
-
-		if !force {
-			updateQuery += " AND acquired = false"
-		}
-
-		tag, err := tx.Exec(ctx, updateQuery, systemId)
-		if err != nil {
-			return fmt.Errorf("update error: %w", err)
-		}
-
-		if tag.RowsAffected() != 1 {
-			return fmt.Errorf("cannot find unacquired system with ID=%d: %w", systemId, ErrAffectedMismatch)
-		}
-
 		deleteQuery := `DELETE FROM installations_snippets WHERE installation_id = $1`
-		tag, err = tx.Exec(ctx, deleteQuery, instID)
+		tag, err := tx.Exec(ctx, deleteQuery, instID)
 		if err != nil {
 			return fmt.Errorf("delete snippets error: %w", err)
 		}
@@ -142,25 +125,7 @@ func (dao systemDao) Rename(ctx context.Context, systemId int64, newName string)
 	}
 
 	if tag.RowsAffected() != 1 {
-		return fmt.Errorf("cannot find acquired system with ID=%d: %w", systemId, ErrAffectedMismatch)
-	}
-
-	return nil
-}
-
-func (dao systemDao) Release(ctx context.Context, systemId int64) error {
-	query := `UPDATE systems SET
-		acquired = false,
-		comment = ''
-		WHERE id = $1 AND acquired = true`
-
-	tag, err := Pool.Exec(ctx, query, systemId)
-	if err != nil {
-		return fmt.Errorf("update error: %w", err)
-	}
-
-	if tag.RowsAffected() != 1 {
-		return fmt.Errorf("cannot find acquired system with ID=%d: %w", systemId, ErrAffectedMismatch)
+		return fmt.Errorf("cannot find system with ID=%d: %w", systemId, ErrAffectedMismatch)
 	}
 
 	return nil
@@ -179,8 +144,6 @@ func (dao systemDao) FindRelated(ctx context.Context, pattern string) (*model.Sy
 		s.uid AS "s.uid",
 		s.hwaddrs AS "s.hwaddrs",
 		s.facts AS "s.facts",
-		s.acquired AS "s.acquired",
-		s.acquired_at AS "s.acquired_at",
 		s.comment AS "s.comment",
 		COALESCE(a.name, '') AS "a.name",
 		COALESCE(a.kind, 0) AS "a.kind",
@@ -223,8 +186,6 @@ func (dao systemDao) FindByMacRelated(ctx context.Context, mac net.HardwareAddr)
 		s.uid AS "s.uid",
 		s.hwaddrs AS "s.hwaddrs",
 		s.facts AS "s.facts",
-		s.acquired AS "s.acquired",
-		s.acquired_at AS "s.acquired_at",
 		s.comment AS "s.comment",
 		COALESCE(a.name, '') AS "a.name",
 		COALESCE(a.kind, 0) AS "a.kind",
@@ -258,8 +219,6 @@ func (dao systemDao) FindByIDRelated(ctx context.Context, id int64) (*model.Syst
 		s.uid AS "s.uid",
 		s.hwaddrs AS "s.hwaddrs",
 		s.facts AS "s.facts",
-		s.acquired AS "s.acquired",
-		s.acquired_at AS "s.acquired_at",
 		s.image_id AS "s.image_id",
 		s.comment AS "s.comment",
 		s.install_uuid AS "s.install_uuid",
