@@ -20,13 +20,13 @@ type Image struct {
 type ImageKind int16
 
 const (
-	UnknownImageKind  = iota
-	ImageInstallerKind = iota
-	ContainerInstallerKind = iota
-	RPMInstallerKind = iota
+	UnknownImageKind       ImageKind = iota
+	ImageInstallerKind     ImageKind = iota
+	ContainerInstallerKind ImageKind = iota
+	RPMInstallerKind       ImageKind = iota
 )
 
-func ParseImageKind(i int16) ApplianceKind {
+func ParseImageKind(i int16) ImageKind {
 	switch i {
 	case 0:
 		return UnknownImageKind

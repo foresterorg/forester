@@ -71,6 +71,7 @@ func (la LastAction) String() string {
 type KickstartParams struct {
 	*CommonParams
 	ImageID        int64
+	ImageKind      int16
 	SystemID       int64
 	SystemName     string
 	SystemHostname string

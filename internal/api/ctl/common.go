@@ -15,20 +15,20 @@ func ensureLimitNonzero(i *int64) {
 func ImageKindToInt(kind string) int16 {
 	switch strings.ToLower(kind) {
 	case "unknown":
-		return model.UnknownImageKind
+		return int16(model.UnknownImageKind)
 	case "image":
-		return model.ImageInstallerKind
+		return int16(model.ImageInstallerKind)
 	case "container":
-		return model.ContainerInstallerKind
+		return int16(model.ContainerInstallerKind)
 	case "rpm":
-		return model.RPMInstallerKind
+		return int16(model.RPMInstallerKind)
 	default:
 		panic(fmt.Sprintf("unknown kind: %s", kind))
 	}
 }
 
 func ImageIntToKind(kind int16) string {
-	switch kind {
+	switch model.ImageKind(kind) {
 	case model.UnknownImageKind:
 		return "unknown"
 	case model.ImageInstallerKind:
@@ -45,20 +45,20 @@ func ImageIntToKind(kind int16) string {
 func ApplianceKindToInt(kind string) int16 {
 	switch strings.ToLower(kind) {
 	case "noop":
-		return model.NoopApplianceKind
+		return int16(model.NoopApplianceKind)
 	case "libvirt":
-		return model.LibvirtApplianceKind
+		return int16(model.LibvirtApplianceKind)
 	case "redfish":
-		return model.RedfishApplianceKind
+		return int16(model.RedfishApplianceKind)
 	case "redfish_manual":
-		return model.RedfishManualApplianceKind
+		return int16(model.RedfishManualApplianceKind)
 	default:
 		panic(fmt.Sprintf("unknown kind: %s", kind))
 	}
 }
 
 func ApplianceIntToKind(kind int16) string {
-	switch kind {
+	switch model.ApplianceKind(kind) {
 	case model.NoopApplianceKind:
 		return "noop"
 	case model.LibvirtApplianceKind:

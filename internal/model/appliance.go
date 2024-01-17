@@ -17,11 +17,11 @@ type Appliance struct {
 type ApplianceKind int16
 
 const (
-	ReservedApplianceKind      = iota
-	NoopApplianceKind          = iota
-	LibvirtApplianceKind       = iota
-	RedfishApplianceKind       = iota
-	RedfishManualApplianceKind = iota
+	ReservedApplianceKind      ApplianceKind = iota
+	NoopApplianceKind          ApplianceKind = iota
+	LibvirtApplianceKind       ApplianceKind = iota
+	RedfishApplianceKind       ApplianceKind = iota
+	RedfishManualApplianceKind ApplianceKind = iota
 )
 
 func ParseKind(i int16) ApplianceKind {

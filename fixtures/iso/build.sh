@@ -338,3 +338,13 @@ popd
 mkisofs -V Fedora-liveimg-fixture -publisher Fedora \
 	-volset fedora-volset-id -preparer "$(id -un)" \
 	-o fixture-liveimg.iso "$TMPD"
+
+pushd "$TMPD"
+rm ./liveimg.tar.gz
+mkdir -p container/blobs/sha256
+touch container/index.json container/oci-layout
+popd
+
+mkisofs -V Fedora-container-fixture -publisher Fedora \
+	-volset fedora-volset-id -preparer "$(id -un)" \
+	-o fixture-container.iso "$TMPD"

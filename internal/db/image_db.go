@@ -71,9 +71,9 @@ func (dao imageDao) List(ctx context.Context, limit, offset int64) ([]*model.Ima
 }
 
 func (dao imageDao) Update(ctx context.Context, image *model.Image) error {
-	query := `UPDATE images SET name = $2, iso_sha256 = $3, liveimg_sha256 = $4 WHERE id = $1`
+	query := `UPDATE images SET name = $2, kind = $3, iso_sha256 = $4, liveimg_sha256 = $5 WHERE id = $1`
 
-	tag, err := Pool.Exec(ctx, query, image.ID, image.Name, image.IsoSha256, image.LiveimgSha256)
+	tag, err := Pool.Exec(ctx, query, image.ID, image.Name, image.Kind, image.IsoSha256, image.LiveimgSha256)
 	if err != nil {
 		return fmt.Errorf("update error: %w", err)
 	}

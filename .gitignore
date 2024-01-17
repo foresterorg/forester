@@ -16,7 +16,11 @@ TAGS
 /forester-cli
 /data
 /cmd/controller/images/
+/cmd/controller/logs/
+/cmd/controller/forester-controller
+/cmd/controller/forester-cli
 /images
+/logs
 
 # config
 /compose.env

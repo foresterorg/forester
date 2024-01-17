@@ -156,23 +156,39 @@ func extractImage(dbImage *model.Image) {
 		return
 	}
 
-	imgPath := filepath.Join(imagePath, "liveimg.tar.gz")
-	slog.DebugContext(ctx, "checking for liveimg.tar.gz", "path", imgPath)
+	// detect installer image
+	sum := sha256exist(ctx, filepath.Join(imagePath, "liveimg.tar.gz"))
+	if sum != "" {
+		dbImage.LiveimgSha256 = sum
+		dbImage.Kind = model.ImageInstallerKind
+	}
+
+	// detect container image
+	sum = sha256exist(ctx, filepath.Join(imagePath, "container", "index.json"))
+	if sum != "" {
+		dbImage.LiveimgSha256 = sum
+		dbImage.Kind = model.ContainerInstallerKind
+	}
+
+	dao := db.GetImageDao(ctx)
+	err = dao.Update(ctx, dbImage)
+	if err != nil {
+		slog.ErrorContext(ctx, "could not update image", "err", err)
+	}
+}
+
+func sha256exist(ctx context.Context, imgPath string) string {
 	if ok, err := fileExists(imgPath); ok && (err == nil) {
 		sum, err := sha256sum(imgPath)
 		if err != nil {
-			slog.ErrorContext(ctx, "error calculate SHA256 sum", "err", err)
-			return
+			slog.ErrorContext(ctx, "error calculating SHA256 sum", "err", err, "file", imgPath)
+			return ""
 		}
-		slog.DebugContext(ctx, "sha256 of the liveimg.tar.gz", "sha256sum", sum)
 
-		dbImage.LiveimgSha256 = sum
-		dao := db.GetImageDao(ctx)
-		err = dao.Update(ctx, dbImage)
-		if err != nil {
-			slog.ErrorContext(ctx, "could not update image sha256", "err", err)
-		}
+		slog.DebugContext(ctx, "calculated SHA256", "file", imgPath, "sha256sum", sum)
+		return sum
 	}
+	return ""
 }
 
 func serveImagePath(w http.ResponseWriter, r *http.Request) {

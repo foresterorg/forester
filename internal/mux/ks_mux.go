@@ -120,6 +120,7 @@ func RenderKickstartForSystem(ctx context.Context, system *model.System, w io.Wr
 	params := tmpl.KickstartParams{
 		SystemID:       system.ID,
 		ImageID:        inst.ImageID,
+		ImageKind:      int16(img.Kind),
 		SystemName:     system.Name,
 		SystemHostname: ToHostname(system.Name),
 		InstallUUID:    inst.UUID.String(),
