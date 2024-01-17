@@ -68,6 +68,7 @@ func main() {
 	doneRouter := chi.NewRouter()
 	logsRouter := chi.NewRouter()
 	confRouter := chi.NewRouter()
+	tarRouter := chi.NewRouter()
 
 	rootRouter.Use(mux.TraceIdMiddleware)
 
@@ -78,6 +79,8 @@ func main() {
 	mux.MountDone(doneRouter)
 	mux.MountLogs(logsRouter)
 	mux.MountConf(confRouter)
+	mux.MountTar(tarRouter)
+
 	rootRouter.Mount("/bootstrap", bootstrapRouter)
 	rootRouter.Mount("/boot", bootRouter)
 	rootRouter.Mount("/img", imgRouter)
@@ -85,11 +88,13 @@ func main() {
 	rootRouter.Mount("/done", doneRouter)
 	rootRouter.Mount("/logs", logsRouter)
 	rootRouter.Mount("/conf", confRouter)
+	rootRouter.Mount("/tar", tarRouter)
+
 	ctl.MountServices(rootRouter)
 
 	rootServer := http.Server{
-		Addr:    fmt.Sprintf(":%d", config.Application.Port),
-		Handler: rootRouter,
+		Addr:        fmt.Sprintf(":%d", config.Application.Port),
+		Handler:     rootRouter,
 		IdleTimeout: 5 * time.Second, // https://access.redhat.com/solutions/6966921
 	}
 

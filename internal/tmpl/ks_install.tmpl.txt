@@ -1,5 +1,15 @@
 # FORESTER PROJECT version {{ .Version }}
 
+%pre
+hostnamectl hostname f-{{ .SystemID }}-{{ .InstallUUID }}
+systemctl reload rsyslog
+
+{{ if eq .ImageKind 2 -}}
+mkdir /var/tmp/container
+curl -s {{ .BaseURL }}/tar/{{ .ImageID }}/container | tar -x -v -C /var/tmp/container
+{{ end -}}
+%end
+
 {{ range .Snippets.pre -}}
 {{ . }}
 {{ end -}}
@@ -30,7 +40,7 @@ liveimg --url={{ .BaseURL }}/img/{{ .ImageID }}/liveimg.tar.gz --checksum {{ .Li
 liveimg --url={{ .BaseURL }}/img/{{ .ImageID }}/liveimg.tar.gz
 {{ end -}}
 {{ else if eq .ImageKind 2 -}}
-ostreecontainer --url={{ .BaseURL }}/img/{{ .ImageID }}/container --transport=oci --no-signature-verification
+ostreecontainer --url=/var/tmp/container --transport=oci --no-signature-verification
 {{ else -}}
 # unknown image kind: {{ .ImageKind }}
 {{ end -}}
@@ -49,18 +59,29 @@ rootpw --iscrypted --lock locked
 {{ else -}}
 sshpw --username forester-{{ .SystemID }} --plaintext {{ .InstallUUID }}
 firstboot --disable
+{{ if ne .ImageKind 2 -}}
 firewall --enabled --ssh
 selinux --enforcing
+{{ end -}}
 {{ end -}}
 # /security
 # disk
 {{ range .Snippets.disk -}}
 {{ . }}
 {{ else -}}
+{{ if eq .ImageKind 2 -}}
+clearpart --all
+part /boot/efi --fstype=efi --size=512 --fsoptions="umask=0077"
+part /boot --fstype=ext2 --size=1024 --label=boot
+part swap --fstype=swap --size=1024
+part / --fstype=ext4 --grow
+bootloader --timeout=1 --append="console=tty1 console=ttyS0,115200n8"
+{{ else -}}
 zerombr
 clearpart --all --initlabel
 autopart
 bootloader --location=mbr --timeout=1 --append="console=tty1 console=ttyS0,115200n8"
+{{ end -}}
 {{ end -}}
 # /disk
 # debug
@@ -73,11 +94,6 @@ logging --host {{ .BaseHost }} --port {{ .SyslogPort }}
 {{ end -}}
 # /debug
 {{ .LastAction }}
-
-%pre
-hostnamectl hostname f-{{ .SystemID }}-{{ .InstallUUID }}
-systemctl reload rsyslog
-%end
 
 # post
 {{ range .Snippets.post -}}
