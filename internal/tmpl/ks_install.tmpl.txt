@@ -103,5 +103,5 @@ logging --host {{ .BaseHost }} --port {{ .SyslogPort }}
 # /post
 
 %post
-curl --silent -X POST "{{ .BaseURL }}/done/{{ .SystemID }}"
+curl --silent -X POST "{{ .BaseURL }}/done/{{ .InstallUUID }}"
 %end

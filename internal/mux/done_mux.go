@@ -7,11 +7,11 @@ import (
 	"forester/internal/metal"
 	"forester/internal/model"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
+	"github.com/google/uuid"
 	"golang.org/x/exp/slog"
 )
 
@@ -19,46 +19,58 @@ func MountDone(r *chi.Mux) {
 	r.Group(func(r chi.Router) {
 		r.Use(render.SetContentType(render.ContentTypePlainText))
 
-		r.Post("/{ID}", HandleDone)
+		r.Post("/{UUID}", HandleDone)
 	})
 }
 
 func HandleDone(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(chi.URLParam(r, "ID"), 10, 64)
+	ctx := r.Context()
+	id, err := uuid.Parse(chi.URLParam(r, "UUID"))
 	if err != nil {
-		slog.InfoContext(r.Context(), "installation what", "system_id", chi.URLParam(r, "ID"), "error", err.Error())
+		slog.InfoContext(ctx, "cannot parse installation UUID", "uuid", chi.URLParam(r, "UUID"), "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	slog.InfoContext(r.Context(), "installation done", "system_id", id)
-	sDao := db.GetSystemDao(r.Context())
-	systemAppliance, err := sDao.FindByIDRelated(r.Context(), id)
+	iDao := db.GetInstallationDao(ctx)
+	inst, err := iDao.FindValid(ctx, id, model.InstallingInstallState)
 	if err != nil {
-		slog.InfoContext(r.Context(), "system not found", "system_id", chi.URLParam(r, "ID"), "error", err.Error())
+		slog.InfoContext(ctx, "installation not found", "uuid", chi.URLParam(r, "UUID"), "err", err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	slog.DebugContext(ctx, "installation done - system will be started soon", "system_id", id)
+	sDao := db.GetSystemDao(ctx)
+	systemAppliance, err := sDao.FindByIDRelated(ctx, inst.SystemID)
+	if err != nil {
+		slog.InfoContext(ctx, "system not found", "system_id", inst.SystemID, "error", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	if systemAppliance.ApplianceID == nil {
-		slog.InfoContext(r.Context(), "system has no appliance associated", "system_id", chi.URLParam(r, "ID"))
+		slog.InfoContext(ctx, "system has no appliance associated", "system_id", inst.SystemID)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	// boot libvirt manually
-	if systemAppliance.Appliance.Kind == model.LibvirtApplianceKind {
-		m := metal.ForKind(systemAppliance.Appliance.Kind)
-		// cannot pass request context it will be cancelled
-		bctx := logging.WithTraceId(context.Background(), logging.TraceId(r.Context()))
-		go bootLocal(bctx, m, systemAppliance)
+	if systemAppliance.Appliance.Kind != model.LibvirtApplianceKind {
+		slog.InfoContext(ctx, "system appliance is not libvirt", "system_id", inst.SystemID)
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
+
+	m := metal.ForKind(systemAppliance.Appliance.Kind)
+	// cannot pass request context it will be cancelled
+	bctx := logging.WithTraceId(context.Background(), logging.TraceId(ctx))
+	go bootLocal(bctx, m, systemAppliance)
 
 	w.WriteHeader(http.StatusOK)
 }
 
 func bootLocal(ctx context.Context, m metal.Metal, s *model.SystemAppliance) {
-	slog.InfoContext(ctx, "will boot system locally", "system_id", s.System.ID)
-	time.Sleep(30 * time.Second)
+	time.Sleep(5 * time.Second)
 	slog.InfoContext(ctx, "booting system locally", "system_id", s.System.ID)
 	err := m.BootLocal(ctx, s)
 	if err != nil {

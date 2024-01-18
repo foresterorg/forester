@@ -7,6 +7,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -51,6 +52,7 @@ type SystemDao interface {
 var GetInstallationDao func(ctx context.Context) InstallationDao
 
 type InstallationDao interface {
+	FindValid(ctx context.Context, uuid uuid.UUID, state model.InstallState) (*model.Installation, error)
 	FindValidByState(ctx context.Context, systemId int64, state model.InstallState) ([]*model.Installation, error)
 	FindAnyByState(ctx context.Context, state model.InstallState) ([]*model.Installation, error)
 	FindInstallationForMAC(ctx context.Context, givenMAC net.HardwareAddr) (*model.Installation, *model.System, error)

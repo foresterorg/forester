@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/google/uuid"
 	"github.com/hashicorp/golang-lru/v2/expirable"
 	"golang.org/x/exp/slog"
 )
@@ -22,6 +23,19 @@ type instDao struct{}
 func getInstallationDao(ctx context.Context) InstallationDao {
 	return &instDao{}
 }
+
+func (dao instDao) FindValid(ctx context.Context, uuid uuid.UUID, state model.InstallState) (*model.Installation, error) {
+	query := `SELECT * FROM installations WHERE uuid = $1 AND valid_until > current_timestamp AND state <= $2`
+
+	result := &model.Installation{}
+	err := pgxscan.Get(ctx, Pool, result, query, uuid, state)
+	if err != nil {
+		return nil, fmt.Errorf("db error: %w", err)
+	}
+
+	return result, nil
+}
+
 
 func (dao instDao) FindValidByState(ctx context.Context, systemId int64, state model.InstallState) ([]*model.Installation, error) {
 	query := `SELECT * FROM installations WHERE system_id = $1 AND valid_until > current_timestamp AND state <= $2 ORDER BY id DESC`

@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/digitalocean/go-libvirt"
 	"github.com/digitalocean/go-libvirt/socket"
@@ -116,19 +117,20 @@ func bootDevice(ctx context.Context, system *model.SystemAppliance, device strin
 	}
 
 	if state == 1 {
-		// domain is running
-		slog.InfoContext(ctx, "force resetting domain", "name", d.Name)
-		err = v.DomainReset(d, 0)
+		// domain is running: changes in boot order require full power off
+		slog.InfoContext(ctx, "force power cycling domain", "name", d.Name)
+		err = v.DomainDestroy(d)
 		if err != nil {
-			return fmt.Errorf("cannot reset domain: %w", err)
+			return fmt.Errorf("cannot destroy domain: %w", err)
 		}
-	} else {
-		// domain was not running
-		slog.InfoContext(ctx, "creating domain", "name", d.Name)
-		err = v.DomainCreate(d)
-		if err != nil {
-			return fmt.Errorf("cannot create domain: %w", err)
-		}
+
+		time.Sleep(2 * time.Second)
+	}
+
+	slog.InfoContext(ctx, "creating domain", "name", d.Name)
+	err = v.DomainCreate(d)
+	if err != nil {
+		return fmt.Errorf("cannot create domain: %w", err)
 	}
 
 	return nil

@@ -219,9 +219,7 @@ func (dao systemDao) FindByIDRelated(ctx context.Context, id int64) (*model.Syst
 		s.uid AS "s.uid",
 		s.hwaddrs AS "s.hwaddrs",
 		s.facts AS "s.facts",
-		s.image_id AS "s.image_id",
 		s.comment AS "s.comment",
-		s.install_uuid AS "s.install_uuid",
 		COALESCE(a.name, '') AS "a.name",
 		COALESCE(a.kind, 0) AS "a.kind",
 		COALESCE(a.uri, '') AS "a.uri"
