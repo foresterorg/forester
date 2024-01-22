@@ -14,7 +14,7 @@ import (
 
 type systemRegisterCmd struct {
 	Name          string            `arg:"-n"`
-	HwAddrs       []string          `arg:"-m,required"`
+	HwAddrs       []string          `arg:"-m,required,separate"`
 	Facts         map[string]string `arg:"-f"`
 	ApplianceName string            `arg:"-a"`
 	UID           string            `arg:"-u"`
@@ -25,7 +25,7 @@ type systemShowCmd struct {
 }
 
 type systemListCmd struct {
-	DisplayFacts []string `args:"-f"`
+	DisplayFacts []string `args:"-f,separate"`
 	Limit        int64    `arg:"-m" default:"100"`
 	Offset       int64    `arg:"-o" default:"0"`
 }
@@ -52,15 +52,11 @@ type systemRenameCmd struct {
 type systemDeployCmd struct {
 	Pattern     string   `arg:"positional,required" placeholder:"MAC_OR_NAME"`
 	Image       string   `arg:"-i,required"`
-	Snippets    []string `arg:"-s"`
+	Snippets    []string `arg:"-s,separate"`
 	TextSnippet string   `arg:"-x"`
 	Kickstart   string   `arg:"-k" placeholder:"KS_OVERRIDE_CONTENTS"`
 	Comment     string   `arg:"-c"`
 	Duration    string   `arg:"-d" default:"3h"`
-}
-
-type systemReleaseCmd struct {
-	Pattern string `arg:"positional,required" placeholder:"MAC_OR_NAME"`
 }
 
 type systemBootNetworkCmd struct {
