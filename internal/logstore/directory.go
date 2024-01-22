@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 	"forester/internal/config"
-	"github.com/djherbis/times"
-	"golang.org/x/exp/slog"
-	"gopkg.in/mcuadros/go-syslog.v2"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime/debug"
 	"time"
+
+	"github.com/djherbis/times"
+	"golang.org/x/exp/slog"
+	"gopkg.in/mcuadros/go-syslog.v2"
 )
 
 type Directory struct {
@@ -152,7 +153,7 @@ func (d *Directory) fileHandler(ctx context.Context, channel syslog.LogPartsChan
 
 	files := make(map[string]SyslogWriter)
 	defer closeFiles(files)
-	closeTicker := time.Tick(time.Second * 5)
+	closeTicker := time.NewTicker(time.Second * 5)
 
 	for {
 		select {
@@ -202,9 +203,10 @@ func (d *Directory) fileHandler(ctx context.Context, channel syslog.LogPartsChan
 				}
 				slog.DebugContext(ctx, fmt.Sprintf("%s", logParts["content"]), "syslog", attrs)
 			}
-		case <-closeTicker:
+		case <-closeTicker.C:
 			closeFiles(files)
 		case <-ctx.Done():
+			closeTicker.Stop()
 			return
 		}
 	}
@@ -213,7 +215,7 @@ func (d *Directory) fileHandler(ctx context.Context, channel syslog.LogPartsChan
 func (d *Directory) noopHandler(ctx context.Context, channel syslog.LogPartsChannel) {
 	for {
 		select {
-		case _ = <-channel:
+		case <-channel:
 			// do nothing
 		case <-ctx.Done():
 			return

@@ -52,9 +52,7 @@ func (i SystemServiceImpl) Register(ctx context.Context, system *NewSystem) erro
 		facts.List = append(facts.List, model.Fact{Key: k, Value: v})
 	}
 	if existingSystem != nil {
-		for _, fn := range existingSystem.Facts.List {
-			facts.List = append(facts.List, fn)
-		}
+		facts.List = append(facts.List, existingSystem.Facts.List...)
 	}
 
 	sys = &model.System{
@@ -68,7 +66,7 @@ func (i SystemServiceImpl) Register(ctx context.Context, system *NewSystem) erro
 		ad := db.GetApplianceDao(ctx)
 		app, err := ad.Find(ctx, *system.ApplianceName)
 		if err != nil {
-			return fmt.Errorf("cannot find appliance named '%s': %w", system.ApplianceName, err)
+			return fmt.Errorf("cannot find appliance named '%v': %w", system.ApplianceName, err)
 		}
 		sys.ApplianceID = &app.ID
 	}
@@ -103,12 +101,12 @@ func (i SystemServiceImpl) Find(ctx context.Context, pattern string) (*System, e
 	}
 
 	payload := &System{
-		ID:         result.System.ID,
-		Name:       result.System.Name,
-		HwAddrs:    hwa,
-		Facts:      result.System.Facts.FactsMap(),
-		Comment:    result.System.Comment,
-		UID:        result.System.UID,
+		ID:      result.System.ID,
+		Name:    result.System.Name,
+		HwAddrs: hwa,
+		Facts:   result.System.Facts.FactsMap(),
+		Comment: result.System.Comment,
+		UID:     result.System.UID,
 	}
 
 	payload.Appliance = &Appliance{
@@ -148,11 +146,11 @@ func (i SystemServiceImpl) List(ctx context.Context, limit int64, offset int64) 
 	result := make([]*System, len(list))
 	for i, item := range list {
 		result[i] = &System{
-			ID:         item.ID,
-			Name:       item.Name,
-			HwAddrs:    item.HwAddrStrings(),
-			Facts:      item.Facts.FactsMap(),
-			Comment:    item.Comment,
+			ID:      item.ID,
+			Name:    item.Name,
+			HwAddrs: item.HwAddrStrings(),
+			Facts:   item.Facts.FactsMap(),
+			Comment: item.Comment,
 		}
 	}
 

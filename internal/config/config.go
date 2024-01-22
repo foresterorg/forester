@@ -87,7 +87,7 @@ func Initialize(configFiles ...string) error {
 	}
 
 	// print key configuration values
-	pwd, err := os.Getwd()
+	pwd, _ := os.Getwd()
 	slog.Debug("starting forester",
 		"pwd", pwd,
 	)
