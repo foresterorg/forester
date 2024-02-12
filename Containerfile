@@ -2,7 +2,8 @@ FROM registry.fedoraproject.org/fedora-minimal:latest as build
 RUN microdnf install -y golang
 RUN mkdir /build
 WORKDIR /build
-COPY . .
+# ignore other (big) files like ISO images
+COPY cmd internal go.mod go.sum .
 RUN go build -o forester-controller cmd/controller/ctl_main.go
 
 FROM registry.fedoraproject.org/fedora-minimal:latest
