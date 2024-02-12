@@ -90,6 +90,8 @@ func Initialize(configFiles ...string) error {
 	pwd, _ := os.Getwd()
 	slog.Debug("starting forester",
 		"pwd", pwd,
+		"build_hash", BuildCommit,
+		"build_time", BuildTime,
 	)
 	slog.Debug("app configuration",
 		"hostname", config.App.Hostname,
