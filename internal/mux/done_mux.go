@@ -2,17 +2,18 @@ package mux
 
 import (
 	"context"
+	"log/slog"
+	"net/http"
+	"time"
+
+	chi "github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
+	"github.com/google/uuid"
+
 	"forester/internal/db"
 	"forester/internal/logging"
 	"forester/internal/metal"
 	"forester/internal/model"
-	"net/http"
-	"time"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
-	"github.com/google/uuid"
-	"golang.org/x/exp/slog"
 )
 
 func MountDone(r *chi.Mux) {

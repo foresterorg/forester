@@ -2,16 +2,16 @@ package db
 
 import (
 	"context"
+	"log/slog"
 
-	"github.com/jackc/pgx/v5"
+	pgx "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/tracelog"
-	"golang.org/x/exp/slog"
 )
 
 // Logger implements the tracelog.Logger interface by wrapping a slog.Logger
 // https://godocs.io/github.com/jackc/pgx/v5/tracelog
 // https://godocs.io/github.com/jackc/pgx/v5#QueryTracer
-// https://godocs.io/golang.org/x/exp/slog
+// https://godocs.io/log/slog
 type Logger struct {
 	slogger *slog.Logger
 }

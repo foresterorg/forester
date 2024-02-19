@@ -6,7 +6,9 @@ import (
 )
 
 var invalid = regexp.MustCompile(`[^.a-zA-Z0-9\-]`)
+
 var prefix = regexp.MustCompile(`^[0-9\-]+`)
+
 var suffix = regexp.MustCompile(`-$`)
 
 // ToHostname converts a string to RFC 1123/952 hostname.

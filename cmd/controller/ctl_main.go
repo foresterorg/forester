@@ -4,6 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	chi "github.com/go-chi/chi/v5"
+
 	"forester/internal/api/ctl"
 	"forester/internal/config"
 	"forester/internal/db"
@@ -12,14 +21,6 @@ import (
 	"forester/internal/logstore"
 	"forester/internal/mux"
 	"forester/internal/tftp"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
-
-	"github.com/go-chi/chi/v5"
-	"golang.org/x/exp/slog"
 )
 
 func main() {
@@ -46,7 +47,7 @@ func main() {
 	tftp, err := tftp.Start(ctx,
 		fmt.Sprintf(":%d", config.Tftp.Port),
 		fmt.Sprintf("http://localhost:%d", config.Application.Port),
-		5 * time.Second)
+		5*time.Second)
 	defer tftp.Shutdown()
 	if err != nil {
 		slog.ErrorContext(ctx, "error when starting TFTP service", "err", err)

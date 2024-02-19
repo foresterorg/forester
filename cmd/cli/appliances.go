@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"forester/internal/api/ctl"
 	"net/http"
+
+	"forester/internal/api/ctl"
 )
 
 type applianceCreateCmd struct {

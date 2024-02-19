@@ -6,21 +6,22 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"forester/internal/config"
-	"forester/internal/db"
-	"forester/internal/img"
-	"forester/internal/logging"
-	"forester/internal/model"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"golang.org/x/exp/slog"
+	chi "github.com/go-chi/chi/v5"
+
+	"forester/internal/config"
+	"forester/internal/db"
+	"forester/internal/img"
+	"forester/internal/logging"
+	"forester/internal/model"
 )
 
 func MountImages(r *chi.Mux) {

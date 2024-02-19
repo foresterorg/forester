@@ -3,12 +3,13 @@ package db
 import (
 	"context"
 	"errors"
-	"forester/internal/model"
 	"net"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
+	pgx "github.com/jackc/pgx/v5"
+
+	"forester/internal/model"
 )
 
 var (

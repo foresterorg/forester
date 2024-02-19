@@ -3,6 +3,7 @@ package metal
 import (
 	"context"
 	"errors"
+
 	"forester/internal/model"
 )
 
@@ -19,8 +20,11 @@ type EnlistResult struct {
 }
 
 var noopMetal Metal = NoopMetal{}
+
 var libvirtMetal Metal = LibvirtMetal{}
+
 var redfishMetal Metal = RedfishMetal{}
+
 var redfishManualMetal Metal = RedfishMetal{Manual: true}
 
 func ForKind(kind model.ApplianceKind) Metal {
@@ -41,6 +45,7 @@ func Enlist(ctx context.Context, app *model.Appliance, pattern string) ([]*Enlis
 }
 
 var ErrSystemWithNoAppliance = errors.New("system has no appliance associated")
+
 var ErrSystemWithNoUID = errors.New("system has no UID set")
 
 func BootNetwork(ctx context.Context, system *model.SystemAppliance) error {

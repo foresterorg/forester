@@ -5,11 +5,13 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"forester/internal/db/migrations"
+	"io/fs"
+	"log/slog"
+
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/tern/v2/migrate"
-	"golang.org/x/exp/slog"
-	"io/fs"
+
+	"forester/internal/db/migrations"
 )
 
 type EmbeddedFS struct {

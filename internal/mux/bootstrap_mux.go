@@ -1,9 +1,11 @@
 package mux
 
 import (
-	"forester/internal/tmpl"
-	"github.com/go-chi/chi/v5"
 	"net/http"
+
+	chi "github.com/go-chi/chi/v5"
+
+	"forester/internal/tmpl"
 )
 
 func MountBootstrap(r *chi.Mux) {
@@ -20,7 +22,7 @@ func serveIpxeBootstrapFile(w http.ResponseWriter, r *http.Request) {
 
 func serveIpxeBootstrap(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	
+
 	err := tmpl.RenderIpxeBootstrap(r.Context(), w)
 	if err != nil {
 		renderBootError(err, w, r, tmpl.IpxeBootErrorType)

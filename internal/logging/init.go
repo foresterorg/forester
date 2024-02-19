@@ -3,9 +3,8 @@ package logging
 import (
 	"context"
 	"log"
+	"log/slog"
 	"os"
-
-	"golang.org/x/exp/slog"
 )
 
 var emptyAttr = slog.Attr{}

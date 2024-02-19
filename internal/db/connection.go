@@ -3,14 +3,14 @@ package db
 import (
 	"context"
 	"fmt"
-	"forester/internal/config"
+	"log/slog"
 	"net/url"
 
+	_ "github.com/georgysavva/scany/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
-	"golang.org/x/exp/slog"
 
-	_ "github.com/georgysavva/scany/v2"
+	"forester/internal/config"
 )
 
 // Pool is the main connection pool for the whole application

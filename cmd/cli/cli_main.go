@@ -3,15 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
-	"forester/internal/config"
-	"forester/internal/logging"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"text/tabwriter"
 
 	arg "github.com/alexflint/go-arg"
-	"golang.org/x/exp/slog"
+
+	"forester/internal/config"
+	"forester/internal/logging"
 )
 
 var args struct {

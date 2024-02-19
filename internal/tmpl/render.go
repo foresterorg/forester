@@ -5,13 +5,13 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	"forester/internal/config"
-	"forester/internal/version"
 	"io"
+	"log/slog"
 	"strconv"
 	"text/template"
 
-	"golang.org/x/exp/slog"
+	"forester/internal/config"
+	"forester/internal/version"
 )
 
 //go:embed *.tmpl.*

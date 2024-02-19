@@ -2,9 +2,9 @@ package mux
 
 import (
 	"archive/tar"
-	"forester/internal/config"
 	"io"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"os"
 	"path"
@@ -12,8 +12,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-chi/chi/v5"
-	"golang.org/x/exp/slog"
+	chi "github.com/go-chi/chi/v5"
+
+	"forester/internal/config"
 )
 
 func MountTar(r *chi.Mux) {

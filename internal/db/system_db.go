@@ -3,14 +3,15 @@ package db
 import (
 	"context"
 	"fmt"
-	"forester/internal/model"
+	"log/slog"
 	"net"
 	"strconv"
 	"time"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
-	"github.com/jackc/pgx/v5"
-	"golang.org/x/exp/slog"
+	pgx "github.com/jackc/pgx/v5"
+
+	"forester/internal/model"
 )
 
 func init() {

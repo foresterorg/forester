@@ -1,12 +1,11 @@
 package logging
 
 import (
+	"log/slog"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-
-	"golang.org/x/exp/slog"
 )
 
 func TestContext(t *testing.T) {

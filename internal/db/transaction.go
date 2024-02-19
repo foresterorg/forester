@@ -3,9 +3,9 @@ package db
 import (
 	"context"
 	"fmt"
-	"golang.org/x/exp/slog"
+	"log/slog"
 
-	"github.com/jackc/pgx/v5"
+	pgx "github.com/jackc/pgx/v5"
 )
 
 // A TxFn is a function that will be called with an initialized `Transaction` object

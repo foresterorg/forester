@@ -3,10 +3,9 @@ package logging
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
-
-	"golang.org/x/exp/slog"
 )
 
 // SlogDualWriter writes Go standard library logger to slog as well as

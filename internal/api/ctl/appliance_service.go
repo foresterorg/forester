@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"strings"
+
 	"forester/internal/db"
 	"forester/internal/metal"
 	"forester/internal/model"
-	"strings"
-
-	"golang.org/x/exp/slog"
 )
 
 var _ ApplianceService = ApplianceServiceImpl{}

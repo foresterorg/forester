@@ -4,17 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"forester/internal/db"
-	"forester/internal/logstore"
-	"forester/internal/metal"
-	"forester/internal/model"
-	"forester/internal/mux"
+	"log/slog"
 	"net"
 	"sort"
 	"strings"
 	"time"
 
-	"golang.org/x/exp/slog"
+	"forester/internal/db"
+	"forester/internal/logstore"
+	"forester/internal/metal"
+	"forester/internal/model"
+	"forester/internal/mux"
 )
 
 var _ SystemService = SystemServiceImpl{}

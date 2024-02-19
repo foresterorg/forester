@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"forester/internal/ptr"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -10,7 +10,8 @@ import (
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
-	"golang.org/x/exp/slog"
+
+	"forester/internal/ptr"
 )
 
 var config struct {

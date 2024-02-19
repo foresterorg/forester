@@ -5,20 +5,21 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"forester/internal/db"
-	"forester/internal/model"
+	"log/slog"
 	"net"
 	"net/url"
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/digitalocean/go-libvirt"
+	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/digitalocean/go-libvirt/socket"
 	"github.com/digitalocean/go-libvirt/socket/dialers"
 	"github.com/google/uuid"
-	"golang.org/x/exp/slog"
 	"libvirt.org/go/libvirtxml"
+
+	"forester/internal/db"
+	"forester/internal/model"
 )
 
 type LibvirtMetal struct{}

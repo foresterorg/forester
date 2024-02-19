@@ -1,12 +1,13 @@
 package mux
 
 import (
-	"forester/internal/logging"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
-	"golang.org/x/exp/slog"
+
+	"forester/internal/logging"
 )
 
 func TraceIdMiddleware(next http.Handler) http.Handler {

@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"forester/cmd/cli/edit"
-	"forester/internal/api/ctl"
 	"io"
 	"net/http"
 	"os"
+
+	"forester/cmd/cli/edit"
+	"forester/internal/api/ctl"
 )
 
 type snippetCreateCmd struct {

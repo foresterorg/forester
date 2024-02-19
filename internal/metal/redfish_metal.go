@@ -3,9 +3,7 @@ package metal
 import (
 	"context"
 	"fmt"
-	"forester/internal/config"
-	"forester/internal/logging"
-	"forester/internal/model"
+	"log/slog"
 	"math"
 	"regexp"
 	"slices"
@@ -14,7 +12,10 @@ import (
 
 	"github.com/stmcginnis/gofish"
 	"github.com/stmcginnis/gofish/redfish"
-	"golang.org/x/exp/slog"
+
+	"forester/internal/config"
+	"forester/internal/logging"
+	"forester/internal/model"
 )
 
 type RedfishMetal struct {

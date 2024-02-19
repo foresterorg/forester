@@ -3,7 +3,7 @@ package logstore
 import (
 	"context"
 	"fmt"
-	"forester/internal/config"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -11,8 +11,9 @@ import (
 	"time"
 
 	"github.com/djherbis/times"
-	"golang.org/x/exp/slog"
-	"gopkg.in/mcuadros/go-syslog.v2"
+	syslog "gopkg.in/mcuadros/go-syslog.v2"
+
+	"forester/internal/config"
 )
 
 type Directory struct {

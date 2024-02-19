@@ -3,12 +3,12 @@ package img
 import (
 	"context"
 	"fmt"
-	"forester/internal/logging"
+	"log/slog"
 	"os/exec"
 	"path"
 	"sync"
 
-	"golang.org/x/exp/slog"
+	"forester/internal/logging"
 )
 
 var wg sync.WaitGroup

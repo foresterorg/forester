@@ -1,11 +1,11 @@
 package mux
 
 import (
+	"log/slog"
 	"net/http"
 	"strings"
 
 	"github.com/go-chi/chi/v5/middleware"
-	"golang.org/x/exp/slog"
 )
 
 func DebugMiddleware(next http.Handler) http.Handler {

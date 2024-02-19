@@ -2,11 +2,8 @@ package mux
 
 import (
 	"context"
-	"forester/internal/config"
-	"forester/internal/db"
-	"forester/internal/model"
-	"forester/internal/tmpl"
 	"io"
+	"log/slog"
 	"mime"
 	"net"
 	"net/http"
@@ -14,9 +11,13 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/go-chi/chi/v5"
+	chi "github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
-	"golang.org/x/exp/slog"
+
+	"forester/internal/config"
+	"forester/internal/db"
+	"forester/internal/model"
+	"forester/internal/tmpl"
 )
 
 func MountBoot(r *chi.Mux) {

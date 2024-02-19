@@ -2,12 +2,13 @@ package mux
 
 import (
 	"encoding/hex"
-	"forester/internal/db"
-	"forester/internal/tmpl"
+	"log/slog"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-	"golang.org/x/exp/slog"
+	chi "github.com/go-chi/chi/v5"
+
+	"forester/internal/db"
+	"forester/internal/tmpl"
 )
 
 func MountConf(r *chi.Mux) {

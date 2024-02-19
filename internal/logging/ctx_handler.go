@@ -2,7 +2,7 @@ package logging
 
 import (
 	"context"
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 // A ContextHandler adds fields from context.

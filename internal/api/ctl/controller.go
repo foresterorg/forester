@@ -1,6 +1,6 @@
 package ctl
 
-import "github.com/go-chi/chi/v5"
+import chi "github.com/go-chi/chi/v5"
 
 var Service = struct {
 	Image     ImageService

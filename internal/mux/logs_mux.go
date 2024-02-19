@@ -1,9 +1,11 @@
 package mux
 
 import (
-	"forester/internal/config"
-	"github.com/go-chi/chi/v5"
 	"net/http"
+
+	chi "github.com/go-chi/chi/v5"
+
+	"forester/internal/config"
 )
 
 func MountLogs(r *chi.Mux) {

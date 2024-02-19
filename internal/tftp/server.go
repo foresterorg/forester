@@ -5,14 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/pin/tftp/v3"
-	"golang.org/x/exp/slog"
+	tftp "github.com/pin/tftp/v3"
 )
 
 type Server struct {
@@ -22,6 +22,7 @@ type Server struct {
 }
 
 var ErrOutsideRoot = errors.New("access outside of the root directory")
+
 var ErrMalformedPath = errors.New("malformed path")
 
 func urlJoin(base string, other string) (string, error) {
@@ -44,7 +45,9 @@ func urlJoin(base string, other string) (string, error) {
 }
 
 var ErrNotSupported = errors.New("not supported")
+
 var ErrNotFound = errors.New("file not found")
+
 var ErrUnknown = errors.New("unknown error")
 
 func writeHandler(filename string, wt io.WriterTo) error {
@@ -120,7 +123,7 @@ func (s *Server) readHandler() func(filename string, rf io.ReaderFrom) error {
 
 func Start(ctx context.Context, listenAddress, url string, timeout time.Duration) (*Server, error) {
 	server := &Server{
-		c: &http.Client{},
+		c:   &http.Client{},
 		url: url,
 	}
 	slog.InfoContext(ctx, "starting TFTP server",

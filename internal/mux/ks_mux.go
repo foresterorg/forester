@@ -4,19 +4,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"forester/internal/db"
-	"forester/internal/model"
-	"forester/internal/tmpl"
 	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"regexp"
 	"strings"
 
-	"github.com/go-chi/chi/v5"
+	chi "github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
-	"github.com/jackc/pgx/v5"
-	"golang.org/x/exp/slog"
+	pgx "github.com/jackc/pgx/v5"
+
+	"forester/internal/db"
+	"forester/internal/model"
+	"forester/internal/tmpl"
 )
 
 func MountKickstart(r *chi.Mux) {

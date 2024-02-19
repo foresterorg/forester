@@ -3,12 +3,12 @@ package img
 import (
 	"context"
 	"fmt"
-	"forester/internal/logging"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path"
 
-	"golang.org/x/exp/slog"
+	"forester/internal/logging"
 )
 
 func GenerateBootISO(ctx context.Context, imageID int64, imageDir string) error {

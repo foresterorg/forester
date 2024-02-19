@@ -3,9 +3,10 @@ package db
 import (
 	"context"
 	"fmt"
-	"forester/internal/model"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
+
+	"forester/internal/model"
 )
 
 func init() {

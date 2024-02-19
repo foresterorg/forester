@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"forester/internal/api/ctl"
 	"net/http"
 	"os"
 	"sort"
 	"strings"
 	"time"
+
+	"forester/internal/api/ctl"
 )
 
 type systemRegisterCmd struct {

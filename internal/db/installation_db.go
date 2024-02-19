@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"forester/internal/model"
+	"log/slog"
 	"net"
 	"time"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"
 	"github.com/hashicorp/golang-lru/v2/expirable"
-	"golang.org/x/exp/slog"
+
+	"forester/internal/model"
 )
 
 func init() {
@@ -35,7 +36,6 @@ func (dao instDao) FindValid(ctx context.Context, uuid uuid.UUID, state model.In
 
 	return result, nil
 }
-
 
 func (dao instDao) FindValidByState(ctx context.Context, systemId int64, state model.InstallState) ([]*model.Installation, error) {
 	query := `SELECT * FROM installations WHERE system_id = $1 AND valid_until > current_timestamp AND state <= $2 ORDER BY id DESC`
@@ -72,6 +72,7 @@ func (dao instDao) FindAnyByState(ctx context.Context, state model.InstallState)
 }
 
 var ErrUnknownSystem = errors.New("unknown system")
+
 var NullMAC net.HardwareAddr
 
 var installationCache *expirable.LRU[string, installationCacheEntry]

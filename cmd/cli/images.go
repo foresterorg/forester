@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"forester/internal/api/ctl"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
+
+	"forester/internal/api/ctl"
 )
 
 type imageUploadCmd struct {

@@ -2,9 +2,9 @@ package metal
 
 import (
 	"context"
-	"forester/internal/model"
+	"log/slog"
 
-	"golang.org/x/exp/slog"
+	"forester/internal/model"
 )
 
 type NoopMetal struct{}

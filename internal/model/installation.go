@@ -1,9 +1,10 @@
 package model
 
 import (
-	"github.com/google/uuid"
 	"math"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Installation struct {

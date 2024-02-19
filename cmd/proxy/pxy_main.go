@@ -2,15 +2,16 @@ package main
 
 import (
 	"context"
-	"forester/internal/logging"
-	"forester/internal/tftp"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/alexflint/go-arg"
-	"golang.org/x/exp/slog"
+	arg "github.com/alexflint/go-arg"
+
+	"forester/internal/logging"
+	"forester/internal/tftp"
 )
 
 const tftpTimeoutDefault = 5 * time.Second
