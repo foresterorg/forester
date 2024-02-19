@@ -5,6 +5,8 @@ WORKDIR /build
 # ignore other (big) files like ISO images
 COPY cmd internal go.mod go.sum .
 RUN go build -o forester-controller cmd/controller/ctl_main.go
+RUN go build -o forester-proxy cmd/proxy/pxy_main.go
+RUN go build -o forester-cli cmd/cli/cli_main.go
 
 FROM registry.fedoraproject.org/fedora-minimal:latest
 COPY --from=build /build/forester-controller /forester-controller

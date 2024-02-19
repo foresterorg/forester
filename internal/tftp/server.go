@@ -1,140 +1,51 @@
 package tftp
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"forester/internal/config"
-	"forester/internal/db"
-	"forester/internal/model"
-	"forester/internal/mux"
-	"forester/internal/tmpl"
 	"io"
-	"net"
+	"net/http"
+	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/pin/tftp/v3"
 	"golang.org/x/exp/slog"
 )
 
 type Server struct {
-	ts *tftp.Server
+	ts  *tftp.Server
+	url string
+	c   *http.Client
 }
 
 var ErrOutsideRoot = errors.New("access outside of the root directory")
 var ErrMalformedPath = errors.New("malformed path")
 
-func serveFile(filename string, rf io.ReaderFrom) error {
-	//slog.Debug("serving file", "file", filename, "mac", mac.String(), "platform", platform)
-	file, err := os.Open(filename)
-	if err != nil {
-		return fmt.Errorf("cannot open %s: %w", filename, err)
-	}
-	defer file.Close()
-	_, err = rf.ReadFrom(file)
-	if err != nil {
-		return fmt.Errorf("cannot read from %s: %w", filename, err)
+func urlJoin(base string, other string) (string, error) {
+	if !strings.HasSuffix(base, "/") {
+		base = base + "/"
 	}
 
-	return nil
+	b, err := url.Parse(base)
+	if err != nil {
+		return "", err
+	}
+
+	o, err := url.Parse(strings.TrimPrefix(other, "/"))
+	if err != nil {
+		return "", err
+	}
+
+	u := b.ResolveReference(o)
+	return u.String(), nil
 }
 
-func readHandler(requestPath string, rf io.ReaderFrom) error {
-	ctx := context.Background()
-	requestPath = strings.TrimPrefix(requestPath, "/")
-
-	if strings.HasPrefix(requestPath, "bootstrap/") {
-		return bootstrapHandler(ctx, requestPath, rf)
-	}
-
-	if !strings.HasPrefix(requestPath, "boot/") {
-		return fmt.Errorf("%w: path must start with /boot/", ErrMalformedPath)
-	}
-	requestPath = strings.TrimPrefix(requestPath, "boot/")
-
-	// ipxe special cases
-	if strings.HasPrefix(requestPath, "ipxe/") {
-		filename, err := filepath.Abs(filepath.Join("/usr/share/ipxe", strings.TrimPrefix(requestPath, "ipxe/")))
-		if err != nil {
-			return fmt.Errorf("filepath error %s: %w", requestPath, err)
-		}
-
-		err = serveFile(filename, rf)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-
-	var mac net.HardwareAddr
-	var err error
-	var i *model.Installation
-
-	path := strings.SplitN(requestPath, "/", 3)
-	if len(path) != 3 || path[0] == "" {
-		return fmt.Errorf("%w: %+v", ErrMalformedPath, path)
-	}
-	platform := strings.ToLower(path[0])
-	strMAC := path[1]
-	finalPath := path[2]
-
-	// Handle embedded BIOS prefix /grub.cfg-01-AA-BB-CC-DD-EE-FF)
-	if strings.HasPrefix(finalPath, "grub.cfg-01-") {
-		mac, err = net.ParseMAC(strings.TrimPrefix(finalPath, "grub.cfg-01-"))
-		if err != nil {
-			return fmt.Errorf("unable to parse mac for prefix path %s: %w", requestPath, err)
-		}
-	} else {
-		mac, err = net.ParseMAC(strMAC)
-		if err != nil {
-			return fmt.Errorf("unable to parse mac %s for path %s: %w", strMAC, requestPath, err)
-		}
-	}
-
-	iDao := db.GetInstallationDao(ctx)
-	i, _, err = iDao.FindInstallationForMAC(ctx, mac)
-	if err != nil {
-		return fmt.Errorf("installation not found for mac %s: %w", mac.String(), err)
-	}
-
-	root := config.BootPath(i.ImageID)
-	filename, err := filepath.Abs(filepath.Join(root, finalPath))
-	if err != nil {
-		return fmt.Errorf("filepath error %s: %w", requestPath, err)
-	}
-
-	if !strings.HasPrefix(filename, root) {
-		return ErrOutsideRoot
-	}
-
-	if strings.HasPrefix(finalPath, "grub.cfg") || finalPath == "script.ipxe" {
-		b := &bytes.Buffer{}
-		if platform == "bios" {
-			mux.WriteGrubConfig(ctx, b, mac, tmpl.GrubLinuxCmdBIOS, tmpl.GrubInitrdCmdBIOS)
-		} else if platform == "efi" || platform == "efi64" {
-			mux.WriteGrubConfig(ctx, b, mac, tmpl.GrubLinuxCmdEFIX64, tmpl.GrubInitrdCmdEFIX64)
-		} else if platform == "ipxes" {
-			mux.WriteIpxeConfig(ctx, b, mac)
-		} else {
-			return errors.New("unknown platform")
-		}
-		// set file size explicitly because buffer does not implement Seek method
-		rf.(tftp.OutgoingTransfer).SetSize(int64(b.Len()))
-		rf.ReadFrom(b)
-	} else {
-		err = serveFile(filename, rf)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-var ErrNotSupported = errors.New("writing not supported")
+var ErrNotSupported = errors.New("not supported")
+var ErrNotFound = errors.New("file not found")
+var ErrUnknown = errors.New("unknown error")
 
 func writeHandler(filename string, wt io.WriterTo) error {
 	return ErrNotSupported
@@ -164,17 +75,67 @@ func (h *logHook) OnFailure(s tftp.TransferStats, err error) {
 	)
 }
 
-func Start(ctx context.Context) (*Server, error) {
-	server := &Server{}
-	slog.InfoContext(ctx, "starting TFTP server", "port", config.Tftp.Port)
+func (s *Server) readHandler() func(filename string, rf io.ReaderFrom) error {
+	return func(filename string, rf io.ReaderFrom) error {
+		uri, err := urlJoin(s.url, filename)
+		if err != nil {
+			return fmt.Errorf("error building URL: %w", err)
+		}
 
-	server.ts = tftp.NewServer(readHandler, writeHandler)
+		req, err := http.NewRequest("GET", uri, nil)
+		if err != nil {
+			return fmt.Errorf("cannot create HTTP request: %w", err)
+		}
+
+		raddr := rf.(tftp.OutgoingTransfer).RemoteAddr()
+		req.Header.Add("X-Tftp-Ip", raddr.IP.String())
+		req.Header.Add("X-Tftp-Port", fmt.Sprintf("%d", raddr.Port))
+		req.Header.Add("X-Tftp-File", filename)
+
+		resp, err := s.c.Do(req)
+		if err != nil {
+			return fmt.Errorf("error during HTTP request: %w", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode == http.StatusNotFound {
+			return ErrNotFound
+		} else if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("%w: %s", ErrUnknown, resp.Status)
+		}
+
+		// Use ContentLength, if provided, to set TSize option
+		if resp.ContentLength >= 0 {
+			rf.(tftp.OutgoingTransfer).SetSize(resp.ContentLength)
+		}
+
+		_, err = rf.ReadFrom(resp.Body)
+		if err != nil {
+			return fmt.Errorf("readfrom failed: %w", err)
+		}
+
+		return nil
+	}
+}
+
+func Start(ctx context.Context, listenAddress, url string, timeout time.Duration) (*Server, error) {
+	server := &Server{
+		c: &http.Client{},
+		url: url,
+	}
+	slog.InfoContext(ctx, "starting TFTP server",
+		"address", listenAddress,
+		"url", url,
+		"timeout", timeout)
+
+	server.ts = tftp.NewServer(server.readHandler(), writeHandler)
 	server.ts.SetHook(&logHook{})
+	server.ts.SetTimeout(timeout)
 
 	go func() {
-		err := server.ts.ListenAndServe(fmt.Sprintf(":%d", config.Tftp.Port))
+		err := server.ts.ListenAndServe(listenAddress)
 		if err != nil {
-			slog.ErrorContext(ctx, "error when starting TFTP service", "err", err)
+			slog.ErrorContext(ctx, "error when starting TFTP service", "address", listenAddress, "err", err)
 			os.Exit(1)
 		}
 	}()

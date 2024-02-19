@@ -43,7 +43,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	tftp, err := tftp.Start(ctx)
+	tftp, err := tftp.Start(ctx,
+		fmt.Sprintf(":%d", config.Tftp.Port),
+		fmt.Sprintf("http://localhost:%d", config.Application.Port),
+		5 * time.Second)
 	defer tftp.Shutdown()
 	if err != nil {
 		slog.ErrorContext(ctx, "error when starting TFTP service", "err", err)

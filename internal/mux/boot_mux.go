@@ -24,6 +24,8 @@ func MountBoot(r *chi.Mux) {
 		"/shim.efi",
 		"/grubx64.efi",
 		"//grubx64.efi", // some grub versions request double slash
+		"/grubx64.0",
+		"//grubx64.0", // some grub versions request double slash
 		"/.discinfo",
 		"/LICENSE",
 		"/liveimg.tar.gz",
@@ -103,7 +105,7 @@ func serveBootPath(w http.ResponseWriter, r *http.Request) {
 	// Overwrite raw path. From StripPrefix doc: "if the prefix in the request contains escaped characters
 	// the reply is also an HTTP 404 not found error."
 	r.URL.RawPath = r.URL.Path
-	
+
 	fs := http.StripPrefix(prefix, http.FileServer(http.Dir(root)))
 	fs.ServeHTTP(w, r)
 }
