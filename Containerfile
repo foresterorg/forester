@@ -2,7 +2,7 @@ FROM registry.fedoraproject.org/fedora-minimal:latest as build
 RUN microdnf install -y golang
 RUN mkdir /build
 WORKDIR /build
-COPY cmd internal go.mod go.sum .
+COPY . .
 RUN go build -o forester-controller cmd/controller/ctl_main.go
 RUN go build -o forester-proxy cmd/proxy/pxy_main.go
 RUN go build -o forester-cli cmd/cli/cli_main.go
