@@ -28,6 +28,9 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 
 **TODO**
 
+* Support for generic (netboot) images (https://odcs.fedoraproject.org/composes/production/latest-Fedora-ELN/compose/BaseOS/x86_64/os/images/boot.iso)
+* Support for ostree/bootc via generic (netboot) images
+* Uploading via URL
 * Bootstrapping unknown hosts does not work (make discovery interactive?)
 * Update documentation on the recent changes (template generation, note that iPXE will not work with SecureBoot)
 * Create events table and store installation milestones (boot, ks, finish) and rendered templates in the database
