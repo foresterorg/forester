@@ -38,3 +38,4 @@ tern.conf
 /images
 /composer-api-*
 /*.iso
+/demo

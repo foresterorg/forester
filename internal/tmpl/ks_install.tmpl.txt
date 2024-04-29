@@ -50,14 +50,14 @@ ostreecontainer --url=/var/tmp/container --transport=oci --no-signature-verifica
 {{ range .Snippets.rootpw -}}
 {{ . }}
 {{ else -}}
-rootpw --iscrypted --lock locked
+rootpw --lock locked
 {{ end -}}
 # /rootpw
 # security
 {{ range .Snippets.security -}}
 {{ . }}
 {{ else -}}
-sshpw --username forester-{{ .SystemID }} --plaintext {{ .InstallUUID }}
+#sshpw --username forester-{{ .SystemID }} --plaintext {{ .InstallUUID }}
 firstboot --disable
 {{ if ne .ImageKind 2 -}}
 firewall --enabled --ssh
@@ -71,10 +71,9 @@ selinux --enforcing
 {{ else -}}
 {{ if eq .ImageKind 2 -}}
 clearpart --all
-part /boot/efi --fstype=efi --size=512 --fsoptions="umask=0077"
-part /boot --fstype=ext2 --size=1024 --label=boot
+reqpart --add-boot
 part swap --fstype=swap --size=1024
-part / --fstype=ext4 --grow
+part / --fstype=xfs --grow
 bootloader --timeout=1 --append="console=tty1 console=ttyS0,115200n8"
 {{ else -}}
 zerombr
@@ -102,6 +101,15 @@ logging --host {{ .BaseHost }} --port {{ .SyslogPort }}
 {{ .CustomSnippet }}
 # /post
 
+{{ if eq .ImageKind 2 -}}
+%post --erroronfail --log=/root/bootc-switch-post.log
+bootc switch --mutate-in-place --transport registry quay.io/lzapletal/fedora-eln-bootc-httpd-test
+%end
+{{ end -}}
+
 %post
+hostnamectl hostname {{ .SystemHostname }}
+sync
 curl --silent -X POST "{{ .BaseURL }}/done/{{ .InstallUUID }}"
 %end
+

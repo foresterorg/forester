@@ -71,10 +71,13 @@ func HandleDone(w http.ResponseWriter, r *http.Request) {
 }
 
 func bootLocal(ctx context.Context, m metal.Metal, s *model.SystemAppliance) {
-	time.Sleep(5 * time.Second)
-	slog.InfoContext(ctx, "booting system locally", "system_id", s.System.ID)
-	err := m.BootLocal(ctx, s)
-	if err != nil {
-		slog.InfoContext(ctx, "error during local boot", "system_id", s.System.ID, "error", err.Error())
-	}
+	slog.InfoContext(ctx, "scheduled system reboot", "system_id", s.System.ID)
+	go func() {
+		time.Sleep(6 * time.Second)
+		slog.InfoContext(ctx, "booting system locally", "system_id", s.System.ID)
+		err := m.BootLocal(ctx, s)
+		if err != nil {
+			slog.InfoContext(ctx, "error during local boot", "system_id", s.System.ID, "error", err.Error())
+		}
+	}()
 }
