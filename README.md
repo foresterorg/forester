@@ -28,6 +28,7 @@ Copyright (c) 2022 Lukáš Zapletal and AUTHORS, (c) 2023 Red Hat, Inc.
 
 **TODO**
 
+* Direct ISO boot only through EFI HTTP and BIOS iPXE sanboot
 * Support for generic (netboot) images (https://odcs.fedoraproject.org/composes/production/latest-Fedora-ELN/compose/BaseOS/x86_64/os/images/boot.iso)
 * Support for ostree/bootc via generic (netboot) images
 * Uploading via URL
